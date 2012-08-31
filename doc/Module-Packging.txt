@@ -1,0 +1,52 @@
+shadow: module packaging
+Written by Dark_Aaron on Aug 31, 2012
+
+shadow is an IRC bot platform, we want people to share and contribute modules.  To make 
+the experience of installing a module more pleasent, we have decided the correct way of
+doing such is to automate the process as much as possible.
+
+To do this, we need to first set a standard on how modules are packaged and distributed.
+Those methods and tips are explained throught this document.
+
+1.) The Module Sources
+
+   For sanity reasons, we must try and maintian a constant as to how we layout the code
+   for our modules.  This in the long run will make things a lot easier for both
+   developers and users.  I will demonstrate the layout of a common module, named Uptime
+   here:
+
+       Uptime                           Our module's directory in modules/
+       |-- module.json                  The JSON file which describes the module.
+       |-- Uptime.pm                    The module's code file
+       |-- install                      Directory for files related to the install
+       `-- `-- uptime.config            This is moved to etc/modules/
+
+2.) The module.json File
+
+    The module.json file is a file which describe the module it tells the author, purpose,
+    dependencies, and other useful information.  An example of a module.json file can be
+    seen here:
+
+       {
+           "name": "OmegleBridge",
+           "description": "Bridges a PM to an Omegle client instance.",
+           "author": {
+               "name": "Dark_Aaron",
+               "email": "aaron@ephasic.org",
+               "url": "http://ephasic.org/~ablakely"
+           },
+           "module": {
+               "compatibility": {
+                    "linux": true,
+                    "freebsd": true,
+                    "darwin": true,
+                    "win32": false
+                },
+                "dependencies": [
+                    "New::Omegle"
+                ]
+            }
+         }
+
+    For the list of values to use in module.compatibility see doc/perlos.txt
+

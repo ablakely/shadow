@@ -1,0 +1,56 @@
+Written by Dark_Aaron
+For additions/corrections contact me: aaron@ephasic.org
+This document can be used for determining the $^O values for various operating systems.
+
+ FAMILY      | COMMON NAME      | $^O VALUE
+-------------------------------------------------
+Unix         | AIX              | aix
+             | BSD/OS           | bsdos
+             | dgux             | dgux
+             | DYNIX/ptx        | dynixptx
+             | FreeBSD          | freebsd
+             | Linux            | linux
+             | MachTen          | machten
+             | Mac OS X         | darwin
+             | MPE/iX           | mpeix
+             | HP-UX            | hpux
+             | IRIX             | irix
+             | OpenBSD          | openbsd
+             | OSF1             | dec_osf
+             | QNX              | qnx
+             | reliantunix-n    | srv4
+             | SCO_SV           | sco_sv
+             | SINIX-N          | svr4
+             | sn4096           | unicos
+             | sn9617           |
+             | sn9716           |
+             | sn6521           | unicosmk
+             | SunOS            | solairs
+             | Solaris          |
+             | SunOS4           | sunos
+             | NetBSD           | netbsd
+             | SCO UNIX 3       | sco3
+             | ULTIX            | ultix
+             |                  |
+DOS          | MS-DOS           | dos
+             | PC-DOS           |
+             | OS/2             | os2
+             | Windows 95       | MSWin32
+             | Windows 98       |
+             | Windows NT       | 
+             | Novell NetWare   | NetWare
+             |                  |
+Mac          | Mac OS           | MacOS
+             | Mac OS X         | darwin
+             | Mac OS X Server  | rhapsody
+             |                  |
+DEC OS       | OpenVMS          | VMS
+             |                  |
+EBCDIC       | OS/390           | os390
+             | VM/ESA           | vmesa
+             |                  |
+Misc.        | RISC OS          | riscos
+             | Amiga            | amigaos
+             | BeOS             | beos
+             | Plan 9           | plan9
+
