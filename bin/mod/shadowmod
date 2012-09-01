@@ -1,0 +1,9 @@
+#!/usr/bin/perl -w
+# shadowmod: shadow module utility
+# Written by Dark_Aaron
+#
+
+use strict;
+use warnings;
+use JSON;
+

@@ -1,0 +1,33 @@
+{
+	"module": {
+		"name": "Uptime",
+		"description": "Simple uptime module for *nix systems.",
+		"version": "0.0.1",
+		"license": "GPL",
+		"git": "https://github.com/ablakely/shadow"
+	},
+
+	"author": {
+		"name": "Dark_Aaron",
+		"email": "aaron@ephasic.org",
+		"url": "http://ephasic.org/~ablakely"
+	},
+
+	"system": {
+		"compatibility": {
+			"Unix":		true,
+			"Mac":		true,
+			"DOS":		false,
+			"macos":	false,
+			"DEC OS":	false,
+			"EBCDIC":	false,
+			"Misc.":	false
+		},
+		"dependencies": []
+	},
+
+	"install": {
+		"prescript":	"install/pre.pl",
+		"srcdir":	"src/"
+	}
+}

@@ -17,9 +17,11 @@ Those methods and tips are explained throught this document.
 
        Uptime                           Our module's directory in modules/
        |-- module.json                  The JSON file which describes the module.
-       |-- Uptime.pm                    The module's code file
-       |-- install                      Directory for files related to the install
-       `-- `-- uptime.config            This is moved to etc/modules/
+       |-- src				Module source dir
+       |-- `-- Uptime.pm
+       |-- install			Install related stuff
+       |-- |-- pre.pl			Pre-install script
+       `   `-- uptime.conf		Module config, is moved to etc/modconf
 
 2.) The module.json File
 
@@ -27,26 +29,39 @@ Those methods and tips are explained throught this document.
     dependencies, and other useful information.  An example of a module.json file can be
     seen here:
 
-       {
-           "name": "OmegleBridge",
-           "description": "Bridges a PM to an Omegle client instance.",
-           "author": {
-               "name": "Dark_Aaron",
-               "email": "aaron@ephasic.org",
-               "url": "http://ephasic.org/~ablakely"
-           },
-           "module": {
-               "compatibility": {
-                    "linux": true,
-                    "freebsd": true,
-                    "darwin": true,
-                    "win32": false
+    {
+        "module": {
+                "name": "Uptime",
+                "description": "Simple uptime module for *nix systems.",
+                "version": "0.0.1",
+                "license": "GPL",
+                "git": "https://github.com/ablakely/shadow"
+        },
+
+        "author": {
+                "name": "Dark_Aaron",
+                "email": "aaron@ephasic.org",
+                "url": "http://ephasic.org/~ablakely"
+        },
+
+        "system": {
+                "compatibility": {
+                        "Unix":         true,
+                        "Mac":          true,
+                        "DOS":          false,
+                        "macos":        false,
+                        "DEC OS":       false,
+                        "EBCDIC":       false,
+                        "Misc.":        false
                 },
-                "dependencies": [
-                    "New::Omegle"
-                ]
-            }
-         }
+                "dependencies": []
+        },
+
+        "install": {
+                "prescript":    "install/pre.pl",
+                "srcdir":       "src/"
+        }
+    }
 
     For the list of values to use in module.compatibility see doc/perlos.txt
 
