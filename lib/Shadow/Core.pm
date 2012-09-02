@@ -5,7 +5,6 @@
 
 package Shadow::Core;
 
-use lib '/home/ablakely/perl5/lib/perl5/'; # no root :(
 use v5.10;
 use Carp;
 use strict;
