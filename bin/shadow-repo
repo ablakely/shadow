@@ -1,0 +1,26 @@
+#!/usr/bin/perl -w
+#
+# shadow-repo: a simple Shadow repository client
+# Written by Aaron Blakely
+#
+# THIS TOOL DOES NOT WORK... YET.
+
+use strict;
+use warnings;
+use LWP::Simple;
+use JSON;
+
+my $command = $ARGV[0] || "no-value";
+if ($command eq "install") {
+}
+elsif ($command eq "rm") {
+}
+elsif ($command eq "search") {
+}
+elsif ($command eq "no-value") {
+	print "usage: $0 <install|rm|search> [-v] <module>\n";
+	print "\tinstall\tInstalls a module from the repo.\n";
+	print "\trm\tRemoves a module that has been installed from the repo.\n";
+	print "\tsearch\tSearches the repo for a module.\n\n";
+	print "shadow-repo: a repo client written by Aaron Blakely\n";
+}

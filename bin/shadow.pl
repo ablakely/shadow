@@ -4,6 +4,7 @@
 #
 # Written by Aaron Blakely
 
+use lib '../lib';
 use strict;
 use warnings;
 use Shadow::Core;
@@ -11,7 +12,7 @@ use Shadow::Config;
 
 $| = 1;
 
-my $configfile		= $ARGV[0] || 'shadow.conf';
+my $configfile		= $ARGV[0] || '../etc/shadow.conf';
 my $configparser	= Shadow::Config->new($configfile);
 my $config		= $configparser->parse();
 
@@ -23,45 +24,30 @@ my $name	= $config->{Shadow}->{IRC}->{bot}->{name};
 
 my $bot = Shadow::Core->new($serverlist, $nick, $name, 0);
 
-exit if (fork());
-exit if (fork());
-sleep 1 until getppid() == 1;
+if ($config->{Shadow}->{Bot}->{system}->{daemonize} eq "yes") {
+	exit if (fork());
+	exit if (fork());
+	sleep 1 until getppid() == 1;
 
-print "gitbot[$$]: Successfully daemonized.\n";
+	print $nick." [$$]: Successfully daemonized.\n";
+}
 
 #############################################################
-
+#
+# Right now, we'll just do this.
+# Eventually, I will add a /correct/ channel joining function
+#
 $bot->add_handler('event connected', 'join_channels');
-
 sub join_channels {
-	$bot->join('#cruzrr');
-}
-
-$bot->add_handler('chanmecmd hello', 'say_hi');
-sub say_hi {
-	my ($nick, $host, $channel, $text) = @_;
-
-	$bot->say($channel, "hi");
-	
-	return;
-}
-
-$bot->add_handler('chanmecmd chgprefix', 'change_prefix');
-sub change_prefix {
-	my ($nick, $host, $channel, $text) = @_;
-
-	if ($nick eq "Dark_Aaron") {
-		$Shadow::Core::options{irc}{cmdprefix} = $text;
-		$bot->say($channel, "Command prefix is now: $text");
-	} else {
-		$bot->say($channel, "Access denied.");
+	my @chans = split(/\,/, $config->{Shadow}->{IRC}->{bot}->{channels});
+	foreach my $channel (@chans) {
+		$bot->join($channel);
 	}
 }
 
-$bot->load_module("Uptime");
-#$bot->load_module("Console");
 
 #############################################################
 
+# Start the wheel...
 $bot->connect();
 
