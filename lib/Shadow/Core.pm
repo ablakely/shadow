@@ -32,7 +32,7 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 		'time'		=> 30,
 	},
 	config => {
-		version		=> 'Shadow v0.05 - By Aaron Blakely (Dark_Aaron)',
+		version		=> 'Shadow v0.08 - By Aaron Blakely (Dark_Aaron)',
 		userdb		=> 'users',
 	},
 	irc => {
