@@ -15,7 +15,7 @@ use Sub::Delete;
 
 # Global Variables, Arrays, and Hashes
 our ($sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time);
-our (@queue, @timeout, @loaded_modules);
+our (@queue, @timeout, @loaded_modules, @onlineusers);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
 
 %options = (
@@ -41,7 +41,7 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 		o_prefix	=> '@',
 		h_prefix	=> '%',
 		v_prefix	=> '\+',
-		cmdprefix	=> '$',
+		cmdprefix	=> '.',
 	},
 		
 );
@@ -472,12 +472,19 @@ sub irc_users {
 	
 	for (@users) {
 		my ($owner, $protect, $op, $halfop, $voice);
-		$owner				= 1 if /$options{irc}{q_prefix}/;
-		$protect			= 1 if /$options{irc}{a_prefix}/;
-		$op				= 1 if /$options{irc}{o_prefix}/;
-		$halfop				= 1 if /$options{irc}{h_prefix}/;
-		$voice				= 1 if /$options{irc}{v_prefix}/;
+		$owner				= 1 if /\Q$options{irc}{q_prefix}/;
+		$protect			= 1 if /\Q$options{irc}{a_prefix}/;
+		$op				    = 1 if /\Q$options{irc}{o_prefix}/;
+		$halfop				= 1 if /\Q$options{irc}{h_prefix}/;
+		$voice				= 1 if /\Q$options{irc}{v_prefix}/;
 		
+		$_ =~ s/\Q$options{irc}{q_prefix}//;
+		$_ =~ s/\Q$options{irc}{a_prefix}//;
+		$_ =~ s/\Q$options{irc}{o_prefix}//;
+		$_ =~ s/\Q$options{irc}{h_prefix}//;
+		$_ =~ s/\Q$options{irc}{v_prefix}//;
+		$_ =~ s/\\//;
+
 		# create a hash for the user
 		$sc{lc($channel)}{users}{$_}		= {};
 		$sc{lc($channel)}{users}{$_}{op}	= 1 if ($op || $protect || $owner); # let's assume anyone with +a and +q are also +o
@@ -596,6 +603,9 @@ sub irc_mode {
 				$count++;
 				my $item = $mode[$count];
 				if ($item eq $nick) {
+					$sc{lc($channel)}{users}{$nick}{voice} = 1 if $action eq "+";
+					$sc{lc($channel)}{users}{$nick}{voice} = undef if $action eq "-";
+					
 					handle_handler('event', 'voice_me', $remotenick, $hostmask, $channel, $action);
 				}
 				
@@ -608,6 +618,9 @@ sub irc_mode {
 				$count++;
 				my $item = $mode[$count];
 				if ($item eq $nick) {
+					$sc{lc($channel)}{users}{$nick}{halfop} = 1 if $action eq "+";
+					$sc{lc($channel)}{users}{$nick}{halfop} = undef if $action eq "-";
+					
 					handle_handler('event', 'halfop_me', $remotenick, $hostmask, $channel, $action);
 				}
 				
@@ -620,6 +633,9 @@ sub irc_mode {
 				$count++;
 				my $item = $mode[$count];
 				if ($item eq $nick) {
+					$sc{lc($channel)}{users}{$nick}{op} = 1 if $action eq "+";
+					$sc{lc($channel)}{users}{$nick}{op} = undef if $action eq "-";
+
 					handle_handler('event', 'op_me', $remotenick, $hostmask, $channel, $action);
 				}
 				
@@ -632,6 +648,9 @@ sub irc_mode {
 				$count++;
 				my $item = $mode[$count];
 				if ($item eq $nick) {
+					$sc{lc($channel)}{users}{$nick}{protect} = 1 if $action eq "+";
+					$sc{lc($channel)}{users}{$nick}{protect} = undef if $action eq "-";
+
 					handle_handler('event', 'protect_me', $remotenick, $hostmask, $channel, $action);
 				}
 				
@@ -644,6 +663,9 @@ sub irc_mode {
 				$count++;
 				my $item = $mode[$count];
 				if ($item eq $nick) {
+					$sc{lc($channel)}{users}{$nick}{owner} = 1 if $action eq "+";
+					$sc{lc($channel)}{users}{$nick}{owner} = undef if $action eq "-";
+
 					handle_handler('event', 'owner_me', $remotenick, $hostmask, $channel, $action);
 				}
 				
@@ -951,7 +973,7 @@ sub isin {
 sub topic {
 	my ($self, $channel, $topic) = @_;
 	if (!defined($topic)) {
-		return $sc{lc($channel)}{topic};
+		return $sc{lc($channel)}{topic}{text};
 	} else {
 		irc_raw(2, "TOPIC $channel :$topic");
 	}

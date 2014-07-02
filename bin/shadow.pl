@@ -22,7 +22,7 @@ my $serverlist 	= $config->{Shadow}->{IRC}->{bot}->{host};
 my $nick	= $config->{Shadow}->{IRC}->{bot}->{nick};
 my $name	= $config->{Shadow}->{IRC}->{bot}->{name};
 
-my $bot = Shadow::Core->new($serverlist, $nick, $name, 0);
+my $bot = Shadow::Core->new($serverlist, $nick, $name, 1);
 
 if ($config->{Shadow}->{Bot}->{system}->{daemonize} eq "yes") {
 	exit if (fork());
@@ -47,6 +47,9 @@ sub join_channels {
 
 
 #############################################################
+
+$bot->load_module("UserAccounts");
+$bot->load_module("Admin");
 
 # Start the wheel...
 $bot->connect();
