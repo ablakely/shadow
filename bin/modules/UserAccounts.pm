@@ -36,7 +36,7 @@ sub usr_indetify {
 sub usr_help {
 	my ($nick, $host, $topic) = @_;
 
-	if (!$topic) {
+	if ($topic == undef) {
 		$bot->notice("\x02--- Shadow Help ---\x02");
 		$bot->notice("- \x02Shadow ($Shadow::Core::nick)\x02 provides users with advanced features to enrich the overall IRC experience,");
 		$bot->notice("- it provides various such as channel management, flood control, user accounts, social network integration and various");
