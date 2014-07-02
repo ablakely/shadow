@@ -34,7 +34,24 @@ sub usr_indetify {
 }
 
 sub usr_help {
-	return;
+	my ($nick, $host, $topic) = @_;
+
+	if (!$topic) {
+		$bot->notice("\x02--- Shadow Help ---\x02");
+		$bot->notice("- \x02Shadow ($Shadow::Core::nick)\x02 provides users with advanced features to enrich the overall IRC experience,");
+		$bot->notice("- it provides various such as channel management, flood control, user accounts, social network integration and various");
+		$bot->notice("- other features for users to enjoy.");
+		$bot->notice("-");
+		$bot->notice("- \x02Available Commands:\x02");
+		$bot->notice("-   \x02register\x02     - Creates a user account.");
+		$bot->notice("-   \x02identify\x02     - Logs you into your account.");
+		$bot->notice("-   \x02reqchan\x02      - Submit a channel request.");
+		$bot->notice("-   \x02chanmgmt\x02     - Channel management settings.");
+		$bot->notice("-   \x02social\x02       - Social network integration settings.");
+		$bot->notice("-   \x02stats\x02        - Bot statistics.");
+		$bot->notice("-");
+		$bot->notice("- For advanced help on a command please use: \x02/msg $Shadow::Core::nick help <command>");
+	}
 }
 
 sub check_flag {
