@@ -21,10 +21,10 @@ sub usr_register {
 		$bot->notice($nick, "Error: That email is registered to an existing account.");
 		return;
 	} else {
-		$db{$email} = { password => $password, regtime => localtime, flags => ''};
-		push(@Shadow::Core::onlineusers, $nick);
+		$db{$email} = { password => $password, regtime => localtime, flags => '', host => $host };
+		push(@Shadow::Core::onlineusers, "$nick:$host:$email");
 
-		$bot->notice($nick, "You are now registered with $Shadow::Core::nick\.");
+		$bot->notice($nick, "You are now registered with the email $email.\.");
 		$bot->notice($nick, "To see a list of commands avaliable, use \x02/msg $Shadow::Core::nick help\x02");
 	}
 }
@@ -35,6 +35,19 @@ sub usr_indetify {
 
 sub usr_help {
 	return;
+}
+
+sub check_flag {
+	my ($email, $flag) = @_;
+
+	my @flags = split("", $db{$email}{flags});
+	foreach my $f ($flags) {
+		if ($f eq $flag) {
+			return 1;
+		}
+	}
+
+	return undef;
 }
 
 1;
