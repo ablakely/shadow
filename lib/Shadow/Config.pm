@@ -18,7 +18,7 @@ sub new {
 	my $self = { };
 
 	push @confFiles, $confFile;
-	
+
 	return bless($self, $class);
 }
 
