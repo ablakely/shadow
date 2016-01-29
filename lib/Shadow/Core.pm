@@ -40,7 +40,7 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 		a_prefix	=> '!',
 		o_prefix	=> '@',
 		h_prefix	=> '%',
-		v_prefix	=> '\+',
+		v_prefix	=> '+',
 		cmdprefix	=> '.',
 	},
 		
@@ -375,7 +375,8 @@ sub irc_in {
 			}
 			when (/NICK/) {
 				# nick change events
-				irc_nick($remotenick, $bits[2] . $text, $bits[0]);
+
+				irc_nick($remotenick, $bits[2], $text, $bits[0]);
 			}
 			when (/INVITE/) {
 				# INVITE event

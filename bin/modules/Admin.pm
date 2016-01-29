@@ -5,10 +5,10 @@ use Data::Dumper;
 my $admin = "Dark_Aaron";
 my $bot   = Shadow::Core;
 
-$bot->add_handler('chancmd eval', irceval);
-$bot->add_handler('chancmd dump', ircdump);
+$bot->add_handler('chancmd eval', ircadmin_eval);
+$bot->add_handler('chancmd dump', ircadmin_dump);
 
-sub irceval {
+sub ircadmin_eval {
 	my ($nick, $host, $chan, $text) = @_;
 
 	if ($nick eq $admin) {
@@ -19,7 +19,7 @@ sub irceval {
 	}
 }
 
-sub ircdump {
+sub ircadmin_dump {
 	my ($nick, $host, $chan, $text) = @_;
 
 	if ($nick eq $admin) {
