@@ -12,10 +12,11 @@ use warnings;
 use IO::Select;
 use IO::Socket::INET;
 use Sub::Delete;
+use Config;
 
 # Global Variables, Arrays, and Hashes
-our ($sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time);
-our (@queue, @timeout, @loaded_modules, @onlineusers);
+our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time);
+our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
 
 %options = (
@@ -43,46 +44,58 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 		v_prefix	=> '+',
 		cmdprefix	=> '.',
 	},
-		
+
 );
 
 # Constructor
 sub new {
 	my $class				= shift;
 	my $self				= {};
-	my ($servers, $nick, $name, $verbose)	= @_;
-	my @serverlist				= split(/,/, $servers);
+	my ($conffile, $verbose)  = @_;
+	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
+	$cfg            = $cfgparser->parse();
+  my @serverlist  = split(/,/, $cfg->{Shadow}->{IRC}->{bot}->{host});
 
 	foreach my $ircserver (@serverlist) {
 		my ($serverhost, $serverport)	= split(/:/, $ircserver);
 		$server{$serverhost}		= {};
 		$server{$serverhost}{port}	= $serverport || 6667;
 	}
-	
+
 	# generate a alternative nickname from the account thats executing the bot if no nick is defined
 	# Example: the user is named 'aaron', then the bot will be named 'aaronbot'
 	my $whoami = `whoami`;
 	chomp $whoami;
 	$whoami .= "bot";
-	$options{config}{nick}		= $nick || $whoami;
-	$options{config}{name}		= $name || $nick;
+	$options{config}{nick}		= $cfg->{Shadow}->{IRC}->{bot}->{nick} || $whoami;
+	$options{config}{name}		= $cfg->{Shadow}->{IRC}->{bot}->{name} || $nick;
 	$options{config}{reconnect}	= 200;
-	
+
 	# to put something in there
 	$Shadow::Core::nick = $nick;
-	
+
 	# Push the loaded modules into our array
 	foreach my $modname (sort keys %INC) {
 		$modname				=~ s/\//\:\:/gs;	# replace / with ::
-		$modname				=~ s/\.pm$//;		# remove the .pm		
+		$modname				=~ s/\.pm$//;		# remove the .pm
 		$loaded_modules[++$#loaded_modules] 	= $modname;
 	}
-	
+
 	if (!$verbose) {
 		open (STDOUT, ">./shadow.log") or die $!;
 		open (STDERR, ">./shadow.log") or die $!;
 	}
-	
+
+	if ($cfg->{Shadow}->{Bot}->{system}->{daemonize} eq "yes") {
+		exit if (fork());
+		exit if (fork());
+		sleep 1 until getppid() == 1;
+
+		print $cfg->{Shadow}->{IRC}->{bot}->{nick}."[$$]: Forked to background.\n";
+	}
+
+	$self->{cfg} = $cfg;
+
 	return bless($self, $class);
 }
 
@@ -100,7 +113,7 @@ sub shadowuse {
 
 sub load_module {
 	my ($self, $module_name) = @_;
-	
+
 	if (-e "modules/$module_name\.pm") {
 		print "Loading module: $module_name\n";
 		package main;				# switch to the main package
@@ -118,7 +131,7 @@ sub load_module {
 
 sub unload_module {
 	my ($self, $module_name) = @_;
-	
+
 	foreach my $loaded_mod (@loaded_modules) {
 		if ($loaded_mod eq $module_name) {
 			eval "package main::$module_name; unloader();";
@@ -126,24 +139,24 @@ sub unload_module {
 			return 1;
 		}
 	}
-	
+
 	return undef;
 }
 
 sub module_stats {
 	my ($self) = @_;
-	
+
 	my %modinfo;
 	my $modcount = 0;
-	
+
 	foreach my $mod (@loaded_modules) {
 		$modcount++;
 		$modinfo{$mod} = {};
 		$modinfo{$mod}{version} = 1;
 	}
-	
+
 	$modinfo{loadedmodcount} = $modcount;
-	
+
 	return %modinfo;
 }
 
@@ -168,13 +181,13 @@ sub sendfh {
 sub flush_out {
 	my $fh = shift;
 	return unless defined $outbuffer{$fh};
-	
+
 	my $sent = syswrite($fh, $outbuffer{$fh}, 1024);
 	return if !defined $sent;
-	
+
 	if (($sent == length($outbuffer{$fh})) || ($! == 11)) {
 		substr($outbuffer{$fh}, 0, $sent) = '';
-		
+
 		if (!length($outbuffer{$fh})) {
 			delete $outbuffer{$fh};
 		}
@@ -185,7 +198,7 @@ sub flush_out {
 
 sub closefh {
 	my ($fh) = shift;
-	
+
 	$ircping = 200 if defined $irc and $fh == $irc;
 	flush_out($fh);
 	$sel->remove($fh);
@@ -201,17 +214,17 @@ sub mainloop {
 			$tmp = sysread($fh, $char, 1024);
 			close $fh unless defined $tmp and length $char;
 			$inbuffer{$fh} .= $char;
-			
+
 			while (my ($theline, $therest) = $inbuffer{$fh} =~ /([^\n]*)\n(.*)/s) {
 				$inbuffer{$fh} = $therest;
 				$theline =~ s/\r$//;
 				irc_in($theline, $fh);
 			}
 		}
-		
+
 		my $count = 0;
 		my $time = time;
-		
+
 		for my $num (0 .. 3) {
 			last if ($lastout >= $time);
 			while ($_ = shift(@{$queue[$num]})) {
@@ -219,14 +232,14 @@ sub mainloop {
 					$_ = substr($_, 0, 511);
 				}
 				sendfh($irc, $_);
-				
+
 				if (length($_) > 400) {
 					$lastout = $time + 5;
 					$count++;
 					last;
 				}
 				$count++;
-				
+
 				if ($lastout < $time - 20) {
 					$lastout = $time - 20;
 					next;
@@ -245,18 +258,18 @@ sub mainloop {
 			}
 			last if $count >= 1;
 		}
-		
+
 		foreach my $fh ($sel->can_write(0)) {
 			flush_out($fh);
 		}
-		
+
 		if ($ircping + 60 < $time && $checktime + 30 < $time) {
 			$checktime = $time;
 			irc_raw(3, "NOTICE $nick :anti-reconnect");	# to try and keep us alive
 		}
 
 		irc_reconnect() if ($ircping + $options{config}{reconnect} <= $time);
-		
+
 		for (@timeout) {
 			if (defined($_->{'time'}) && $time >= $_->{'time'}) {
 				delete($_->{'time'});
@@ -271,17 +284,17 @@ sub mainloop {
 
 sub irc_connect {
 	my ($ircserver, $ircport) = split(/:/, $_[0], 2);
-	
+
 	print "Connecting to IRC server... [server=$ircserver, port=$ircport]\n";
 	$irc = IO::Socket::INET->new(
 		Proto		=> 'TCP',
 		PeerAddr	=> $ircserver,
 		PeerPort	=> $ircport,
 	) or return undef;
-	
+
 	sendfh($irc, "NICK ".$options{config}{nick}."\r\n");
 	sendfh($irc, "USER shadow ".lc($options{config}{nick})." ".lc($ircserver)." :".$options{config}{name}."\r\n");
-	
+
 	$sel->add($irc);
 	$ircping = time;
 	return $irc;
@@ -296,11 +309,11 @@ sub irc_disconnect {
 
 sub irc_reconnect {
 	irc_disconnect() if defined $irc;
-	
+
 	until ($irc) {
 		for (keys %server) {
 			return if $irc = irc_connect($_.":".$server{$_}{port});
-			
+
 		}
 		sleep 20 if !$irc;
 	}
@@ -311,7 +324,7 @@ sub irc_reconnect {
 sub irc_in {
 	my ($response, $fh) = @_;
 	$ircping = time;
-	
+
 	if ($response =~ /^PING (.*)$/) {
 		irc_raw(0, "PONG $1");
 	}
@@ -324,86 +337,90 @@ sub irc_in {
 		$response 		=~ s/^:([^ ]+) //;
 		my $ck       		= $1;
 		my ($command, $text) 	= split(/:/, $response, 2);
-		
+
 		my @bits		= split(' ', "$ck $command");
 		return if !defined $bits[1];
 		my ($remotenick, $remotehost) = split("!", $bits[0]);
 		handle_handler("raw", lc($bits[1]), $remotenick, $remotehost, $text, @bits);
-		
-		given ($bits[1]) {
-			when (/004/) {
-				# connected event
-				irc_connected($bits[2]);
-			}
-			when (/005/) {
-				# scan 005 info for adapting to our enviornment
-				irc_scaninfo(@bits);
-			}
-			when (/433/) {
-				# nickname is use event
-				irc_nicktaken($bits[3]);
-			}
-			when (/353/) {
-				# NAMES event
-				irc_users($bits[4], split(/ /, $text));
-			}
-			when (/MODE/) {
-				# MODE event
-				my $mode = join(" ", @bits[2 .. scalar(@bits) - 1]) if defined $bits[2];
-				$mode .= $text if defined $text;
-				irc_mode($mode, $remotenick, $bits[0]);
-			}
-			when (/PRIVMSG/) {
-				# PRIVMSG event
-				irc_msg_handler($remotenick, $bits[2], $text, $bits[0]);
-			}
-			when (/JOIN/) {
-				# JOIN event
-				irc_join($text, $remotenick, $bits[0]);
-			}
-			when (/PART/) {
-				# PART event
-				irc_part($bits[2], $remotenick, $bits[0], $text);
-			}
-			when (/QUIT/) {
-				# QUIT event
-				irc_quit($remotenick, $bits[0], $text);
-			}
-			when (/NOTICE/) {
-				# NOTICE event
-				irc_notice($remotenick, $bits[2], $text, $bits[0]);
-			}
-			when (/NICK/) {
-				# nick change events
 
-				irc_nick($remotenick, $bits[2], $text, $bits[0]);
-			}
-			when (/INVITE/) {
-				# INVITE event
-				irc_invite($remotenick, $bits[3], $text, $bits[0]);
-			}
-			when (/KICK/) {
-				# KICK event
-				irc_kick($remotenick, $bits[2], $bits[3], $text, $bits[0]);
-			}
-			when (/[473|475|479]/) {
-				# KNOCK event
-				irc_knock($remotenick, $bits[3], $text, $bits[0]);
-			}
-			when (/332/) {
-				# TOPIC event
-				$sc{lc($bits[3])}{topic}{text} = $text;
-			}
-			when (/333/) {
-				# TOPIC info event
-				$sc{lc($bits[3])}{topic}{by}		= $bits[4];
-				$sc{lc($bits[3])}{topic}{'time'}	= $bits[5];
-			}
-			when (/TOPIC/) {
-				# TOPIC event
-				irc_topic($remotenick, $bits[2], $text, $bits[0]);
-			}
+		if ($bits[1] eq "004") {
+		    # connected event
+		    irc_connected($bits[2]);
+
+		    my @chans = split(/\,/, $cfg->{Shadow}->{IRC}->{bot}->{channels});
+		    foreach my $channel (@chans) {
+					print "Attempting to join $channel\n";
+					irc_raw(1, "JOIN :$channel");
+		    }
 		}
+		elsif ($bits[1] eq "005") {
+		  # scan 005 info for adapting to our enviornment
+		  irc_scaninfo(@bits);
+		}
+		elsif ($bits[1] eq "433") {
+		  # nickname is in use event
+		  irc_nicktaken($bits[3]);
+		}
+		elsif ($bits[1] eq "353") {
+		  # names event
+		  irc_users($bits[4], split(/ /, $text));
+		}
+		elsif ($bits[1] eq "MODE") {
+		  # mode event
+		  my $mode = join(" ", @bits[2 .. scalar(@bits) - 1]) if defined $bits[2];
+		  $mode .= $text if defined $text;
+		  irc_mode($mode, $remotenick, $bits[0]);
+		}
+		elsif ($bits[1] eq "PRIVMSG") {
+		  # privmsg event
+		  irc_msg_handler($remotenick, $bits[2], $text, $bits[0]);
+		}
+		elsif ($bits[1] eq "JOIN") {
+		  # join event
+		  irc_join($text, $remotenick, $bits[0]);
+		}
+		elsif ($bits[1] eq "PART") {
+		  # part event
+		  irc_part($bits[2], $remotenick, $bits[0], $text);
+		}
+		elsif ($bits[1] eq "QUIT") {
+		  # quit event
+		  irc_quit($remotenick, $bits[0], $text);
+		}
+		elsif ($bits[1] eq "NOTICE") {
+		  # notice event
+		  irc_notice($remotenick, $bits[2], $text, $bits[0]);
+		}
+		elsif ($bits[1] eq "NICK") {
+		  # nick change event
+		  irc_nick($remotenick, $bits[2], $text, $bits[0]);
+		}
+		elsif ($bits[1] eq "INVITE") {
+		  # invite event
+		  irc_invite($remotenick, $bits[3], $text, $bits[0]);
+		}
+		elsif ($bits[1] eq "KICK") {
+		  # kick event
+		  irc_kick($remotenick, $bits[2], $bits[3], $text, $bits[0]);
+		}
+		elsif ($bits[1] eq "473" || $bits[1] eq "475" || $bits[1] eq "479") {
+		  # knock event
+		  irc_knock($remotenick, $bits[3], $text, $bits[0]);
+		}
+		elsif ($bits[1] eq "332") {
+		  # topic event
+		  $sc{lc($bits[3])}{topic}{text} = $text;
+		}
+		elsif ($bits[1] eq "333") {
+		  # topic info event
+		  $sc{lc($bits[3])}{topic}{by}     = $bits[4];
+		  $sc{lc($bits[3])}{topic}{'time'} = $bits[5];
+		}
+		elsif ($bits[1] eq "TOPIC") {
+		  # topic event
+		  irc_topic($remotenick, $bits[2], $text, $bits[0]);
+		}
+
 	}
 }
 
@@ -414,13 +431,13 @@ sub irc_scaninfo {
 		if ($line =~ /PREFIX\=(.*)/) {
 			my $prefixes_unfmt = $1;
 			my ($letters_unfmt, $symbols_unfmt) = split(/\)/, $prefixes_unfmt);
-			
+
 			# remove the '(' from letters
 			$letters_unfmt =~ s/\(//;
-			
+
 			my @letters = split(//, $letters_unfmt);
 			my @symbols = split(//, $symbols_unfmt);
-			
+
 			for (my $count = 0; $count != $#letters; $count++) {
 				if ($letters[$count] eq 'q') {
 					$options{irc}{q_prefix}		= $symbols[$count];
@@ -455,12 +472,12 @@ sub irc_connected {
 
 sub irc_nicktaken {
 	my ($taken) = @_;
-	
+
 	print "The nick ($nick) is taken: $taken\n";
 	if ($taken) {
 		print "Appending random chars to the end of the nickname..\n";
 		my $tmp = $Shadow::Core::nick . int(rand(9)) . int(rand(9)) . int(rand(9));
-		
+
 		irc_raw(0, "NICK $tmp");
 		handle_handler('event', 'nicktaken', $nick, $tmp);
 		$nick = $tmp;
@@ -470,7 +487,7 @@ sub irc_nicktaken {
 
 sub irc_users {
 	my ($channel, @users) = @_;
-	
+
 	for (@users) {
 		my ($owner, $protect, $op, $halfop, $voice);
 		$owner				= 1 if /\Q$options{irc}{q_prefix}/;
@@ -478,7 +495,7 @@ sub irc_users {
 		$op				    = 1 if /\Q$options{irc}{o_prefix}/;
 		$halfop				= 1 if /\Q$options{irc}{h_prefix}/;
 		$voice				= 1 if /\Q$options{irc}{v_prefix}/;
-		
+
 		$_ =~ s/\Q$options{irc}{q_prefix}//;
 		$_ =~ s/\Q$options{irc}{a_prefix}//;
 		$_ =~ s/\Q$options{irc}{o_prefix}//;
@@ -498,34 +515,34 @@ sub irc_users {
 
 sub irc_topic {
 	my ($remotenick, $channel, $text, $hostmask) = @_;
-	
+
 	$sc{lc($channel)}{topic}{text}		= $text;
 	$sc{lc($channel)}{topic}{'time'}	= time;
 	$sc{lc($channel)}{topic}{by}		= $remotenick;
-	
+
 	handle_handler('event', 'topic', $remotenick, $hostmask, $channel, $text);
 }
 
 sub irc_join {
 	my ($channel, $remotenick, $hostmask) = @_;
-	
+
 	# if it is ourself then we create a record for the channel and update our host
 	if ($remotenick eq $nick) {
 		$sc{lc($channel)}	= {};
 		$myhost			= $hostmask;
 		handle_handler('event', 'join_me', $remotenick, $hostmask, $channel);
 	}
-	
+
 	$sc{lc($channel)}{users}{$remotenick}		= {};
 	$sc{lc($channel)}{users}{$remotenick}{hostmask}	= $hostmask;
-	
+
 	return if $remotenick eq $nick;
 	handle_handler('event', 'join', $remotenick, $hostmask, $channel);
 }
 
 sub irc_part {
 	my ($channel, $remotenick, $hostmask, $text) = @_;
-	
+
 	# if it is ourself then we delete the channel record
 	if ($remotenick eq $nick) {
 		delete($sc{lc($channel)});
@@ -538,26 +555,26 @@ sub irc_part {
 
 sub irc_quit {
 	my ($remotenick, $hostmask, $text) = @_;
-	
+
 	my @channels;
 	for (keys(%sc)) {
 		if (delete($sc{$_}{users}{$remotenick})) {
 			push(@channels, $_);
 		}
 	}
-	
+
 	handle_handler('event', 'quit', $remotenick, $hostmask, $text, @channels);
 }
 
 sub irc_nick {
 	my ($remotenick, $newnick, $hostmask) = @_;
-	
+
 	if (lc($remotenick) eq lc($nick)) {
 		$nick = $newnick;
 		handle_handler('event', 'nick_me', $remotenick, $hostmask, $newnick);
 		return;
 	}
-	
+
 	my @channels;
 	for (keys (%sc)) {
 		if (defined $sc{$_}{users}{$remotenick}) {
@@ -566,132 +583,118 @@ sub irc_nick {
 			push(@channels, $_);
 		}
 	}
-	
+
 	if (defined $sf{$remotenick}) {
 		$sf{$newnick} = $sf{$remotenick};
 	}
-	
+
 	handle_handler('event', 'nick', $remotenick, $hostmask, $newnick, @channels);
 }
 
 sub irc_mode {
 	my @mode = split(/ /, $_[0]);
-	
+
 	my ($remotenick, $hostmask) = ($_[1], $_[2]);
 	return if $mode[0] !~ /^[#&!@%+~]/;
 	return if !defined $mode[0];
-	
+
 	my $channel		= $mode[0];
 	my ($action)		= substr($mode[0], 0, 1);
-	
+
 	handle_handler('event', 'mode', $remotenick, $hostmask, $channel, $action, @mode);
-	
+
 	my $count	= 1;
 	my $i		= 0;
 	my $l		= length($mode[1]) - 1;
-	
+
 	while ($i <= $l) {
 		my $bit = substr($mode[1], $i, 1);
-		
-		given ($bit) {
-			when (/\+/) {
-				$action		= "+";
-			}
-			when (/\-/) {
-				$action		= "-";
-			}
-			when (/v/) {
-				$count++;
-				my $item = $mode[$count];
-				if ($item eq $nick) {
-					$sc{lc($channel)}{users}{$nick}{voice} = 1 if $action eq "+";
-					$sc{lc($channel)}{users}{$nick}{voice} = undef if $action eq "-";
-					
-					handle_handler('event', 'voice_me', $remotenick, $hostmask, $channel, $action);
-				}
-				
-				return if $item eq $nick;
-				$sc{lc($channel)}{users}{$item}{voice}		= 1 if $action eq "+";
-				$sc{lc($channel)}{users}{$item}{voice}		= undef if $action eq "-";
-				handle_handler('mode', 'voice', $remotenick, $hostmask, $channel, $action, $item);
-			}
-			when (/h/) {
-				$count++;
-				my $item = $mode[$count];
-				if ($item eq $nick) {
-					$sc{lc($channel)}{users}{$nick}{halfop} = 1 if $action eq "+";
-					$sc{lc($channel)}{users}{$nick}{halfop} = undef if $action eq "-";
-					
-					handle_handler('event', 'halfop_me', $remotenick, $hostmask, $channel, $action);
-				}
-				
-				return if $item eq $nick;
-				$sc{lc($channel)}{users}{$item}{halfop}		= 1 if $action eq "+";
-				$sc{lc($channel)}{users}{$item}{halfop}		= undef if $action eq "-";
-				handle_handler('mode', 'halfop', $remotenick, $hostmask, $channel, $action, $item);
-			}
-			when (/o/) {
-				$count++;
-				my $item = $mode[$count];
-				if ($item eq $nick) {
-					$sc{lc($channel)}{users}{$nick}{op} = 1 if $action eq "+";
-					$sc{lc($channel)}{users}{$nick}{op} = undef if $action eq "-";
 
-					handle_handler('event', 'op_me', $remotenick, $hostmask, $channel, $action);
-				}
-				
-				return if $item eq $nick;
-				$sc{lc($channel)}{users}{$item}{op}		= 1 if $action eq "+";
-				$sc{lc($channel)}{users}{$item}{op}		= undef if $action eq "-";
-				handle_handler('mode', 'op', $remotenick, $hostmask, $channel, $action, $item);
-			}
-			when (/a/) {
-				$count++;
-				my $item = $mode[$count];
-				if ($item eq $nick) {
-					$sc{lc($channel)}{users}{$nick}{protect} = 1 if $action eq "+";
-					$sc{lc($channel)}{users}{$nick}{protect} = undef if $action eq "-";
-
-					handle_handler('event', 'protect_me', $remotenick, $hostmask, $channel, $action);
-				}
-				
-				return if $item eq $nick;
-				$sc{lc($channel)}{users}{$item}{protect}	= 1 if $action eq "+";
-				$sc{lc($channel)}{users}{$item}{protect}	= undef if $action eq "-";
-				handle_handler('mode', 'protect', $remotenick, $hostmask, $channel, $action, $item);
-			}
-			when (/q/) {
-				$count++;
-				my $item = $mode[$count];
-				if ($item eq $nick) {
-					$sc{lc($channel)}{users}{$nick}{owner} = 1 if $action eq "+";
-					$sc{lc($channel)}{users}{$nick}{owner} = undef if $action eq "-";
-
-					handle_handler('event', 'owner_me', $remotenick, $hostmask, $channel, $action);
-				}
-				
-				return if $item eq $nick;
-				$sc{lc($channel)}{users}{$item}{owner}		= 1 if $action eq "+";
-				$sc{lc($channel)}{users}{$item}{owner}		= undef if $action eq "-";
-				handle_handler('mode', 'owner', $remotenick, $hostmask, $channel, $action);
-			}
-			when (/b/) {
-				$count++;
-				my $item = $mode[$count];
-				if ($item eq $nick) {
-					handle_handler('event', 'ban_me', $remotenick, $hostmask, $channel, $action);
-				}
-				return if $item eq $nick;
-				handle_handler('mode', 'ban', $remotenick, $hostmask, $channel, $action);
-			}
-			when (/^[lkIe]$/) {
-				$count++;
-				handle_handler('mode', 'otherp', $remotenick, $hostmask, $channel, $action, $bit, $mode[$count]);
-			}
-			default {
-				handle_handler('mode', 'other', $remotenick, $hostmask, $channel, $action, $bit);
-			}
+		if ($bit eq "+" || $bit eq "-") {
+		  $action = $bit;
 		}
+		elsif ($bit eq "v") {
+		  $count++;
+		  my $item = $mode[$count];
+		  if ($item eq $nick) {
+		    $sc{lc($channel)}{users}{$nick}{voice} = 1 if $action eq "+";
+		    $sc{lc($channel)}{users}{$nick}{voice} = undef if $action eq "-";
+		    handle_handler('event', 'voice_me', $remotenick, $hostmask, $channel, $action);
+		    return;
+		  }
+		  $sc{lc($channel)}{users}{$item}{voice} = 1 if $action eq "+";
+		  $sc{lc($channel)}{users}{$item}{voice} = undef if $action eq "-";
+		  handle_handler('mode', 'voice', $remotenick, $hostmask, $channel, $action, $item);
+		}
+		elsif ($bit eq "h") {
+		  $count++;
+		  my $item = $mode[$count];
+		  if ($item eq $nick) {
+		    $sc{lc($channel)}{users}{$nick}{halfop} = 1 if $action eq "+";
+		    $sc{lc($channel)}{users}{$nick}{halfop} = undef if $action eq "-";
+		    handle_handler('event', 'halfop_me', $remotenick, $hostmask, $channel, $action);
+		    return;
+		  }
+		  $sc{lc($channel)}{users}{$item}{halfop} = 1 if $action eq "+";
+		  $sc{lc($channel)}{users}{$item}{halfop} = undef if $action eq "-";
+		  handle_handler('mode', 'halfop', $remotenick, $hostmask, $channel, $action, $item);
+		}
+		elsif ($bit eq "o") {
+		  $count++;
+		  my $item = $mode[$count];
+		  if ($item eq $nick) {
+		    $sc{lc($channel)}{users}{$nick}{op} = 1 if $action eq "+";
+		    $sc{lc($channel)}{users}{$nick}{op} = undef if $action eq "-";
+		    handle_handler('event', 'op_me', $remotenick, $hostmask, $channel, $action);
+		    return;
+		  }
+		  $sc{lc($channel)}{users}{$item}{op} = 1 if $action eq "+";
+		  $sc{lc($channel)}{users}{$item}{op} = undef if $action eq "-";
+		  handle_handler('mode', 'op', $remotenick, $hostmask, $channel, $action, $item);
+		}
+		elsif ($bit eq "a") {
+		  $count++;
+		  my $item = $mode[$count];
+		  if ($item eq $nick) {
+		    $sc{lc($channel)}{users}{$nick}{protect} = 1 if $action eq "+";
+		    $sc{lc($channel)}{users}{$nick}{protect} = undef if $action eq "-";
+		    handle_handler('event', 'protect_me', $remotenick, $hostmask, $channel, $action);
+		    return;
+		  }
+		  $sc{lc($channel)}{users}{$item}{protect} = 1 if $action eq "+";
+		  $sc{lc($channel)}{users}{$item}{protect} = undef if $action eq "-";
+		  handle_handler('mode', 'protect', $remotenick, $hostmask, $channel, $action, $item);
+		}
+		elsif ($bit eq "q") {
+		  $count++;
+		  my $item = $mode[$count];
+		  if ($item eq $nick) {
+		    $sc{lc($channel)}{users}{$nick}{owner} = 1 if $action eq "+";
+		    $sc{lc($channel)}{users}{$nick}{owner} = undef if $action eq "-";
+		    handle_handler('event', 'owner_me', $remotenick, $hostmask, $channel, $action);
+		    return;
+		  }
+		  $sc{lc($channel)}{users}{$item}{owner} = 1 if $action eq "+";
+		  $sc{lc($channel)}{users}{$item}{owner} = undef if $action eq "-";
+		  handle_handler('event', 'owner', $remotenick, $hostmask, $channel, $action, $item);
+		}
+		elsif ($bit eq "b") {
+		  $count++;
+		  my $item = $mode[$count];
+
+		  if ($item eq $nick) {
+		    handle_handler('event', 'ban_me', $remotenick, $hostmask, $channel, $action);
+		    return;
+		  }
+		  handle_handler('mode', 'ban', $remotenick, $hostmask, $channel, $action);
+		}
+		elsif ($bit =~ /^[lkIe]/) {
+		  $count++;
+		  handle_handler('mode', 'otherp', $remotenick, $hostmask, $channel, $action, $bit, $mode[$count]);
+		} else {
+		  handle_handler('mode', 'other', $remotenick, $hostmask, $channel, $action, $bit);
+		}
+
 		$i++;
 	}
 	1;
@@ -699,9 +702,9 @@ sub irc_mode {
 
 sub irc_msg_handler {
 	my ($remotenick, $msgchan, $text, $hostmask) = @_;
-	
+
 	return if ignore($remotenick, $hostmask);
-	
+
 	if ($text =~ /^\001(\w*)( (.*)|)\001$/) {
 		irc_ctcp_handler($msgchan, $remotenick, $1, $2, $hostmask);
 	} else {
@@ -716,14 +719,14 @@ sub irc_msg_handler {
 
 sub irc_channel_handler {
 	my @tmp;
-	my ($remotenick, $channel, $text, $hostmask) = @_;	
+	my ($remotenick, $channel, $text, $hostmask) = @_;
 	if ($text =~ /^\Q$options{irc}{cmdprefix}\E(\S+)(\s+(.*))?/) {
 		handle_handler('chancmd', $1, $remotenick, $hostmask, $channel, $3);
 	}
 	elsif ($text =~ /^\Q$nick\E\002?[:,\.]\002?\s+(\S+)(\s+(.*))?/) {
 		@tmp = ($1 || "", $3 || "");
 		if (!handle_handler('chanmecmd', lc($tmp[0]), $remotenick, $hostmask, $channel, $tmp[1])) {
-			handle_handler('chanmecmd', 'default', $remotenick, $hostmask, $channel, 
+			handle_handler('chanmecmd', 'default', $remotenick, $hostmask, $channel,
 				       $tmp[0].($tmp[1] ne "" ? " ".$tmp[1] : ''));
 		}
 	}
@@ -739,7 +742,7 @@ sub irc_channel_handler {
 sub irc_privmsg_handler {
 	my ($remotenick, $text, $hostmask) = @_;
 	handle_handler('message', 'private', $remotenick, $hostmask, $text);
-	
+
 	my ($command, $options) = split(/ /, $text, 2);
 	if (!handle_handler('privcmd', $command, $remotenick, $hostmask, (defined($options) ? $options : ''))) {
 		handle_handler('privcmd', 'default', $remotenick, $hostmask, $command." ".(defined $options ? $options : ''));
@@ -751,7 +754,7 @@ sub irc_ctcp_handler {
 	if (handle_handler('ctcp', lc($ctcp_command), $remotenick, $msgchan, $ctcp_params)) {
 		return;
 	}
-	
+
 	if ($ctcp_command eq "VERSION") {
 		return if flood_check($remotenick, $hostmask, 'ctcp', 30, 3);
 		irc_ctcp_reply($remotenick, 'VERSION', "I am Shadow v0.05 written by Dark_Aaron running on Perl version: $^V.");
@@ -773,20 +776,20 @@ sub irc_ctcp_handler {
 
 sub irc_notice {
 	my ($remotenick, $text, $hostmask, $msgchan) = @_;
-	
-	return if $remotenick eq $nick and $text eq 'anti-reconnect';
+
+	return if $remotenick eq $cfg->{Shadow}->{IRC}->{bot}->{nick} && $text eq 'anti-reconnect';
 	handle_handler('event', 'notice', $remotenick, $hostmask, $msgchan, $text);
 }
 
 sub irc_invite {
 	my ($remotenick, $channel) = @_;
-	
+
 	handle_handler('event', 'invite', $remotenick, $channel);
 }
 
 sub irc_kick {
 	my ($remotenick, $channel, $knick, $text, $hostname) = @_;
-	
+
 	delete($sc{lc($channel)}{users}{$knick});
 	handle_handler('event', 'kick', $remotenick, $channel, $knick, $text, $hostname);
 }
@@ -823,11 +826,11 @@ sub ctcp {
 sub notice {
 	my $self = shift;
 	my ($target, $text, $level) = @_;
-	
+
 	$level = 2 if !$level;
 	irc_raw($level, "NOTICE $target :$text");
 }
-	
+
 sub emote {
 	my $self = shift;
 	my ($target, $text, $level) = @_;
@@ -842,13 +845,13 @@ sub nick {
 	irc_raw(1, "NICK $_[0]");
 }
 
-sub join {
+sub chanjoin {
 	my $self = shift;
 	irc_raw(1, "JOIN $_[0]");
 }
 
 sub part {
-	my $self = shift;	
+	my $self = shift;
 	irc_raw(1, "PART $_[0]");
 }
 
@@ -1043,7 +1046,7 @@ sub flood_process {
 sub flood_check_type {
 	my ($rnick, $hostmask, $type) = @_;
 	$hostmask =~ s/^(.*?\!)?.*?\@//;
-	return ($#{$sf{$hostmask}{$rnick}{$type}}, 
+	return ($#{$sf{$hostmask}{$rnick}{$type}},
 		flood_check_burst($sf{$hostmask}{$rnick}{$type}));
 }
 
@@ -1132,9 +1135,9 @@ sub flood_check {
 	my ($remotenick, $hostmask, $type, $time, $num) = @_;
 	return 'igonore' if (ignore($remotenick, $hostmask));
 	flood_add($remotenick, $hostmask, $type);
-	
+
 	flood_do();
-	
+
 	my ($floodtype, $floodtypeburst) = flood_check_type($remotenick, $hostmask, $type);
 	return 'type' if (flood_do($remotenick, $hostmask, $floodtype, $floodtypeburst, $options{flood}{typenum},
 				$options{flood}{typebnum}, 'type', $type));
