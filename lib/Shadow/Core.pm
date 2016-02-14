@@ -13,6 +13,8 @@ use IO::Select;
 use IO::Socket::INET;
 use Sub::Delete;
 use Config;
+use Shadow::Admin;
+use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
 our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time);
@@ -95,6 +97,8 @@ sub new {
 	}
 
 	$self->{cfg} = $cfg;
+	$self->{help}  = Shadow::Help->new(bless($self, $class));
+	$self->{admin} = Shadow::Admin->new(bless($self,$class));
 
 	return bless($self, $class);
 }
@@ -407,6 +411,9 @@ sub irc_in {
 		  # knock event
 		  irc_knock($remotenick, $bits[3], $text, $bits[0]);
 		}
+		elsif ($bits[1] eq "302") {
+			irc_userhost($text);
+		}
 		elsif ($bits[1] eq "332") {
 		  # topic event
 		  $sc{lc($bits[3])}{topic}{text} = $text;
@@ -488,6 +495,10 @@ sub irc_nicktaken {
 sub irc_users {
 	my ($channel, @users) = @_;
 
+	my $ul = join(" ", @users);
+	$ul =~ s/[\+|\%|\@|\&\~]//gs;
+	irc_raw(1, "userhost $ul"); # Figure out our user hosts
+
 	for (@users) {
 		my ($owner, $protect, $op, $halfop, $voice);
 		$owner				= 1 if /\Q$options{irc}{q_prefix}/;
@@ -510,6 +521,32 @@ sub irc_users {
 		$sc{lc($channel)}{users}{$_}{halfop}	= 1 if $halfop;
 		$sc{lc($channel)}{users}{$_}{voice}	= 1 if $voice;
 		$sc{lc($channel)}{users}{$_}{owner}	= 1 if $owner;
+	}
+}
+
+sub irc_userhost {
+	my ($text) = @_;
+	my @users  = split(/ /, $text);
+	my $isoper = 0;
+
+	foreach my $user (@users) {
+		my ($nick, $host) = split(/\=/, $user);
+		if ($nick =~ /\*/) {
+			$isoper = 1;
+			$nick   =~ s/\*//;
+		}
+		$host =~ s/\+//;
+
+		foreach my $chan (keys %sc) {
+			if ($sc{$chan}{users}{$nick}) {
+				$sc{$chan}{users}{$nick}{host} = $host;
+
+				if ($isoper) {
+					$sc{$chan}{users}{$nick}{oper} = 1;
+				}
+			}
+		}
+		$isoper = 0;
 	}
 }
 
@@ -697,7 +734,6 @@ sub irc_mode {
 
 		$i++;
 	}
-	1;
 }
 
 sub irc_msg_handler {
@@ -845,19 +881,19 @@ sub nick {
 	irc_raw(1, "NICK $_[0]");
 }
 
-sub chanjoin {
+sub join {
 	my $self = shift;
 	irc_raw(1, "JOIN $_[0]");
 }
 
 sub part {
 	my $self = shift;
-	irc_raw(1, "PART $_[0]");
+	irc_raw(1, "PART $_[0] :$_[1]");
 }
 
 sub kick {
 	my $self = shift;
-	irc_raw(1, "KICK $_[0] $_[1] $_[2]");
+	irc_raw(1, "KICK $_[0] $_[1] :$_[2]");
 }
 
 sub mode {
@@ -963,6 +999,12 @@ sub isvoice {
 	} else {
 		return 0;
 	}
+}
+
+sub isbotadmin {
+	my ($self, $nick, $host) = @_;
+
+	return $self->{admin}->check_admin($nick, $host);
 }
 
 sub isin {
