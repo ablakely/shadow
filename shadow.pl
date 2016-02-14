@@ -16,6 +16,8 @@ my $configfile		= $ARGV[0] || './etc/shadow.conf';
 
 my $bot = Shadow::Core->new($configfile, 1);
 
+$bot->load_module("ChanOP");
+$bot->load_module("AutoID");
 
 # Start the wheel...
 $bot->connect();

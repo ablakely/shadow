@@ -18,98 +18,57 @@ sub new {
   $self->{bot}->add_handler('privcmd eval',  'ircadmin_eval');
   $self->{bot}->add_handler('privcmd join',  'ircadmin_join');
   $self->{bot}->add_handler('privcmd part',  'ircadmin_part');
-  $self->{bot}->add_handler('chancmd op',    'ircadmin_op');
-  $self->{bot}->add_handler('privcmd op',    'ircadmin_op');
-  $self->{bot}->add_handler('chancmd deop',  'ircadmin_deop');
-  $self->{bot}->add_handler('privcmd deop',  'ircadmin_deop');
-  $self->{bot}->add_handler('privcmd kick',  'ircadmin_kick');
-  $self->{bot}->add_handler('chancmd kick',  'ircadmin_kick');
-  $self->{bot}->add_handler('chancmd ban',   'ircadmin_ban');
-  $self->{bot}->add_handler('privcmd ban',   'ircadmin_ban');
+  $self->{bot}->add_handler('privcmd modlist', 'ircadmin_modlist');
+  $self->{bot}->add_handler('privcmd loadmod', 'ircadmin_loadmod');
+  $self->{bot}->add_handler('privcmd rmmod', 'ircadmin_rmmod');
 
-  $self->{bot}->{help}->add_help('eval', '<text>', 'Evaluates perl code. [F]', 1);
-  $self->{bot}->{help}->add_help('dump', '<var>', 'Dumps a structure and notices it to you.', 1);
-  $self->{bot}->{help}->add_help('join', '<channel>', 'Force bot to join a channel.', 1);
-  $self->{bot}->{help}->add_help('part', '<channel>', 'Force bot to part a channel.', 1);
-  $self->{bot}->{help}->add_help('op', '<user> <channel>', 'Give operator mode to a user. [F]', 0);
-  $self->{bot}->{help}->add_help('deop', '<user> <channel>', 'Removes operator mode from a user. [F]', 0);
-  $self->{bot}->{help}->add_help('kick', '<user> <channel> <reason>', 'Kicks a user from a channel. [F]', 0);
-  $self->{bot}->{help}->add_help('ban', '<user> <channel> <reason>', 'Bans a user from a channel. [F]', 0);
+  $self->{bot}->{help}->add_help('modlist', 'Admin', '', 'See all modules currently loaded.', 1);
+  $self->{bot}->{help}->add_help('loadmod', 'Admin', '<module>', 'Load a module.', 1);
+  $self->{bot}->{help}->add_help('rmmod', 'Admin', '<module>', 'Unload a module.', 1);
+  $self->{bot}->{help}->add_help('eval', 'Admin', '<text>', 'Evaluates perl code. [F]', 1);
+  $self->{bot}->{help}->add_help('dump', 'Admin', '<var>', 'Dumps a structure and notices it to you. [F]', 1);
+  $self->{bot}->{help}->add_help('join', 'Admin', '<channel>', 'Force bot to join a channel.', 1);
+  $self->{bot}->{help}->add_help('part', 'Admin', '<channel>', 'Force bot to part a channel.', 1);
 
   return bless($self, $class);
 }
 
-sub check_admin {
-  my ($self, $nick, $host, $channel, $text) = @_;
 
-  my $admins = $bot->{cfg}->{Shadow}->{Admin}->{bot}->{admins};
-  my @tmp    = split(',', $admins);
+sub ircadmin_loadmod {
+  my ($nick, $host, $text) = @_;
 
-  foreach my $t (@tmp) {
-    my ($u, $h) = split(/\!/, $t);
-
-    if ($u eq $nick || $u eq "*") {
-      my ($ar, $ahm) = split(/\@/, $host);
-      my ($r, $hm) = split(/\@/, $h);
-
-      if ($r eq "*" && $hm ne "*") {
-        return 1 if $hm eq $ahm;
-      }
-      elsif ($r ne "*" && $hm eq "*") {
-        return 1 if $r eq $ar;
-      }
-      elsif ($r eq "*" && $hm eq "*") {
-        return 1 if $u eq $nick;
-      } else {
-        return 1 if $r eq $ar && $hm eq $ahm;
-      }
-    }
-  }
-
-  return 0;
-}
-
-sub ircadmin_kick {
-  my ($nick, $host, $chan, $text) = @_;
-  my ($user, $channel, @reason);
-
-  if (!$text) {
-    $text = $chan;
-    ($user, $channel, @reason) = split(/ /, $text);
-  } else {
-    ($user, @reason) = split(/ /, $text);
-    $channel = $chan;
-  }
-
-  my $r = join(" ", @reason) || $nick;
-
-  if ($bot->isbotadmin($nick, $host) || $bot->isop($nick, $channel)) {
-    $bot->kick($channel, $user, $r);
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->notice($nick, "Loading module: $text");
+    $bot->load_module($text);
   }
 }
 
-sub ircadmin_ban {
-  my ($nick, $host, $chan, $text) = @_;
-  my ($user, $channel, @reason);
+sub ircadmin_rmmod {
+  my ($nick, $host, $text) = @_;
 
-  if (!$text) {
-    $text = $chan;
-    ($user, $channel, @reason) = split(/ /, $text);
-  } else {
-    ($user, @reason) = split(/ /, $text);
-    $channel = $chan;
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->notice($nick, "Unloading module: $text");
+    $bot->unload_module($text);
+  }
+}
+
+sub ircadmin_modlist {
+  my ($nick, $host, $text) = @_;
+
+  return if !$bot->isbotadmin($nick, $host);
+
+  $bot->notice($nick, "\x02*** LOADED MODULES ***\x02");
+
+  my %modlist = $bot->module_stats();
+  my $modstr  = "";
+  foreach my $mod (keys %modlist) {
+    next if ($mod eq "loadedmodcount");
+
+    $modstr .= "$mod, ";
   }
 
-  my $r = join(" ", @reason) || $nick;
-
-  if ($bot->isbotadmin($nick, $host) || $bot->isop($nick, $channel)) {
-    my $bhost = $Shadow::Core::sc{lc($channel)}{users}{$user}{host};
-    $bhost =~ s/^(.*)\@//;
-    $bhost = "*!*@".$bhost;
-
-    $bot->mode($channel, "+b", $bhost);
-    $bot->kick($channel, $user, $r);
-  }
+  $bot->notice($nick, $modstr);
+  $bot->notice($nick, "There are ".$modlist{loadedmodcount}." modules loaded.");
 }
 
 sub ircadmin_join {
@@ -125,34 +84,6 @@ sub ircadmin_part {
     my ($chan, @reason) = split(/ /, $text);
     my $r = join(" ", @reason);
     $bot->part($chan, $r);
-  }
-}
-
-sub ircadmin_op {
-  my ($nick, $host, $chan, $text) = @_;
-  if (!$text) {
-    $text = $chan;
-  }
-
-  if ($bot->isbotadmin($nick, $host) || $bot->isop($nick, $chan)) {
-    my ($n, $c) = split(/ /, $text);
-    $c = $chan if !$c;
-
-    $bot->op($c, $n);
-  }
-}
-
-sub ircadmin_deop {
-  my ($nick, $host, $chan, $text) = @_;
-  if (!$text) {
-    $text = $chan;
-  }
-
-  if ($bot->isbotadmin($nick, $host) || $bot->isop($nick, $chan)) {
-    my ($n, $c) = split(/ /, $text);
-    $c = $chan if !$c;
-
-    $bot->deop($c, $n);
   }
 }
 

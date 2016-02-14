@@ -1,8 +1,13 @@
 package Uptime;
 
 my $bot = Shadow::Core;
+my $help = Shadow::Help;
 
-$bot->add_handler('chancmd uptime', 'uptime_cmd');
+sub loader {
+	$bot->add_handler('chancmd uptime', 'uptime_cmd');
+	$help->add_help("uptime", 'Channel', "", "Prints system's uptime to channel. [F]", 0);
+}
+
 sub uptime_cmd {
 	my ($nick, $host, $chan, $text) = @_;
 
@@ -10,6 +15,11 @@ sub uptime_cmd {
 	chomp $uptime;
 
 	$bot->say($chan, "Uptime: ".$uptime);
+}
+
+sub unloader {
+	$bot->del_handler('chancmd uptime', 'uptime_cmd');
+	$help->del_help("uptime", 'Channel');
 }
 
 1;

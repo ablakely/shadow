@@ -17,7 +17,7 @@ use Shadow::Admin;
 use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
-our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time);
+our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $debug);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
 
@@ -40,7 +40,7 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 	},
 	irc => {
 		q_prefix	=> '~',
-		a_prefix	=> '!',
+		a_prefix	=> '&',
 		o_prefix	=> '@',
 		h_prefix	=> '%',
 		v_prefix	=> '+',
@@ -48,6 +48,13 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 	},
 
 );
+
+# Ignore "redined subroutine" warnings
+$SIG{__WARN__} = sub {
+    my $warning = shift;
+    warn $warning unless $warning =~ /Subroutine .* redefined at/;
+};
+
 
 # Constructor
 sub new {
@@ -57,6 +64,8 @@ sub new {
 	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
   my @serverlist  = split(/,/, $cfg->{Shadow}->{IRC}->{bot}->{host});
+
+	$debug = $verbose;
 
 	foreach my $ircserver (@serverlist) {
 		my ($serverhost, $serverport)	= split(/:/, $ircserver);
@@ -120,10 +129,9 @@ sub load_module {
 
 	if (-e "modules/$module_name\.pm") {
 		print "Loading module: $module_name\n";
-		package main;				# switch to the main package
-		require "modules/$module_name\.pm";	# require the module from the 'main' package
-		eval "package main::$module_name; loader();";
-		package Shadow::Core;
+		require "modules/$module_name\.pm";
+
+		eval "$module_name->loader();";
 		$loaded_modules[++$#loaded_modules] = "Shadow::Mods::".$module_name;
 		handle_handler('module', 'load', $module_name);
 		return 1;
@@ -137,9 +145,17 @@ sub unload_module {
 	my ($self, $module_name) = @_;
 
 	foreach my $loaded_mod (@loaded_modules) {
-		if ($loaded_mod eq $module_name) {
-			eval "package main::$module_name; unloader();";
-			package Shadow::Core;
+		if ($loaded_mod eq "Shadow::Mods::".$module_name) {
+			eval "$module_name->unloader();";
+
+			delete $INC{'modules/'.$module_name.'.pm'};
+
+			for my $i (reverse 0 .. $#loaded_modules) {
+				if ($loaded_modules[$i] eq "Shadow::Mods::".$module_name) {
+					splice(@loaded_modules, $i, 1, ());
+				}
+			}
+
 			return 1;
 		}
 	}
@@ -162,6 +178,13 @@ sub module_stats {
 	$modinfo{loadedmodcount} = $modcount;
 
 	return %modinfo;
+}
+
+sub add_help {
+	my ($self, $c, $s, $d, $a) = @_;
+	print "add_help called: $self, $c, $s, $d, $a\n";
+
+	$self->{help}->add_help($c, $s, $d, $a);
 }
 
 # IRC connection stuff
@@ -793,7 +816,7 @@ sub irc_ctcp_handler {
 
 	if ($ctcp_command eq "VERSION") {
 		return if flood_check($remotenick, $hostmask, 'ctcp', 30, 3);
-		irc_ctcp_reply($remotenick, 'VERSION', "I am Shadow v0.05 written by Dark_Aaron running on Perl version: $^V.");
+		irc_ctcp_reply($remotenick, 'VERSION', "I am $options{config}{version} running on Perl version: $^V.");
 	}
 	if ($ctcp_command eq "TIME") {
 		return if flood_check($remotenick, $hostmask, 'ctcp', 30, 3);
@@ -1001,10 +1024,40 @@ sub isvoice {
 	}
 }
 
+sub check_admin {
+  my ($nick, $host) = @_;
+
+  my $admins = $cfg->{Shadow}->{Admin}->{bot}->{admins};
+  my @tmp    = split(',', $admins);
+
+  foreach my $t (@tmp) {
+    my ($u, $h) = split(/\!/, $t);
+
+    if ($u eq $nick || $u eq "*") {
+      my ($ar, $ahm) = split(/\@/, $host);
+      my ($r, $hm) = split(/\@/, $h);
+
+      if ($r eq "*" && $hm ne "*") {
+        return 1 if $hm eq $ahm;
+      }
+      elsif ($r ne "*" && $hm eq "*") {
+        return 1 if $r eq $ar;
+      }
+      elsif ($r eq "*" && $hm eq "*") {
+        return 1 if $u eq $nick;
+      } else {
+        return 1 if $r eq $ar && $hm eq $ahm;
+      }
+    }
+  }
+
+  return 0;
+}
+
 sub isbotadmin {
 	my ($self, $nick, $host) = @_;
 
-	return $self->{admin}->check_admin($nick, $host);
+	return check_admin($nick, $host);
 }
 
 sub isin {
@@ -1039,7 +1092,9 @@ sub irc_ctcp {
 }
 
 sub irc_ctcp_reply {
-	irc_ctcp(@_);
+	my ($target, $type, $text, $level) = @_;
+
+	irc_send_notice($target, "$type $text", $level);
 }
 
 sub irc_send_notice {
@@ -1239,7 +1294,7 @@ sub add_handler {
 	}
 	elsif ($event[0] eq 'chancmd') {
 		add_handler_parsed('chancmd', $event[1], $caller, $sub);
-		print "added chancmd handler: $event[1], $caller, $sub\n";
+		#print "added chancmd handler: $event[1], $caller, $sub\n" if $debug;
 	}
 	elsif ($event[0] eq 'privcmd') {
 		add_handler_parsed('privcmd', $event[1], $caller, $sub);

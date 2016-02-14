@@ -1,2 +1,2 @@
-etc/users.dbm
-etc/autoid.conf
+autoid.pd
+shadow.log
