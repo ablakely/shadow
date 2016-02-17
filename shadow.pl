@@ -18,6 +18,8 @@ my $bot = Shadow::Core->new($configfile, 1);
 
 $bot->load_module("ChanOP");
 $bot->load_module("AutoID");
+$bot->load_module("URLIdentifier");
+$bot->load_module("RSSReader");
 
 # Start the wheel...
 $bot->connect();

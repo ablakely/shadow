@@ -301,7 +301,7 @@ sub mainloop {
 			if (defined($_->{'time'}) && $time >= $_->{'time'}) {
 				delete($_->{'time'});
 				my ($module, $sub) = ($_->{module}, $_->{'sub'});
-				eval("${$module}::$sub();");
+				eval("$module->$sub();");
 			}
 		}
 	}
@@ -1343,6 +1343,7 @@ sub del_handler {
 
 sub add_timeout {
 	my ($self, $timeout, $sub) = @_;
+
 	my $caller = caller();
 	push(@timeout,
 		{
