@@ -7,6 +7,7 @@ package Shadow::Core;
 
 use v5.10;
 use Carp;
+use Encode qw(encode);
 use strict;
 use warnings;
 use IO::Select;
@@ -208,8 +209,9 @@ sub sendfh {
 sub flush_out {
 	my $fh = shift;
 	return unless defined $outbuffer{$fh};
-
-	my $sent = syswrite($fh, $outbuffer{$fh}, 1024);
+    
+        my $enc  = encode('UTF-8', $outbuffer{$fh});
+	my $sent = syswrite($fh, $enc, 1024);
 	return if !defined $sent;
 
 	if (($sent == length($outbuffer{$fh})) || ($! == 11)) {

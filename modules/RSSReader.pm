@@ -12,9 +12,11 @@ sub loader {
   $bot->add_handler('privcmd addfeed', 'RSSReader_addfeed');
   $bot->add_handler('privcmd delfeed', 'RSSReader_delfeed');
   $bot->add_handler('chancmd rsssync', 'RSSReader_rsssync');
+  $bot->add_handler('privcmd listfeed', 'RSSReader_listfeed');
 
   $help->add_help('addfeed', 'RSSReader', '<chan> <title> <url>', 'Enables the RSS Reader module.');
   $help->add_help('delfeed', 'RSSReader', '<chan> <title>', 'Deletes a RSS feed.');
+  $help->add_help('listfeed', 'RSSReader', '<chan>', 'Lists all active RSS feeds for a channel.');
   $help->add_help('rsssync', 'Channel', '', 'Syncs all RSS feeds. [F]');
 
   $bot->add_timeout(300, 'RSSReader_feedagrigator');
@@ -49,7 +51,7 @@ sub RSSReader_readdb {
 }
 
 sub RSSReader_checkread {
-  my ($chan, $title, $id) = @_;
+  my ($chan, $title, $link) = @_;
 
   my $db = RSSReader_readdb();
 
@@ -57,7 +59,7 @@ sub RSSReader_checkread {
     foreach my $title (keys $db->{$chan}) {
       foreach my $read (@{$db->{$chan}->{$title}->{readposts}}) {
         foreach my $r ($read) {
-          if ($r eq $id) {
+          if ($r eq $link) {
 		          return 1;
 	        }
         }
@@ -68,20 +70,19 @@ sub RSSReader_checkread {
   return 0;
 }
 
-sub RSSReader_addread {
-  my ($chan, $title, $id) = @_;
-
-
+sub RSSReader_listfeed {
+  my ($nick, $host, $text) = @_;
   my $db = RSSReader_readdb();
 
-  foreach my $eid (@{$db->{$chan}->{$title}->{readposts}}) {
-  	if ($eid eq $id) {
-           push(@{$db->{$chan}->{$title}->{readposts}}, $id);
-         }
+  if (!$text) {
+    $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick listfeed <chan>");
+  } else {
+      foreach my $title (keys $db->{$text}) {
+        $bot->notice($nick, $title." ".$db->{$text}->{$title}->{url});
+      }
   }
-
-  RSSReader_writedb($db);
 }
+
 
 sub RSSReader_genfeed {
   my ($feed, $chan, $title) = @_;
@@ -92,10 +93,10 @@ sub RSSReader_genfeed {
   my $f = XML::Feed->parse(URI->new($feed)) or print "RSSReader Error: ".XML::Feed->errstr;
 
   for my $entry ($f->entries) {
-    my $x = RSSReader_checkread($chan, $title, $entry->id());
+    my $x = RSSReader_checkread($chan, $title, $entry->link());
     if (!$x) {
       $bot->say($chan, "$title: ".$entry->title()." [".$entry->link()."]");
-      my $id = $entry->id();
+      my $id = $entry->link();
       push(@{$db->{$chan}->{$title}->{readposts}}, $id);
 
     }
@@ -164,10 +165,12 @@ sub unloader {
   $bot->del_handler('privcmd addfeed', 'RSSReader_addfeed');
   $bot->del_handler('privcmd delfeed', 'RSSReader_delfeed');
   $bot->del_handler('chancmd rsssync', 'RSSReader_rsssync');
+  $bot->del_handler('privcmd listfeed', 'RSSReader_listfeed');
 
   $bot->del_help('addfeed', 'RSSReader');
   $bot->del_help('delfeed', 'RSSReader');
   $bot->del_help('rsssync', 'Channel');
+  $bot->del_help('listfeed', 'RSSReader');
 }
 
 1;
