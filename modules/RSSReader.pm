@@ -74,9 +74,9 @@ sub RSSReader_checkread {
 sub RSSReader_listfeed {
   my ($nick, $host, $text) = @_;
   my $db                   = RSSReader_readdb();
-  
+
   $bot->notice($nick, "\x02*** RSS Feeds ***\x02");
-  
+
   foreach my $chan (keys $db) {
     foreach my $title (keys $db->{$chan}) {
       $bot->notice($nick, "[$chan] ".$title." - ".$db->{$chan}->{$title}->{url});
@@ -87,11 +87,19 @@ sub RSSReader_listfeed {
 
 sub RSSReader_genfeed {
   my ($feed, $chan, $title) = @_;
-  my @read;
+  my %feedcache;
+  my $f;
 
   my $db   = RSSReader_readdb();
   my @cp   = $db->{$chan}->{$title}->{readposts};
-  my $f = XML::Feed->parse(URI->new($feed)) or return $bot->say($chan, "RSSReader Error: ".XML::Feed->errstr);
+
+  if (!$feedcache{$feed}) {
+    $feedcache{$feed} = XML::Feed->parse(URI->new($feed)) or
+      return $bot->say($chan, "RSS error on feed [$title]: ".XML::Feed->errstr);
+    $f = $feedcache{$feed};
+  } else {
+    $f = $feedcache{$feed};
+  }
 
   for my $entry ($f->entries) {
     my $x = RSSReader_checkread($chan, $title, $entry->link());
@@ -105,6 +113,7 @@ sub RSSReader_genfeed {
 
   RSSReader_writedb($db);
 }
+
 
 sub RSSReader_feedagrigator {
   my $db = RSSReader_readdb();
