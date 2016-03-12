@@ -209,9 +209,9 @@ sub sendfh {
 sub flush_out {
 	my $fh = shift;
 	return unless defined $outbuffer{$fh};
-    
-        my $enc  = encode('UTF-8', $outbuffer{$fh});
-	my $sent = syswrite($fh, $enc, 1024);
+
+	$outbuffer{$fh} = encode('UTF-8', $outbuffer{$fh});
+	my $sent = syswrite($fh, $outbuffer{$fh}, 1024);
 	return if !defined $sent;
 
 	if (($sent == length($outbuffer{$fh})) || ($! == 11)) {

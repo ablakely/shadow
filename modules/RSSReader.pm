@@ -12,7 +12,7 @@ sub loader {
   $bot->add_handler('privcmd addfeed', 'RSSReader_addfeed');
   $bot->add_handler('privcmd delfeed', 'RSSReader_delfeed');
   $bot->add_handler('chancmd rsssync', 'RSSReader_rsssync');
-  $bot->add_handler('privcmd listfeed', 'RSSReader_listfeed');
+  $bot->add_handler('privcmd listfeeds', 'RSSReader_listfeed');
 
   $help->add_help('addfeed', 'RSSReader', '<chan> <title> <url>', 'Enables the RSS Reader module.');
   $help->add_help('delfeed', 'RSSReader', '<chan> <title>', 'Deletes a RSS feed.');
@@ -70,16 +70,17 @@ sub RSSReader_checkread {
   return 0;
 }
 
+
 sub RSSReader_listfeed {
   my ($nick, $host, $text) = @_;
-  my $db = RSSReader_readdb();
-
-  if (!$text) {
-    $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick listfeed <chan>");
-  } else {
-      foreach my $title (keys $db->{$text}) {
-        $bot->notice($nick, $title." ".$db->{$text}->{$title}->{url});
-      }
+  my $db                   = RSSReader_readdb();
+  
+  $bot->notice($nick, "\x02*** RSS Feeds ***\x02");
+  
+  foreach my $chan (keys $db) {
+    foreach my $title (keys $db->{$chan}) {
+      $bot->notice($nick, "[$chan] ".$title." - ".$db->{$chan}->{$title}->{url});
+    }
   }
 }
 
@@ -90,7 +91,7 @@ sub RSSReader_genfeed {
 
   my $db   = RSSReader_readdb();
   my @cp   = $db->{$chan}->{$title}->{readposts};
-  my $f = XML::Feed->parse(URI->new($feed)) or print "RSSReader Error: ".XML::Feed->errstr;
+  my $f = XML::Feed->parse(URI->new($feed)) or return $bot->say($chan, "RSSReader Error: ".XML::Feed->errstr);
 
   for my $entry ($f->entries) {
     my $x = RSSReader_checkread($chan, $title, $entry->link());

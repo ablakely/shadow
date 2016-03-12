@@ -16,7 +16,7 @@ sub getTitle {
 	my $response = $ua->get($url);
 
 	if ( $response->is_success ) {
-    my @html =  $response->decoded_content;
+    		my @html =  $response->decoded_content;
 
 		foreach my $line (@html) {
 			if ($line =~ /\<title\>(.*)\<\/title\>/) {
@@ -25,7 +25,7 @@ sub getTitle {
 		}
 	}
 	else {
-    die $response->status_line;
+    		die $response->status_line;
 	}
 }
 
@@ -39,7 +39,7 @@ sub url_id {
 }
 
 sub unloader {
-  $bot->del_handler('message channel', 'urlid');
+  $bot->del_handler('message channel', 'url_id');
 }
 
 1;
