@@ -1,0 +1,19 @@
+# Shadow Configuration File
+# Written by Aaron Blakely
+
+
+!Shadow
+
+_IRC_
+bot.host	   = server.host:port
+bot.nick	   = Shadow
+bot.name	   = shadow
+bot.channels = #chan1,#chan2,#etc
+
+_Bot_
+system.daemonize	= no
+system.modules    = ChanOP,AutoID
+
+_Admin_
+# Comma separated list of hostnames (wildcards are accepted)
+bot.admins = *!*@example.org,*!*@netadmin.bbsn.ca

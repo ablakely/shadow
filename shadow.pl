@@ -16,10 +16,9 @@ my $configfile		= $ARGV[0] || './etc/shadow.conf';
 
 my $bot = Shadow::Core->new($configfile, 1);
 
-$bot->load_module("ChanOP");
-$bot->load_module("AutoID");
-$bot->load_module("URLIdentifier");
-$bot->load_module("RSSReader");
+foreach my $mod (split(",", $Shadow::Core::options{cfg}->{Shadow}->{Bot}->{system}->{modules})) {
+  $bot->load_module($mod);
+}
 
 # Start the wheel...
 $bot->connect();

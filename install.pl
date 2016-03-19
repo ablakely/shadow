@@ -9,6 +9,15 @@ use strict;
 use warnings;
 use CPAN;
 
+print "Checking for Mojo::UserAgent...\t\t";
+eval ("require Mojo::UserAgent;");
+if ($@) {
+	print "Not found.\nInstalling...\n";
+	install("Mojo::UserAgent;");
+} else {
+	print "Excellent!\n";
+}
+
 print "Checking for JSON...\t\t\t\t";
 eval ("require JSON;");
 if ($@) {

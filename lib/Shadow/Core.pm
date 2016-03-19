@@ -3,19 +3,20 @@
 # Supports:
 #	/Most/ IRCd's - Since it scans 005 of the PREFIXES
 
+
 package Shadow::Core;
 
-use v5.10;
 use Carp;
 use Encode qw(encode);
 use strict;
 use warnings;
 use IO::Select;
 use IO::Socket::INET;
-use Sub::Delete;
+use Mojo::IOLoop;
 use Config;
 use Shadow::Admin;
 use Shadow::Help;
+
 
 # Global Variables, Arrays, and Hashes
 our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $debug);
@@ -64,6 +65,7 @@ sub new {
 	my ($conffile, $verbose)  = @_;
 	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
+	$options{cfg}   = $cfg;
   my @serverlist  = split(/,/, $cfg->{Shadow}->{IRC}->{bot}->{host});
 
 	$debug = $verbose;
@@ -238,6 +240,9 @@ sub closefh {
 
 sub mainloop {
 	while (1) {
+		Mojo::IOLoop->one_tick();  # Used for async HTTP client [Mojo::UserAgent]
+
+		
 		foreach my $fh ($sel->can_read(1)) {
 			my ($tmp, $char);
 			$tmp = sysread($fh, $char, 1024);
@@ -255,6 +260,7 @@ sub mainloop {
 		my $time = time;
 
 		for my $num (0 .. 3) {
+
 			last if ($lastout >= $time);
 			while ($_ = shift(@{$queue[$num]})) {
 				if (length($_) > 512) {
@@ -294,6 +300,7 @@ sub mainloop {
 
 		if ($ircping + 60 < $time && $checktime + 30 < $time) {
 			$checktime = $time;
+
 			irc_raw(3, "NOTICE $nick :anti-reconnect");	# to try and keep us alive
 		}
 

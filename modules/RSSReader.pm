@@ -1,12 +1,16 @@
 package RSSReader;
 
-use warnings;
-use JSON;
-use XML::Feed;
-
 my $bot   = Shadow::Core;
 my $help  = Shadow::Help;
+
+use warnings;
+use JSON;
+use Mojo::UserAgent;
+use XML::Feed;
+
+our $SYNCTIME = 300;  # How offten do we check RSS feeds? (in seconds)
 my $feeds = "./feeds.db";
+my $ua    = Mojo::UserAgent->new;
 
 sub loader {
   $bot->add_handler('privcmd addfeed', 'RSSReader_addfeed');
@@ -19,7 +23,7 @@ sub loader {
   $help->add_help('listfeed', 'RSSReader', '<chan>', 'Lists all active RSS feeds for a channel.');
   $help->add_help('rsssync', 'Channel', '', 'Syncs all RSS feeds. [F]');
 
-  $bot->add_timeout(300, 'RSSReader_feedagrigator');
+  $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
 
   if (!-e $feeds) {
     open(my $fh, ">", $feeds) or print "RSSReader Error: ".$!;
@@ -93,29 +97,33 @@ sub RSSReader_genfeed {
   my $db   = RSSReader_readdb();
   my @cp   = $db->{$chan}->{$title}->{readposts};
 
-  if (!$feedcache{$feed}) {
-    $feedcache{$feed} = XML::Feed->parse(URI->new($feed)) or
-      return $bot->say($chan, "RSS error on feed [$title]: ".XML::Feed->errstr);
-    $f = $feedcache{$feed};
-  } else {
-    $f = $feedcache{$feed};
-  }
+  $ua->get("$feed" => json => {a => 'b'} => sub {
+    my ($ua, $tx) = @_;
 
-  for my $entry ($f->entries) {
-    my $x = RSSReader_checkread($chan, $title, $entry->link());
-    if (!$x) {
-      $bot->say($chan, "$title: ".$entry->title()." [".$entry->link()."]");
-      my $id = $entry->link();
-      push(@{$db->{$chan}->{$title}->{readposts}}, $id);
+    my $body = \scalar($tx->res->body);
 
+    if (!$feedcache{$feed}) {
+      $f = $feedcache{$feed} = XML::Feed->parse($body) or return $bot->say($chan, "RSS error on feed [$title]: ".XML::Feed->errstr);
+    } else {
+      $f = $feedcache{$feed};
     }
-  }
 
-  RSSReader_writedb($db);
+    for my $entry ($f->entries) {
+      my $x = RSSReader_checkread($chan, $title, $entry->link());
+      if (!$x) {
+        $bot->say($chan, "$title: ".$entry->title()." [".$entry->link()."]", 3);
+        my $id = $entry->link();
+        push(@{$db->{$chan}->{$title}->{readposts}}, $id);
+      }
+    }
+
+    RSSReader_writedb($db);
+  });
 }
 
 
 sub RSSReader_feedagrigator {
+
   my $db = RSSReader_readdb();
   my @feed;
 
@@ -125,7 +133,7 @@ sub RSSReader_feedagrigator {
     }
   }
 
-  $bot->add_timeout(300, 'RSSReader_feedagrigator');
+  $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
 }
 
 sub RSSReader_addfeed {
