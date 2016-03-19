@@ -1,4 +1,4 @@
 autoid.pd
 shadow.log
 feeds.db
-shadow.conf
+*.conf
