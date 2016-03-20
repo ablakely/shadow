@@ -12,7 +12,6 @@ use strict;
 use warnings;
 use IO::Select;
 use IO::Socket::INET;
-use Mojo::IOLoop;
 use Config;
 use Shadow::Admin;
 use Shadow::Help;
@@ -240,9 +239,8 @@ sub closefh {
 
 sub mainloop {
 	while (1) {
-		Mojo::IOLoop->one_tick();  # Used for async HTTP client [Mojo::UserAgent]
+		handle_handler('event', 'tick');
 
-		
 		foreach my $fh ($sel->can_read(1)) {
 			my ($tmp, $char);
 			$tmp = sysread($fh, $char, 1024);
@@ -1071,7 +1069,7 @@ sub isbotadmin {
 
 sub isin {
 	my ($self, $channel, $nick) = @_;
-	if (defined($sc{lc($channel)}{$nick})) {
+	if (defined($sc{lc($channel)}{users}{$nick})) {
 		return 1;
 	} else {
 		return 0;

@@ -1,3 +1,20 @@
+# RSSReader - Shadow RSS Reader Module
+# v0.5
+# Written by Aaron Blakely <aaron@ephasic.org>
+#
+# COMMANDS:
+#   channel - rsssync - Sync all active RSS feeds.
+#   private - addfeed - Adds a feed.
+#   private - delfeed - Removes a feed.
+#   private - listfeeds - Lists all active feeds.
+#
+# DEPENDENCIES:
+#   This module requires Mojo::UserAgent and Mojo::IOLoop to
+#   be installed on the system.
+#
+# SYNCTIME:
+#   Default sync interval is 5 min (300 sec)
+
 package RSSReader;
 
 my $bot   = Shadow::Core;
@@ -6,6 +23,7 @@ my $help  = Shadow::Help;
 use warnings;
 use JSON;
 use Mojo::UserAgent;
+use Mojo::IOLoop;
 use XML::Feed;
 
 our $SYNCTIME = 300;  # How offten do we check RSS feeds? (in seconds)
@@ -13,6 +31,7 @@ my $feeds = "./feeds.db";
 my $ua    = Mojo::UserAgent->new;
 
 sub loader {
+  $bot->add_handler('event tick', 'RSSReader_iotick');
   $bot->add_handler('privcmd addfeed', 'RSSReader_addfeed');
   $bot->add_handler('privcmd delfeed', 'RSSReader_delfeed');
   $bot->add_handler('chancmd rsssync', 'RSSReader_rsssync');
@@ -21,7 +40,7 @@ sub loader {
 
   $help->add_help('addfeed', 'RSSReader', '<chan> <title> <url>', 'Enables the RSS Reader module.');
   $help->add_help('delfeed', 'RSSReader', '<chan> <title>', 'Deletes a RSS feed.');
-  $help->add_help('listfeed', 'RSSReader', '<chan>', 'Lists all active RSS feeds for a channel.');
+  $help->add_help('listfeeds', 'RSSReader', '<chan>', 'Lists all active RSS feeds for a channel.');
   $help->add_help('rsssync', 'Channel', '', 'Syncs all RSS feeds. [F]');
 
   $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
@@ -31,6 +50,10 @@ sub loader {
     print $fh "{}";
     close($fh);
   }
+}
+
+sub RSSReader_iotick {
+  Mojo::IOLoop->one_tick();
 }
 
 sub RSSReader_writedb {
@@ -151,7 +174,7 @@ sub RSSReader_dbcleanup {
 
     foreach my $chan (keys $db) {
       foreach my $title (keys $db->{$chan}) {
-        $db->{$chan}->{$title}->{readposts} = [];
+        $db->{$chan}->{$title}->{readposts} = ();
       }
     }
 
@@ -167,15 +190,17 @@ sub RSSReader_addfeed {
   if (!$chan || !$title || !$url) {
     $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick addfeed <chan> <title> <url>");
   } else {
-    $db = RSSReader_readdb();
-    $db->{$chan}->{$title} = {
-    	url => $url,
-	readposts => []
-    };
+    if ($bot->isin($chan, $Shadow::Core::nick) && $bot->isop($nick, $chan)) {
+      $db = RSSReader_readdb();
+      $db->{$chan}->{$title} = {
+    	   url => $url,
+	       readposts => []
+       };
 
-    RSSReader_writedb($db);
-    $bot->notice($nick, "Enabled $title [$url] for $chan");
-
+       RSSReader_writedb($db);
+       $bot->notice($nick, "Enabled $title [$url] for $chan");
+       $bot->notice($nick, "Feed posts should start surfacing in channel within 5 minutes.");
+     }
   }
 }
 
@@ -186,12 +211,14 @@ sub RSSReader_delfeed {
   if (!$chan || !$title) {
     $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick delfeed <chan> <title>")
   } else {
-    my $db = RSSReader_readdb();
+    if ($bot->isin($chan, $Shadow::Core::nick) && $bot->isop($nick, $chan)) {
+      my $db = RSSReader_readdb();
 
-    delete $db->{$chan}->{$title};
-    RSSReader_writedb($db);
+      delete $db->{$chan}->{$title};
+      RSSReader_writedb($db);
 
-    $bot->notice($nick, "Disabling '$title' feed for $chan.");
+      $bot->notice($nick, "Disabling '$title' feed for $chan.");
+    }
   }
 }
 
@@ -203,10 +230,11 @@ sub RSSReader_rsssync {
 }
 
 sub unloader {
+  $bot->del_handler('event tick', 'RSSReader_iotick');
   $bot->del_handler('privcmd addfeed', 'RSSReader_addfeed');
   $bot->del_handler('privcmd delfeed', 'RSSReader_delfeed');
   $bot->del_handler('chancmd rsssync', 'RSSReader_rsssync');
-  $bot->del_handler('privcmd listfeed', 'RSSReader_listfeed');
+  $bot->del_handler('privcmd listfeeds', 'RSSReader_listfeed');
 
   $ua->_cleanup();
 
