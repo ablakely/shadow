@@ -10,10 +10,10 @@ use warnings;
 use CPAN;
 
 print "Checking for Mojo::UserAgent...\t\t";
-eval ("require Mojo::UserAgent;");
+eval ("require Mojo::UserAgent");
 if ($@) {
 	print "Not found.\nInstalling...\n";
-	install("Mojo::UserAgent;");
+	install("Mojo::UserAgent");
 } else {
 	print "Excellent!\n";
 }
@@ -23,15 +23,6 @@ eval ("require JSON;");
 if ($@) {
 	print "Not found.\nInstalling...\n";
 	install("JSON")
-} else {
-	print "Excellent!\n";
-}
-
-print "Checking for Sub::Delete...\t\t\t";
-eval ("require Sub::Delete;");
-if ($@) {
-	print "Not found.\nInstalling...\n";
-	install("Sub::Delete");
 } else {
 	print "Excellent!\n";
 }
