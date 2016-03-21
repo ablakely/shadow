@@ -27,7 +27,7 @@ use Mojo::IOLoop;
 use XML::Feed;
 
 our $SYNCTIME = 300;  # How offten do we check RSS feeds? (in seconds)
-my $feeds = "./feeds.db";
+my $feeds = "./etc/feeds.db";
 my $ua    = Mojo::UserAgent->new;
 
 sub loader {

@@ -1,4 +1,5 @@
-autoid.pd
 shadow.log
-feeds.db
+/etc/autoid.pd
+/etc/feeds.db
+/etc/autojoin.db
 /etc/shadow.conf

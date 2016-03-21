@@ -5,7 +5,7 @@ package AutoID;
 # Compatibilty:
 #
 
-my $pwfile = "./autoid.pd";
+my $pwfile = "./etc/autoid.pd";
 my $bot    = Shadow::Core;
 my $help   = Shadow::Help;
 

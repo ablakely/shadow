@@ -16,6 +16,7 @@ sub loader {
   }
 
   $bot->add_handler('privcmd status', 'BotStats_dostatus');
+  $help->add_help('status', 'Admin', '', 'Outputs current stats about the bot.');
 }
 
 sub memusage {
@@ -55,6 +56,11 @@ sub BotStats_dostatus {
     my $uptime = Time::Seconds->new((time() - $^T));
     $bot->notice($nick, "Bot Uptime: ".$uptime->pretty);
   }
+}
+
+sub unloader {
+  $bot->del_handler('privcmd status', 'BotStats_dostatus');
+  $help->del_help('status', 'Admin');
 }
 
 1;
