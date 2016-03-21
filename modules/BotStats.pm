@@ -40,6 +40,7 @@ sub BotStats_dostatus {
     if ($mem) {
       $mem  = $mem / 1024;
       $mem  = $mem / 1024;
+      $mem  = floor($mem);
 
       $bot->notice($nick, "Current Memory Usage: $mem MB");
     }
