@@ -15,6 +15,7 @@ Shadow is based on a callback event loop. Here's a list of all the current event
 
 ## Classes
 ### event
+    tick       - [none]                  - IO Loop tick 
     join_me    - $nick, $hostmask, $chan - Self channel join event
     join       - $nick, $hostmask, $chan - Channel join event
     part_me    - $nick, $hostmask, $chan, $text - Self channel part

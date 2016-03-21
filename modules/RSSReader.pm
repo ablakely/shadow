@@ -125,7 +125,7 @@ sub RSSReader_genfeed {
     my ($ua, $tx) = @_;
 
     if (my $err = $tx->error) {
-      return $bot->say($chan, "RSS error on feed [$title]: ".$err);
+      return $bot->say($chan, "RSS error on feed [$title]: ".$err->{message});
     }
 
     my $body = \scalar($tx->res->body);
