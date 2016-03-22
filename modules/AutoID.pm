@@ -49,9 +49,9 @@ sub genpw {
 
 sub autoid_connected {
   if (-e $pwfile) {
-    open(my $f, "<", $pwfile) or print "AutoID Error:".$!;
+    open(my $f, "<", $pwfile) or return $bot->err("AutoID Error: ".$!, 0);
     $nspasswd = <$f>;
-    close($f) or print "AutoID Error:".$!;
+    close($f) or $bot->err("AutoID Error: ".$!, 0);
 
     chomp $nspasswd;
     my ($ns, $pw) = split(/\:/, $nspasswd);
@@ -68,9 +68,9 @@ sub autoid_register {
   return $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick nsregister <nickserv> <email> [password]") if !$ns;
 
   if ($bot->isbotadmin($nick, $host)) {
-    open(my $f, ">", $pwfile) or print "AutoID Error:".$!;
+    open(my $f, ">", $pwfile) or return $bot->err("AutoID Error: ".$!, 0);
     print $f "$ns:$pw\n";
-    close($f) or print "AutoID Error:".$!;
+    close($f) or $bot->err("AutoID Error: ".$!, 0);
 
     $bot->say($ns, "REGISTER $pw $email");
     $bot->notice($nick, "Registered with NickServ: $email $pw");
@@ -81,9 +81,9 @@ sub autoid_passwd {
   my ($nick, $host) = @_;
 
   if ($bot->isbotadmin($nick, $host)) {
-    open(my $x, "<", $pwfile) or print "AutoID Error: ".$!;
+    open(my $x, "<", $pwfile) or return $bot->err("AutoID Error: ".$!, 0);
     my $f = <$x>;
-    close($x) or print "AutoID Error: ".$!;
+    close($x) or $bot->err("AutoID Error: ".$!, 0);
     chomp $f;
 
     my ($s, $pw) = split(/:/, $pw);

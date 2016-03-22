@@ -25,7 +25,7 @@ sub getTitle {
 		}
 	}
 	else {
-    		die $response->status_line;
+    		$bot->err("URLIdentifier: Error fetching title for $url: ".$response->status_line, 0);
 	}
 }
 
@@ -43,4 +43,3 @@ sub unloader {
 }
 
 1;
-

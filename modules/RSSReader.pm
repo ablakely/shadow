@@ -14,6 +14,9 @@
 #
 # SYNCTIME:
 #   Default sync interval is 5 min (300 sec)
+#
+# TODO:
+# Reimplement using new 'tick' event and don't ignore cache maxAge headers.
 
 package RSSReader;
 
@@ -125,13 +128,13 @@ sub RSSReader_genfeed {
     my ($ua, $tx) = @_;
 
     if (my $err = $tx->error) {
-      return $bot->say($chan, "RSS error on feed [$title]: ".$err->{message});
+      return $bot->err("RSSReader Error on fetching feed: [$title]: ".$err->{message}, 0);
     }
 
     my $body = \scalar($tx->res->body);
 
     if (!$feedcache{$feed}) {
-      $f = $feedcache{$feed} = XML::Feed->parse($body) or return $bot->say($chan, "RSS parser error on feed [$title]: ".XML::Feed->errstr);
+      $f = $feedcache{$feed} = XML::Feed->parse($body) or return $bot->err("RSS parser error on feed [$title]: ".XML::Feed->errstr, 0);
     } else {
       $f = $feedcache{$feed};
     }
@@ -169,6 +172,7 @@ sub RSSReader_dbcleanup {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Preforming RSS Feed database cleanup.");
+    $bot->log("RSSReader: Preforming RSS Feed database cleanup.");
 
     my $db = RSSReader_readdb();
 
@@ -199,6 +203,7 @@ sub RSSReader_addfeed {
 
        RSSReader_writedb($db);
        $bot->notice($nick, "Enabled $title [$url] for $chan");
+       $bot->log("$nick added new RSS feed: $title - $url - $chan");
        $bot->notice($nick, "Feed posts should start surfacing in channel within 5 minutes.");
      }
   }
@@ -217,6 +222,7 @@ sub RSSReader_delfeed {
       delete $db->{$chan}->{$title};
       RSSReader_writedb($db);
 
+      $bot->log("$nick removes RSS feed: $title - $url - $chan");
       $bot->notice($nick, "Disabling '$title' feed for $chan.");
     }
   }
@@ -225,8 +231,11 @@ sub RSSReader_delfeed {
 sub RSSReader_rsssync {
   my ($nick, $host, $chan, $text) = @_;
 
-  $bot->say($chan, "$nick: Syncing RSS Feeds.");
-  RSSReader_feedagrigator();
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->say($chan, "$nick: Syncing RSS Feeds.");
+    $bot->log("$nick preformed forced RSS sync in $chan");
+    RSSReader_feedagrigator();
+  }
 }
 
 sub unloader {

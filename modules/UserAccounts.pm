@@ -1,5 +1,9 @@
 package UserAccounts;
 
+# NOTICE:
+# This module is currently broken and is no longer maintained.
+#
+
 use BerkeleyDB;
 my $bot = Shadow::Core;
 

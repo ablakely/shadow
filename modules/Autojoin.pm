@@ -14,7 +14,7 @@ sub loader {
   $help->add_help('autojoin', 'Admin', '<add|del|list> <chan> [key]', 'Shadow Autojoin Module');
 
   if (!-e $dbfile) {
-    open(my $fh, ">", $dbfile) or print "Autojoin Error: Couldn't create db file.\n";
+    open(my $fh, ">", $dbfile) or $bot->err("Autojoin Error creating db: ".$!, 0);
     print $fh "{}";
     close($fh);
   }
@@ -23,7 +23,7 @@ sub loader {
 sub Autojoin_readdb {
   my $data;
 
-  open(my $db, "<", $dbfile) or print "Error opening $dbfile: ".$!;
+  open(my $db, "<", $dbfile) or return $bot->err("Autojoin Error opening $dbfile: $!", 0);
   @data = <$db>;
   close($db);
 
@@ -37,7 +37,7 @@ sub Autojoin_writedb {
 
   $json_text   = to_json( $data, { ascii => 1, pretty => 0} );
 
-  open(my $db, ">", $dbfile) or print "Error opening $dbfile: ".$!;
+  open(my $db, ">", $dbfile) or return $bot->err("Autojoin Error opening $dbfile: $!", 0);
   print $db $json_text;
   close($db);
 }
@@ -56,6 +56,10 @@ sub autojoin {
 
   if ($bot->isbotadmin($nick, $host)) {
     my $db = Autojoin_readdb();
+
+    if (!$cmd) {
+      return $bot->notice($nick, "Syntax: autojoin <add|del|list> <channel> [key]");
+    }
 
     if ($cmd eq "add") {
       $db->{$chan} = $key;
@@ -78,9 +82,6 @@ sub autojoin {
 
       $bot->notice($nick, "\x02*** AUTOJOIN LIST ***\x02");
       $bot->notice($nick, $clist);
-    }
-    else {
-      return $bot->notice($nick, "Syntax: autojoin <add|del|list> <channel> [key]");
     }
   }
 }

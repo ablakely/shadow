@@ -125,6 +125,31 @@ sub shadowuse {
 	$loaded_modules[++$#loaded_modules] = $mod;
 }
 
+sub log {
+	my ($self, $string) = @_;
+	err($self, $string, 0);
+}
+
+sub err {
+	my ($self, $err, $fatal) = @_;
+	if (!$fatal) {
+		$fatal = 0;
+	}
+
+	chomp $err;
+
+	if ($debug) {
+		print $err."\n";
+	}
+	my $cmdchan = $cfg->{Shadow}->{IRC}->{bot}->{cmdchan};
+	irc_raw(1, "PRIVMSG $cmdchan :$err");
+
+	if ($fatal) {
+		irc_raw(1, "PRIVMSG $cmdchan :[FATAL] Encountered fatal error.  Exiting...");
+		print "[FATAL] Encountered fata error.  Exiting...\n";
+		die();
+	}
+}
 
 sub load_module {
 	my ($self, $module_name) = @_;
@@ -386,6 +411,9 @@ sub irc_in {
 					print "Attempting to join $channel\n";
 					irc_raw(1, "JOIN :$channel");
 		    }
+
+				print "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}."\n";
+			  irc_raw(1, "JOIN :".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan});
 		}
 		elsif ($bits[1] eq "005") {
 		  # scan 005 info for adapting to our enviornment

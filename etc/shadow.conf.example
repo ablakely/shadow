@@ -10,6 +10,10 @@ bot.nick	   = Shadow
 bot.name	   = shadow
 bot.channels = #chan1,#chan2,#etc
 
+# bot.cmdchan - Bot logging/control channel
+bot.cmdchan  = #botcmd
+
+
 _Bot_
 system.daemonize	= no
 system.modules    = ChanOP,AutoID
