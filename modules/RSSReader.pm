@@ -160,6 +160,7 @@ sub RSSReader_feedagrigator {
 
   foreach my $chan (keys $db) {
     foreach my $title (keys $db->{$chan}) {
+      $bot->log("RSSReader: Fetching RSS feed $title for $chan");
       RSSReader_genfeed($db->{$chan}->{$title}->{url}, $chan, $title);
     }
   }

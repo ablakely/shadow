@@ -531,21 +531,23 @@ sub irc_scaninfo {
 
 sub irc_connected {
 	$nick = shift;
-	mode($nick, "+i");
+	mode($nick, "+iB");
 	handle_handler('event', 'connected', $nick);
 }
 
 sub irc_nicktaken {
 	my ($taken) = @_;
 
+	my $nick = $bot->{cfg}->{Shadow}->{IRC}->{bot}->{nick};
+
 	print "The nick ($nick) is taken: $taken\n";
 	if ($taken) {
 		print "Appending random chars to the end of the nickname..\n";
-		my $tmp = $Shadow::Core::nick . int(rand(9)) . int(rand(9)) . int(rand(9));
+		my $tmp = $nick . int(rand(9)) . int(rand(9)) . int(rand(9));
 
 		irc_raw(0, "NICK $tmp");
 		handle_handler('event', 'nicktaken', $nick, $tmp);
-		$nick = $tmp;
+		$nick = $Shadow::Core::nick = $tmp;
 		irc_nick($tmp);
 	}
 }
