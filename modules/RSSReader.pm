@@ -29,7 +29,7 @@ use Mojo::UserAgent;
 use Mojo::IOLoop;
 use XML::Feed;
 
-our $SYNCTIME = 300;  # How offten do we check RSS feeds? (in seconds)
+our $SYNCTIME;  # How offten do we check RSS feeds? (in seconds)
 my $feeds = "./etc/feeds.db";
 my $ua    = Mojo::UserAgent->new;
 
@@ -45,6 +45,8 @@ sub loader {
   $help->add_help('delfeed', 'RSSReader', '<chan> <title>', 'Deletes a RSS feed.');
   $help->add_help('listfeeds', 'RSSReader', '<chan>', 'Lists all active RSS feeds for a channel.');
   $help->add_help('rsssync', 'Channel', '', 'Syncs all RSS feeds. [F]');
+
+  $SYNCTIME = 300;
 
   $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
 
@@ -160,12 +162,14 @@ sub RSSReader_feedagrigator {
 
   foreach my $chan (keys $db) {
     foreach my $title (keys $db->{$chan}) {
-      $bot->log("RSSReader: Fetching RSS feed $title for $chan");
+      $bot->log("RSSReader: Fetching RSS feed $title for $chan [tick: $Shadow::Core::tickcount]");
       RSSReader_genfeed($db->{$chan}->{$title}->{url}, $chan, $title);
     }
   }
 
-  $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
+  if ($SYNCTIME != -1) {
+    $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
+  }
 }
 
 sub RSSReader_dbcleanup {
@@ -246,6 +250,7 @@ sub unloader {
   $bot->del_handler('chancmd rsssync', 'RSSReader_rsssync');
   $bot->del_handler('privcmd listfeeds', 'RSSReader_listfeed');
 
+  $SYNCTIME = -1;
   $ua->_cleanup();
 
   $bot->del_help('addfeed', 'RSSReader');

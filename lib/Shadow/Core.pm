@@ -18,7 +18,7 @@ use Shadow::Help;
 
 
 # Global Variables, Arrays, and Hashes
-our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $debug);
+our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
 
@@ -110,6 +110,8 @@ sub new {
 	$self->{cfg} = $cfg;
 	$self->{help}  = Shadow::Help->new(bless($self, $class));
 	$self->{admin} = Shadow::Admin->new(bless($self,$class));
+
+	$tickcount = 0;
 
 	return bless($self, $class);
 }
@@ -264,7 +266,8 @@ sub closefh {
 
 sub mainloop {
 	while (1) {
-		handle_handler('event', 'tick');
+		$tickcount++;
+		handle_handler('event', 'tick', $tickcount);
 
 		foreach my $fh ($sel->can_read(1)) {
 			my ($tmp, $char);
