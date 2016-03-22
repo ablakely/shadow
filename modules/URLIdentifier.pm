@@ -32,7 +32,7 @@ sub getTitle {
 sub url_id {
   my ($nick, $host, $chan, $text) = @_;
 
-  if ($text =~ /^[http\:\/\/|https\:\/\/]/) {
+  if ($text =~ /(^http\:\/\/|^https\:\/\/)/) {
     my $title = getTitle($text);
     $bot->say($chan, "Title: $title") if $title;
   }
