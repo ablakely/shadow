@@ -538,7 +538,7 @@ sub irc_connected {
 sub irc_nicktaken {
 	my ($taken) = @_;
 
-	my $nick = $bot->{cfg}->{Shadow}->{IRC}->{bot}->{nick};
+	my $nick = $options{cfg}->{Shadow}->{IRC}->{bot}->{nick};
 
 	print "The nick ($nick) is taken: $taken\n";
 	if ($taken) {
