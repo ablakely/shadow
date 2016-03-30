@@ -120,14 +120,17 @@ sub RSSReader_listfeed {
 
 sub RSSReader_genfeed {
   my ($feed, $chan, $title) = @_;
-  my %feedcache;
-  my $f;
 
-  my $db   = RSSReader_readdb();
-  my @cp   = $db->{$chan}->{$title}->{readposts};
+  # TODO: Fix feed caching mechanism
 
   $ua->get("$feed" => json => {a => 'b'} => sub {
     my ($ua, $tx) = @_;
+
+    my %feedcache;
+    my $f;
+
+    my $db   = RSSReader_readdb();
+    my @cp   = $db->{$chan}->{$title}->{readposts};
 
     if (my $err = $tx->error) {
       return $bot->err("RSSReader Error on fetching feed: [$title]: ".$err->{message}, 0);
@@ -138,6 +141,7 @@ sub RSSReader_genfeed {
     if (!$feedcache{$feed}) {
       $f = $feedcache{$feed} = XML::Feed->parse($body) or return $bot->err("RSS parser error on feed [$title]: ".XML::Feed->errstr, 0);
     } else {
+      $bot->log("RSSReader: Using cached RSS feed: $feed for $chan.");
       $f = $feedcache{$feed};
     }
 
@@ -156,6 +160,8 @@ sub RSSReader_genfeed {
 
 
 sub RSSReader_feedagrigator {
+  my ($no_timerset) = @_;
+
 
   my $db = RSSReader_readdb();
   my @feed;
@@ -167,7 +173,9 @@ sub RSSReader_feedagrigator {
     }
   }
 
-  if ($SYNCTIME != -1) {
+  if (!defined($no_timerset)) { $no_timerset = 0; }
+  if ($SYNCTIME != -1 && !$no_timerset) {
+    $bot->log("RSSReader_feedagrigator: adding timeout for: $SYNCTIME");
     $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
   }
 }
@@ -239,7 +247,7 @@ sub RSSReader_rsssync {
   if ($bot->isbotadmin($nick, $host)) {
     $bot->say($chan, "$nick: Syncing RSS Feeds.");
     $bot->log("$nick preformed forced RSS sync in $chan");
-    RSSReader_feedagrigator();
+    RSSReader_feedagrigator(1);
   }
 }
 

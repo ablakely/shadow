@@ -39,6 +39,7 @@ sub ircadmin_loadmod {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Loading module: $text");
+    $bot->log("Loading module: $text [Issued by $nick]");
     $bot->load_module($text);
   }
 }
@@ -48,12 +49,19 @@ sub ircadmin_rmmod {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Unloading module: $text");
+    $bot->log("Unloading module: $text [Issued by $nick]");
     $bot->unload_module($text);
   }
 }
 
 sub ircadmin_modlist {
   my ($nick, $host, $text) = @_;
+
+  my $ALL_MODS = 0;
+
+  if ($text =~ /all/) {
+    $ALL_MODS = 1;
+  }
 
   return if !$bot->isbotadmin($nick, $host);
 
@@ -64,7 +72,13 @@ sub ircadmin_modlist {
   foreach my $mod (keys %modlist) {
     next if ($mod eq "loadedmodcount");
 
-    $modstr .= "$mod, ";
+    if ($ALL_MODS) {
+      $modstr .= "$mod, ";
+    } else {
+      if ($mod =~ /Shadow\:\:Mods\:\:/) {
+        $modstr .= "$mod, ";
+      }
+    }
   }
 
   $bot->notice($nick, $modstr);
