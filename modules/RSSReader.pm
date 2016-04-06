@@ -72,7 +72,7 @@ sub RSSReader_writedb {
 }
 
 sub RSSReader_readdb {
-  my $data;
+  my @data;
 
   open(my $db, "<", $feeds) or print "RSSReader Error: ".$!;
   @data = <$db>;
@@ -160,9 +160,6 @@ sub RSSReader_genfeed {
 
 
 sub RSSReader_feedagrigator {
-  my ($no_timerset) = @_;
-
-
   my $db = RSSReader_readdb();
   my @feed;
 
@@ -173,8 +170,7 @@ sub RSSReader_feedagrigator {
     }
   }
 
-  if (!defined($no_timerset)) { $no_timerset = 0; }
-  if ($SYNCTIME != -1 && !$no_timerset) {
+  if ($SYNCTIME != -1 && !defined($ARGV[0])) {
     $bot->log("RSSReader_feedagrigator: adding timeout for: $SYNCTIME");
     $bot->add_timeout($SYNCTIME, 'RSSReader_feedagrigator');
   }
@@ -185,7 +181,7 @@ sub RSSReader_dbcleanup {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Preforming RSS Feed database cleanup.");
-    $bot->log("RSSReader: Preforming RSS Feed database cleanup.");
+    $bot->log("RSSReader: Preforming RSS Feed database cleanup. [Issued by $nick]");
 
     my $db = RSSReader_readdb();
 

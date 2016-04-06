@@ -209,13 +209,6 @@ sub module_stats {
 	return %modinfo;
 }
 
-sub add_help {
-	my ($self, $c, $s, $d, $a) = @_;
-	print "add_help called: $self, $c, $s, $d, $a\n";
-
-	$self->{help}->add_help($c, $s, $d, $a);
-}
-
 # IRC connection stuff
 
 sub connect {
