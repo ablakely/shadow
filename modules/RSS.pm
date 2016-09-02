@@ -25,7 +25,6 @@ use Time::Seconds;
 use Mojo::IOLoop;
 use Mojo::UserAgent;
 use XML::Feed;
-use Data::Dumper;
 
 my $bot      = Shadow::Core;
 my $help     = Shadow::Help;

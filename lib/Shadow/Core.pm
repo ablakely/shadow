@@ -319,8 +319,6 @@ sub mainloop {
 
 		if ($ircping + 60 < $time && $checktime + 30 < $time) {
 			$checktime = $time;
-
-			irc_raw(3, "NOTICE $nick :anti-reconnect");	# to try and keep us alive
 		}
 
 		irc_reconnect() if ($ircping + $options{config}{reconnect} <= $time);
@@ -533,18 +531,16 @@ sub irc_connected {
 
 sub irc_nicktaken {
 	my ($taken) = @_;
+	my $cfgnick = $options{cfg}->{Shadow}->{IRC}->{bot}->{nick};
 
-	my $nick = $options{cfg}->{Shadow}->{IRC}->{bot}->{nick};
-
-	print "The nick ($nick) is taken: $taken\n";
+	print "Nickname [$cfgnick] is currently in use.\n";
 	if ($taken) {
-		print "Appending random chars to the end of the nickname..\n";
-		my $tmp = $nick . int(rand(9)) . int(rand(9)) . int(rand(9));
+		my $tmpnick = $cfgnick . int(rand(9)) . int(rand(9)) . int(rand(9));
+		print "Using new nickname: $tmpnick\n";
 
-		irc_raw(0, "NICK $tmp");
-		handle_handler('event', 'nicktaken', $nick, $tmp);
-		$nick = $Shadow::Core::nick = $tmp;
-		irc_nick($tmp);
+		$nick = $tmpnick;
+		irc_raw(1, "NICK :$tmpnick");
+		handle_handler('event', 'nicktaken', $cfgnick, $tmpnick);
 	}
 }
 

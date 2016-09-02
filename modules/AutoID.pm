@@ -13,6 +13,7 @@ sub loader {
   $bot->add_handler('event connected', 'autoid_connected');
   $bot->add_handler('privcmd nsregister', 'autoid_register');
   $bot->add_handler('privcmd nspasswd', 'autoid_passwd');
+  $bot->add_handler('event nicktaken', 'autoid_ghost');
 
   $help->add_help('nsregister', 'AutoID', '<nickserv> <email> <password>', 'Register bot with NickServ.', 1);
   $help->add_help('nspasswd', 'AutoID', '', 'Prints current NickServ password.', 1);
@@ -86,7 +87,7 @@ sub autoid_passwd {
     close($x) or $bot->err("AutoID Error: ".$!, 0);
     chomp $f;
 
-    my ($s, $pw) = split(/:/, $pw);
+    my ($s, $pw) = split(/\:/, $f);
 
     $bot->notice($nick, "$s password: $pw");
   } else {
@@ -94,10 +95,26 @@ sub autoid_passwd {
   }
 }
 
+sub autoid_ghost {
+  my ($taken, $tmpnick) = @_;
+  $bot->log("AutoID: Ghosting $taken");
+
+  open(my $f, "<", $pwfile) or return $bot->err("AutoID Error: ".$!, 0);
+  my $c = <$f>;
+  close($f);
+  chomp $c;
+
+  my ($ns, $pw) = split(/\:/, $c);
+
+  $bot->raw("PRIVMSG $ns :GHOST $taken $pw");
+  $bot->nick($taken);
+}
+
 sub unloader {
   $bot->del_handler('event connected', 'autoid_connected');
   $bot->del_handler('privcmd nsregister', 'autoid_register');
   $bot->del_handler('privcmd nspasswd', 'autoid_passwd');
+  $bot->del_handler('event nicktaken', 'autoid_ghost');
 
   $bot->del_help('nsregister', 'AutoID');
   $bot->del_help('nspasswd', 'AutoID');
