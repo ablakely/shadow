@@ -1,5 +1,11 @@
 package Uptime;
 
+# Shadow Module: Uptime
+# This is a very basic module which adds a channel command "uptime",
+# which prints the system's uptime in the channel.
+#
+# Written by Aaron Blakely <aaron@ephasic.org>
+
 my $bot = Shadow::Core;
 my $help = Shadow::Help;
 

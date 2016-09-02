@@ -36,6 +36,7 @@ my %feedcache;
 sub loader {
   $bot->add_handler('event connected', 'rss_connected');
   $bot->add_handler('privcmd rss', 'rss_irc_interface');
+  $help->add_help("rss", "Channel", "<add|del|list|set|sync> <feed name> <url>", "RSS module interface.", 0);
 
   if (!-e $feedfile) {
     $bot->log("RSS: No feed database found, creating one.");
@@ -74,7 +75,7 @@ sub rss_dbwrite {
 
 sub rss_irc_interface {
   my ($nick, $host, $text) = @_;
-  my ($command, $arg1, $arg2, $arg3) = split(" ", $text);
+  my ($command, $arg1, $arg2, $arg3, $arg4) = split(" ", $text);
   my $db;
 
   if ($command eq "add" || $command eq "ADD") {
@@ -84,7 +85,7 @@ sub rss_irc_interface {
 
     if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
       $db = rss_dbread();
-      $db->{$arg1}->{$arg2} = {
+      $db->{lc($arg1)}->{$arg2} = {
         url => $arg3,
         lastSync => 0,
         syncInterval => 300,
@@ -95,21 +96,84 @@ sub rss_irc_interface {
       $bot->notice($nick, "Added feed $arg2 [$arg3] for $arg1.");
       $bot->log("RSS: New feed for $arg1 [$arg2 - $arg3] added by $nick.");
       $bot->notice($nick, "Feed post should start appearing in $arg1 within 5 minutes.");
+    } else {
+      $bot->notice($nick, "Command requres channel op (+o) mode.");
+      $bot->log("RSS: Command denied for $nick: ADD $arg1 $arg2 :$arg3");
     }
   }
   elsif ($command eq "del" || $command eq "DEL") {
+    if (!$arg1 || !$arg2) {
+      return $bot->notice($nick, "Syntax: /msg ".$Shadow::Core::nick." rss del <chan> <title>");
+    }
+
+    if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
+      $db = rss_dbread();
+      my $url = $db->{$arg1}->{$arg2}->{url};
+
+      delete($db->{$arg1}->{$arg2});
+      rss_dbwrite($db);
+
+      $bot->notice($nick, "Deleted feed $arg2 [$url] for $arg1.");
+      $bot->log("RSS: Feed $arg2 [$url] was removed from $arg1 by $nick.");
+    } else {
+      $bot->notice($nick, "Command requres channel op (+o) mode.");
+      $bot->log("RSS: Command denied for $nick: DEL $arg1 $arg2 :$arg3");
+    }
 
   }
   elsif ($command eq "list" || $command eq "LIST") {
+    if (!$arg1) {
+      return $bot->notice($nick, "Syntax: /msg ".$Shadow::Core::nick." rss list <chan>");
+    }
 
+    $arg1 = lc($arg1);
+
+    if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
+      $db = rss_dbread();
+      my $feeds = "";
+
+      foreach my $feed (keys $db->{$arg1}) {
+        $feeds .= $feed.", ";
+      }
+
+      $bot->notice($nick, "*** $arg1 RSS FEEDS ***");
+      $bot->notice($nick, $feeds);
+      $bot->log("RSS: LIST command issued by $nick for $arg1");
+    } else {
+      $bot->notice($nick, "Command requres channel op (+o) mode.");
+      $bot->log("RSS: Command denied for $nick: LIST $arg1");
+    }
   }
   elsif ($command eq "set" || $command eq "SET") {
+    if (!$arg1 || !$arg2 || !$arg3) {
+      return $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick RSS SET <option> <chan> <feed> <value>");
+    }
 
+    if ($arg1 eq "SYNCTIME" || $arg1 eq "synctime") {
+      if ($bot->isin($arg2, $Shadow::Core::nick) && $bot->isop($nick, $arg2)) {
+        $db = rss_dbread();
+        $arg2 = lc($arg2);
+        $db->{$arg2}->{$arg3}->{syncInterval} = $arg4;
+        rss_dbwrite($db);
+
+        $bot->notice($nick, "Updated sync interval to $arg4 for feed $arg3 in $arg2.");
+        $bot->log("RSS: SET SYNCTIME was used by $nick for $arg3 in $arg2.");
+      }
+    } else {
+      $bot->notice($nick, "SET options: SYNCTIME");
+    }
   }
   elsif ($command eq "sync" || $command eq "SYNC") {
-
+    if ($bot->isbotadmin($nick, $host)) {
+      $bot->notice($nick, "Refreshing RSS feeds.");
+      rss_refresh();
+      $bot->log("RSS: Forced to refresh feeds by botadmin $nick");
+    } else {
+      $bot->notice($nick, "Access denied.");
+      $bot->log("RSS: Command denied for $nick: SYNC");
+    }
   } else {
-    $bot->notice($nick, "Invalid command.  For help: /msg $Shadow::Core help rss");
+    $bot->notice($nick, "Invalid command.  For help: /msg $Shadow::Core::nick help rss");
   }
 }
 
@@ -207,6 +271,8 @@ sub unloader {
   $bot->del_handler('event connected', 'rss_connected');
   $bot->del_handler('event tick', 'rss_tick');
   $bot->del_handler('privcmd rss', 'rss_irc_interface');
+
+  $help->del_help("rss", "Channel");
 }
 
 1;

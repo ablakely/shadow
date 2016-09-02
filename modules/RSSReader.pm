@@ -1,6 +1,9 @@
-# RSSReader - Shadow RSS Reader Module
+# [DEPRECATED] RSSReader - Shadow RSS Reader Module
 # v0.5
 # Written by Aaron Blakely <aaron@ephasic.org>
+#
+# This module is now deprecated and has beeen replaced by the new
+# RSS.pm module!
 #
 # COMMANDS:
 #   channel - rsssync - Sync all active RSS feeds.

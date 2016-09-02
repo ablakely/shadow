@@ -1,5 +1,11 @@
 package Autojoin;
 
+# Shadow Module: Autojoin
+# Module that implements an autojoin feature, which is a list of channels
+# to automatically join on connect that is manipulated via IRC commands.
+#
+# Written by Aaron Blakely <aaron@ephasic.org>
+
 use JSON;
 
 my $bot  = Shadow::Core;

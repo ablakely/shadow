@@ -1,5 +1,13 @@
 package BotStats;
 
+# Shadow Module: BotStats
+# This module adds a command which returns stats about this
+# instance of Shadow.  Requires bot admin.
+#
+# COMMAND: /msg <bot> status
+#
+# Written by Aaron Blakely <aaron@ephasic.org>
+
 use POSIX;
 use Time::Seconds;
 use Proc::ProcessTable;
@@ -55,6 +63,9 @@ sub BotStats_dostatus {
 
     my $uptime = Time::Seconds->new((time() - $^T));
     $bot->notice($nick, "Bot Uptime: ".$uptime->pretty);
+  } else {
+    $bot->notice($nick, "Access denied.");
+    $bot->log("BotStats: STATUS command denied for $nick.");
   }
 }
 

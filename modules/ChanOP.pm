@@ -1,5 +1,16 @@
 package ChanOP;
 
+# Shadow Module: ChanOP
+# This module adds many basic channel operator commands, and honnors
+# their respective channel access requirements.  Commands can be used in
+# channel or via private message.  The command prefix is not used for private
+# messages.
+#
+# Commands:
+# See /msg <bot> help for detalied command info.
+#
+# Written by Aaron Blakely <aaron@ephasic.org>
+
 my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
@@ -96,7 +107,7 @@ sub chanop_voice {
 	$bot->voice($c, $n);
     }
   }
-} 
+}
 
 sub unloader {
   $bot->del_handler('chancmd op',    'chanop_op');
