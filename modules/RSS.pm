@@ -108,9 +108,9 @@ sub rss_irc_interface {
 
     if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
       $db = rss_dbread();
-      my $url = $db->{$arg1}->{$arg2}->{url};
-
-      delete($db->{$arg1}->{$arg2});
+      my $url = $db->{lc($arg1)}->{$arg2}->{url};
+            
+      delete($db->{lc($arg1)}->{$arg2});            
       rss_dbwrite($db);
 
       $bot->notice($nick, "Deleted feed $arg2 [$url] for $arg1.");
