@@ -319,6 +319,8 @@ sub mainloop {
 
 		if ($ircping + 60 < $time && $checktime + 30 < $time) {
 			$checktime = $time;
+
+			irc_raw(3, "NOTICE $nick :anti-reconnect"); # ping fail back
 		}
 
 		irc_reconnect() if ($ircping + $options{config}{reconnect} <= $time);
