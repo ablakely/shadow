@@ -624,8 +624,6 @@ sub irc_topic {
 sub irc_join {
 	my ($channel, $remotenick, $hostmask) = @_;
 
-        print "debug irc_join(): $channel, $remotenick, $hostmask\n";
-
 	# if it is ourself then we create a record for the channel and update our host
 	if ($remotenick eq $nick) {
 		$sc{lc($channel)}	= {};
