@@ -435,6 +435,13 @@ sub irc_in {
 		}
 		elsif ($bits[1] eq "JOIN") {
 		  # join event
+		  
+		  if (!$text) {
+		    # support for charybdis 3.5.2
+		    
+		    ($command, $text) = split(/ /, $command);
+		  }
+		  
 		  irc_join($text, $remotenick, $bits[0]);
 		}
 		elsif ($bits[1] eq "PART") {
@@ -616,6 +623,8 @@ sub irc_topic {
 
 sub irc_join {
 	my ($channel, $remotenick, $hostmask) = @_;
+
+        print "debug irc_join(): $channel, $remotenick, $hostmask\n";
 
 	# if it is ourself then we create a record for the channel and update our host
 	if ($remotenick eq $nick) {
