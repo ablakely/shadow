@@ -458,7 +458,13 @@ sub irc_in {
 		}
 		elsif ($bits[1] eq "NICK") {
 		  # nick change event
-		  irc_nick($remotenick, $bits[2], $text, $bits[0]);
+		  
+		  # support for charybdis 3.5.2
+		  if (!$bits[2]) {
+		      irc_nick($remotenick, $text, $bits[0]);
+		  } else {
+		      irc_nick($remotenick, $bits[2], $bits[0]);
+		  }
 		}
 		elsif ($bits[1] eq "INVITE") {
 		  # invite event
