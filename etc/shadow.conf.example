@@ -2,22 +2,22 @@
 # Written by Aaron Blakely
 
 
-!Shadow
+@Shadow
 
-_IRC_
+[IRC]
 bot.host	   = server.host:port
 bot.nick	   = Shadow
 bot.name	   = shadow
-bot.channels = #chan1,#chan2,#etc
+bot.channels   = [#chan1,#chan2,#etc]
 
 # bot.cmdchan - Bot logging/control channel
 bot.cmdchan  = #botcmd
 
 
-_Bot_
+[Bot]
 system.daemonize	= no
-system.modules    = ChanOP,AutoID
+system.modules      = [ChanOP,AutoID]
 
-_Admin_
+[Admin]
 # Comma separated list of hostnames (wildcards are accepted)
-bot.admins = *!*@example.org,*!*@netadmin.bbsn.ca
+bot.admins = [*!*@example.org,*!*@netadmin.bbsn.ca]

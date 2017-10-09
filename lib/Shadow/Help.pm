@@ -50,7 +50,7 @@ sub check_admin_class {
 
   foreach my $k (keys %cmdlist) {
     if ($k eq $class) {
-      foreach my $cmd (keys $cmdlist{$k}) {
+      foreach my $cmd (keys %{$cmdlist{$k}}) {
         if ($cmdlist{$k}->{$cmd}{adminonly}) {
           return 1;
         }
@@ -72,7 +72,7 @@ sub dohelp {
   my ($ci, $cfmt, $si, $sfmt) = (0, "", 0, "");
 
   foreach my $c (keys %cmdlist) {
-    foreach my $i (keys $cmdlist{$c}) {
+    foreach my $i (keys %{$cmdlist{$c}}) {
       $nmax = length $cmdlist{$c}->{$i}{cmd} if (length $cmdlist{$c}->{$i}{cmd} >= $nmax);
       $smax = length $cmdlist{$c}->{$i}{syntax} if (length $cmdlist{$c}->{$i}{syntax} >= $smax);
     }
@@ -91,7 +91,7 @@ sub dohelp {
       $bot->notice($nick, "\x02$c Commands\x02");
     }
 
-    foreach my $k (keys $cmdlist{$c}) {
+    foreach my $k (keys %{$cmdlist{$c}}) {
       if ($nmax >= length($cmdlist{$c}->{$k}{cmd})) {
         $ci   = $nmax - length $cmdlist{$c}->{$k}{cmd};
         $cfmt = " " x $ci;

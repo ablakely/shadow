@@ -53,7 +53,14 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 # Ignore "redined subroutine" warnings
 $SIG{__WARN__} = sub {
     my $warning = shift;
-    warn $warning unless $warning =~ /Subroutine .* redefined at/;
+    
+    if ($warning !~ /Subroutine .* redefined at/) {
+    	return;
+    } elsif ($warning !~ /keys on reference is experimental/) {
+    	return;
+    }
+
+    warn $warning;
 };
 
 
@@ -65,7 +72,7 @@ sub new {
 	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
 	$options{cfg}   = $cfg;
-  my @serverlist  = split(/,/, $cfg->{Shadow}->{IRC}->{bot}->{host});
+    my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
 
 	$debug = $verbose;
 
@@ -110,6 +117,7 @@ sub new {
 	$self->{cfg} = $cfg;
 	$self->{help}  = Shadow::Help->new(bless($self, $class));
 	$self->{admin} = Shadow::Admin->new(bless($self,$class));
+	$self->{starttime} = time();
 
 	$tickcount = 0;
 
@@ -148,7 +156,7 @@ sub err {
 
 	if ($fatal) {
 		irc_raw(1, "PRIVMSG $cmdchan :[FATAL] Encountered fatal error.  Exiting...");
-		print "[FATAL] Encountered fata error.  Exiting...\n";
+		print "[FATAL] Encountered fatal error.  Exiting...\n";
 		die();
 	}
 }
@@ -402,13 +410,13 @@ sub irc_in {
 		    # connected event
 		    irc_connected($bits[2]);
 
-		    my @chans = split(/\,/, $cfg->{Shadow}->{IRC}->{bot}->{channels});
+		    my @chans = @{$cfg->{Shadow}->{IRC}->{bot}->{channels}};
 		    foreach my $channel (@chans) {
 					print "Attempting to join $channel\n";
 					irc_raw(1, "JOIN :$channel");
 		    }
 
-				print "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}."\n";
+			  print "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}."\n";
 			  irc_raw(1, "JOIN :".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan});
 		}
 		elsif ($bits[1] eq "005") {
@@ -1071,8 +1079,7 @@ sub isvoice {
 sub check_admin {
   my ($nick, $host) = @_;
 
-  my $admins = $cfg->{Shadow}->{Admin}->{bot}->{admins};
-  my @tmp    = split(',', $admins);
+  my @tmp = $cfg->{Shadow}->{Admin}->{bot}->{admins};
 
   foreach my $t (@tmp) {
     my ($u, $h) = split(/\!/, $t);

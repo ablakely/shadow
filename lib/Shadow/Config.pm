@@ -16,6 +16,7 @@ sub new {
 	my ($confFile) = @_;
 
 	my $self = { };
+	$self->{confFile} = $confFile;
 
 	push @confFiles, $confFile;
 
@@ -23,35 +24,64 @@ sub new {
 }
 
 sub parse {
-	my $class = shift;
+	my $self = shift;
 	my %c	  = ();
 	my $cur	  = "";
 	my $curr  = "";
+	my @tmp;
+	my $lc    = 0;
+	my $i     = 0;
 
 	foreach my $f (@confFiles) {
 		open (FH, "<$f") or die $!;
 		while(<FH>) {
 			if (/^\#(.*)/) {
+				$lc++;
 				next;
 			}
-			elsif (/^\!(.*)$/) {
-				#$c{$cur} = ();
+			elsif (/^\s/ || /^\r/ || /^\n/) {
+				$lc++;
+				next;
+			}
+			elsif (/^\@(.*)$/) {
+				$lc++;
 				$cur = $1;
 				next;
 			}
-			elsif (/^\_(\w+)\_$/) {
-				#$c{$cur}->{$1} = ();
+			elsif (/^\[(\w+)\]$/) {
+				$lc++;
 				$curr = $1;
 				next;
 			}
-			elsif (/^(\w+)\.(\w+)\s*\=\s*(.*)$/) {
+			elsif (/^(\w+)\.(\w+)\s*\=\s*\"(.*)\"$/ || /^(\w+)\.(\w+)\s*\=\s*\'(.*)\'$/) {
+				$lc++;
 				$c{$cur}->{$curr}->{$1}->{$2} = $3;
 				next;
 			}
-			elsif (/^(\w+)\.(\w+)\[(\d+)\]\s*\=\s*(.*)$/) {
-				$c{$cur}->{$curr}->{$1}->{$2}[$3] = $4;
+			elsif (/^(\w+)\.(\w+)\s*\=\s*\[(.*)\]$/) {
+				$lc++;
+				@tmp = split(/\,/, $3);
+
+				for ($i = 0; $i < scalar(@tmp); $i++) {
+					$c{$cur}->{$curr}->{$1}->{$2}[$i] = $tmp[$i];
+				}
+
 				next;
 			}
+			elsif (/^(\w+)\.(\w+)\s*\=\s*yes$/) {
+				$lc++;
+				$c{$cur}->{$curr}->{$1}->{$2} = 1;
+				next;
+			}
+			elsif (/^(\w+)\.(\w+)\s*\=\s*no$/) {
+				$lc++;
+				$c{$cur}->{$curr}->{$1}->{$2} = 0;
+			}
+			else {
+				chomp;
+				print "[".$self->{confFile}.":$lc] Invalid statement:".$_."\n";
+			}
+			$lc++;
 		}
 
 		close FH or die $!;

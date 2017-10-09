@@ -33,6 +33,7 @@ my $ua       = Mojo::UserAgent->new;
 my %feedcache;
 
 sub loader {
+  $bot->log("[RSS] Loading: RSS module v1.0");
   $bot->add_handler('event connected', 'rss_connected');
   $bot->add_handler('privcmd rss', 'rss_irc_interface');
   $help->add_help("rss", "Channel", "<add|del|list|set|sync> <feed name> <url>", "RSS module interface.", 0);
@@ -267,6 +268,7 @@ sub rss_tick {
 }
 
 sub unloader {
+  $bot->log("[RSS] Unloading RSS module");
   $bot->del_handler('event connected', 'rss_connected');
   $bot->del_handler('event tick', 'rss_tick');
   $bot->del_handler('privcmd rss', 'rss_irc_interface');

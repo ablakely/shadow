@@ -41,7 +41,13 @@ sub url_id {
   if ($text =~ /(^http\:\/\/|^https\:\/\/)/) {
     $bot->log("URLIdentifier: Fetching URL [$text] for $nick in $chan.");
     my $title = getTitle($text);
-    $bot->say($chan, "Title: $title") if $title;
+
+    if ($text =~ /youtube.com/) {
+      $title  =~ s/- YouTube//;
+      $bot->say($chan, "[\002\0030,4You\003Tube\002] $title");
+    } else {
+      $bot->say($chan, "Title: $title") if $title;
+    }
   }
 }
 
