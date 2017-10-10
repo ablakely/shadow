@@ -165,6 +165,13 @@ sub load_module {
 	my ($self, $module_name) = @_;
 
 	if (-e "modules/$module_name\.pm") {
+		foreach my $loaded_mod (@loaded_modules) {
+			if ($loaded_mod eq "Shadow::Mods::".$module_name) {
+				print "$module_name module aready loaded...\n";
+				return;
+			}
+		}
+
 		print "Loading module: $module_name\n";
 		require "modules/$module_name\.pm";
 
@@ -1079,7 +1086,7 @@ sub isvoice {
 sub check_admin {
   my ($nick, $host) = @_;
 
-  my @tmp = $cfg->{Shadow}->{Admin}->{bot}->{admins};
+  my @tmp = @{$cfg->{Shadow}->{Admin}->{bot}->{admins}};
 
   foreach my $t (@tmp) {
     my ($u, $h) = split(/\!/, $t);
@@ -1103,6 +1110,45 @@ sub check_admin {
   }
 
   return 0;
+}
+
+sub color {
+	my ($self, $fg, $bg) = @_;
+	my %colors = (
+		'white'      => 0,
+		'black'      => 1,
+		'blue'       => 2,
+		'green'      => 3,
+		'lightred'   => 4,
+		'brown'      => 5,
+		'purple'     => 6,
+		'orange'     => 7,
+		'yellow'     => 8,
+		'lightgreen' => 9,
+		'cyan'       => 10,
+		'lightcyan'  => 11,
+		'lightblue'  => 12,
+		'pink'       => 13,
+		'gray'       => 14,
+		'lightgray'  => 15
+	);
+	my $colorstr = "\003";
+
+	if ($fg) {
+		$colorstr = $colorstr.$colors{$fg};
+	}
+
+	if ($bg) {
+		$colorstr = $colorstr.",".$colors{$bg};
+	}
+
+	return $colorstr;
+}
+
+sub bold {
+	my ($self) = @_;
+
+	return "\002";
 }
 
 sub isbotadmin {

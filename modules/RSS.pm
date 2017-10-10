@@ -16,6 +16,14 @@
 #     }
 #   }
 # ]
+#
+# TODO:
+#  set command: interval, format, etc
+#  HTTP connection keep alive support
+#  Better db format?
+#  .last channel command for last 5 feeds
+
+
 
 package RSS;
 
