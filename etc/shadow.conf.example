@@ -5,13 +5,13 @@
 @Shadow
 
 [IRC]
-bot.host	   = server.host:port
-bot.nick	   = Shadow
-bot.name	   = shadow
+bot.host	   = [irc-nb.bbsn.ca:6667]
+bot.nick	   = "Shadow"
+bot.name	   = "shadow"
 bot.channels   = [#chan1,#chan2,#etc]
 
 # bot.cmdchan - Bot logging/control channel
-bot.cmdchan  = #botcmd
+bot.cmdchan  = "#botcmd"
 
 
 [Bot]
