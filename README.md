@@ -23,3 +23,4 @@
 * Autojoin.pm - Automatically join channels on connect.
 * URLIdentifier.pm - Automatically fetches the title of a URL.
 * BotStats.pm - [Linux] Returns information about the bot, like memory usage.
+* Fortune.pm - Wrapper for the `fortune` command.
