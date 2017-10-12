@@ -924,6 +924,7 @@ sub irc_say {
 	irc_raw($level, "PRIVMSG $target :$text");
 }
 
+
 sub irc_knock {
 	return;
 }
