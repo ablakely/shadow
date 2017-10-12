@@ -13,7 +13,6 @@ bot.channels   = [#chan1,#chan2,#etc]
 # bot.cmdchan - Bot logging/control channel
 bot.cmdchan  = "#botcmd"
 
-
 [Bot]
 system.daemonize	= no
 system.modules      = [ChanOP,AutoID]

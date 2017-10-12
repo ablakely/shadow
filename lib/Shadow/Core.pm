@@ -1,7 +1,8 @@
-# Shadow::Core	- Core Module for Shadow IRC Bot
+# Shadow::Core v1.0	- Core Module for Shadow IRC Bot
 # Written by Aaron Blakely <aaron@ephasic.org>
 # Supports:
 #	/Most/ IRCd's - Since it scans 005 of the PREFIXES
+#
 
 
 package Shadow::Core;
@@ -36,7 +37,7 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 		'time'		=> 30,
 	},
 	config => {
-		version		=> 'Shadow v0.08 - By Aaron Blakely (Dark_Aaron)',
+		version		=> 'Shadow v1.0 - By Aaron Blakely (Dark_Aaron)',
 		userdb		=> 'users',
 	},
 	irc => {

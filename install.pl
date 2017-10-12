@@ -9,22 +9,45 @@ use strict;
 use warnings;
 use CPAN;
 
-print "Checking for Mojo::UserAgent...\t\t";
-eval ("require Mojo::UserAgent");
-if ($@) {
-	print "Not found.\nInstalling...\n";
-	install("Mojo::UserAgent");
-} else {
-	print "Excellent!\n";
+my @dependsRaw;
+my @depends;
+
+sub sortArray {
+	my %seen;
+	grep !$seen{$_}++, @_;
 }
 
-print "Checking for JSON...\t\t\t\t";
-eval ("require JSON;");
-if ($@) {
-	print "Not found.\nInstalling...\n";
-	install("JSON")
-} else {
-	print "Excellent!\n";
+# Get a dir listing
+opendir(MODS, "./modules") or die $!;
+while (my $file = readdir(MODS)) {
+	if ($file =~ /\.pm/) {
+		open(MODFILE, "<./modules/$file") or die $!;
+
+		while (my $line = <MODFILE>) {
+			if ($line =~ /use (.*);/) {
+				my ($pkg, $arg) = split(/ /, $1);
+				push(@dependsRaw, $pkg) if $pkg ne "open";
+			}
+
+		}
+
+		close(MODFILE);
+	}
+}
+closedir(MODS);
+
+@depends = sortArray(@dependsRaw);
+
+foreach my $mod (@depends) {
+	print "Checking for $mod...";
+	eval "require $mod";
+
+	if ($@) {
+		print "Not found.\nInstalling...\n";
+		install($mod);
+	} else {
+		print "Excellent!\n";
+	}
 }
 
 print "\nDone.  You're enviornment is now prepared for shadow.\n";
