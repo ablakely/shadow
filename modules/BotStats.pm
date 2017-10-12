@@ -24,7 +24,14 @@ sub loader {
   }
 
   $bot->add_handler('privcmd status', 'BotStats_dostatus');
-  $help->add_help('status', 'Admin', '', 'Outputs current stats about the bot.');
+  $help->add_help('status', 'Admin', '', 'Outputs current stats about the bot.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02STATUS\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02status\x02 will give you details about the bot such as memory usage, number of channels, and mod count.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick status");
+  });
 }
 
 sub memusage {

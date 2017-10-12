@@ -24,10 +24,41 @@ sub loader {
   $bot->add_handler('chancmd ban',   'chanop_ban');
   $bot->add_handler('privcmd ban',   'chanop_ban');
 
-  $help->add_help('op', 'Channel', '<user> <channel>', 'Give or removes operator mode to a user. [F]', 0);
-  $help->add_help('voice', 'Channel', '<user> <channel>', 'Gives or removes voice from a user. [F]', 0);
-  $help->add_help('kick', 'Channel', '<user> <channel> <reason>', 'Kicks a user from a channel. [F]', 0);
-  $help->add_help('ban', 'Channel', '<user> <channel> <reason>', 'Bans a user from a channel. [F]', 0);
+  $help->add_help('op', 'Channel', '<user> <channel>', 'Give or removes operator mode to a user. [F]', 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02OP\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02op\x02 grants or revokes operator status from a user.");
+    $bot->say($nick, "\x02SYNTAX\x02: .op <nick> or /msg $Shadow::Core::nick op <chan> <nick>");
+  });
+  
+  $help->add_help('voice', 'Channel', '<user> <channel>', 'Gives or removes voice from a user. [F]', 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02VOICE\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02voice\x02 grants or revokes voice status from a user.");
+    $bot->say($nick, "\x02SYNTAX\x02: .voice <nick> or /msg $Shadow::Core::nick voice <chan> <nick>");
+  });
+  
+  $help->add_help('kick', 'Channel', '<user> <channel> <reason>', 'Kicks a user from a channel. [F]', 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02KICK\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02kick\x02 removes a user from a channel.");
+    $bot->say($nick, "\x02SYNTAX\x02: .kick <user> <reason> or /msg $Shadow::Core::nick kick <user> <channel> <reason>");
+  });
+  
+  $help->add_help('ban', 'Channel', '<user> <channel> <reason>', 'Bans a user from a channel. [F]', 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02BAN\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02ban\x02 will kick and ban a user from a channel.");
+    $bot->say($nick, "\x02SYNTAX\x02: .ban <user> <reason> or /msg $Shadow::Core::nick ban <user> <channel> <reason>");
+  });
 }
 
 sub chanop_kick {

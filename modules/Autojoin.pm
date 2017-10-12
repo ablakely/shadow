@@ -17,7 +17,19 @@ sub loader {
   $bot->add_handler('event connected', 'Autojoin_connected');
   $bot->add_handler('privcmd autojoin', 'autojoin');
 
-  $help->add_help('autojoin', 'Admin', '<add|del|list> <chan> [key]', 'Shadow Autojoin Module');
+  $help->add_help('autojoin', 'Admin', '<add|del|list> <chan> [key]', 'Shadow Autojoin Module', 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02AUTOJOIN\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02autojoin\x02 is a command for managing which channels the bot automatically joins on connect.");
+    $bot->say($nick, "This command uses a set of subcommands to perform actions:");
+    $bot->say($nick, "  \x02add\x02 - Adds a channel to the autojoin list.");
+    $bot->say($nick, "  \x02del\x02 - Removes a channel from the autojoin list.");
+    $bot->say($nick, "  \x02list\x02 - Lists all the channels the bot automatically joins.");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick autojoin <add|del|list> [chan] [key]");
+  });
 
   if (!-e $dbfile) {
     open(my $fh, ">", $dbfile) or $bot->err("Autojoin Error creating db: ".$!, 0);

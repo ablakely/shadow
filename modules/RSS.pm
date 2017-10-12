@@ -44,7 +44,21 @@ sub loader {
   $bot->log("[RSS] Loading: RSS module v1.0");
   $bot->add_handler('event connected', 'rss_connected');
   $bot->add_handler('privcmd rss', 'rss_irc_interface');
-  $help->add_help("rss", "Channel", "<add|del|list|set|sync> <feed name> <url>", "RSS module interface.", 0);
+  $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02RSS\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02rss\x02 is a command used for managing RSS feeds for each channel.");
+    $bot->say($nick, "This command uses subcommands to perform different actions:");
+    $bot->say($nick, "  \x02add\x02 #chan <feed name> <url> - Adds a feed for a channel.");
+    $bot->say($nick, "  \x02del\x02 #chan <feed name> - Removes a feed from a channel.");
+    $bot->say($nick, "  \x02set\x02 #chan <feed name> <setting> <value> - Not yet implemented.");
+    $bot->say($nick, "  \x02list\x02 #chan - Lists all of the feeds for a given channel.");
+    $bot->say($nick, "  \x02sync\x02 - Forces the bot to sync all feeds.");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rss <add|del|list|set|sync> [#chan] [feed name] [url]");
+  });
 
   if (!-e $feedfile) {
     $bot->log("RSS: No feed database found, creating one.");

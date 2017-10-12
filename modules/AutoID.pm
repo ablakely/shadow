@@ -15,8 +15,23 @@ sub loader {
   $bot->add_handler('privcmd nspasswd', 'autoid_passwd');
   $bot->add_handler('event nicktaken', 'autoid_ghost');
 
-  $help->add_help('nsregister', 'AutoID', '<nickserv> <email> <password>', 'Register bot with NickServ.', 1);
-  $help->add_help('nspasswd', 'AutoID', '', 'Prints current NickServ password.', 1);
+  $help->add_help('nsregister', 'AutoID', '<nickserv> <email> <password>', 'Register bot with NickServ.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02NSREGISTER\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "nsregister will register the bot with NickServ.");
+    $bot->say($nick, "If no password is given then the bot will generate it's own password.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nsregister <nickserv> <email> <password>");
+  });
+  $help->add_help('nspasswd', 'AutoID', '', 'Prints current NickServ password.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02NSPASSWD\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "nspasswd will return the current password used for identifying with nickserv.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nspasswd");
+  });
 }
 
 sub genpw {

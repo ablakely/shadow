@@ -22,13 +22,73 @@ sub new {
   $self->{bot}->add_handler('privcmd loadmod', 'ircadmin_loadmod');
   $self->{bot}->add_handler('privcmd rmmod', 'ircadmin_rmmod');
 
-  $self->{bot}->{help}->add_help('modlist', 'Admin', '', 'See all modules currently loaded.', 1);
-  $self->{bot}->{help}->add_help('loadmod', 'Admin', '<module>', 'Load a module.', 1);
-  $self->{bot}->{help}->add_help('rmmod', 'Admin', '<module>', 'Unload a module.', 1);
-  $self->{bot}->{help}->add_help('eval', 'Admin', '<text>', 'Evaluates perl code. [F]', 1);
-  $self->{bot}->{help}->add_help('dump', 'Admin', '<var>', 'Dumps a structure and notices it to you. [F]', 1);
-  $self->{bot}->{help}->add_help('join', 'Admin', '<channel>', 'Force bot to join a channel.', 1);
-  $self->{bot}->{help}->add_help('part', 'Admin', '<channel>', 'Force bot to part a channel.', 1);
+  $self->{bot}->{help}->add_help('modlist', 'Admin', '', 'See all modules currently loaded.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02MODLIST\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02modlist\x02 is a command that lists all the modules currently loaded into Shadow.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick modlist");
+  });
+  
+  $self->{bot}->{help}->add_help('loadmod', 'Admin', '<module>', 'Load a module.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02LOADMOD\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02loadmod\x02 is a command for dynamically loading shadow modules.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick loadmod <module>");
+  });
+
+  $self->{bot}->{help}->add_help('rmmod', 'Admin', '<module>', 'Unload a module.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02RMMOD\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02rmmod\x02 is a command for dynamically unloading shadow modules.");
+  });
+  
+  $self->{bot}->{help}->add_help('eval', 'Admin', '<text>', 'Evaluates perl code. [F]', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02EVAL\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02eval\x02 is a command that executes perl code.  Do not play with this unless you know what you're doing.");
+    $bot->say($nick, "Examples:");
+    $bot->say($nick, '  .eval for (my $i = 0; $i < 10; $i++) { $bot->say($chan, "hi Scally"); }');
+    $bot->say($nick, '  .eval $Shadow::Core::options{irc}->{cmdprfix} = "!";');
+    $bot->say($nick, '  .eval system "kill $$";');
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02SYNTAX\x02: .eval <perl code> or /msg $Shadow::Core::nick eval <perl code>");
+  });
+  
+  $self->{bot}->{help}->add_help('dump', 'Admin', '<var>', 'Dumps a structure and notices it to you. [F]', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02DUMP\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02dump\x02 uses the Perl Data::Dumper module to dump a data structure and then it notices it to you.");
+    $bot->say($nick, "This is helpful when debugging your custom modules.");
+    $bot->say($nick, "\x02SYNTAX\x02: .dump <var|array|hash>");
+  });
+  
+  $self->{bot}->{help}->add_help('join', 'Admin', '<channel>', 'Force bot to join a channel.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02JOIN\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "Forces the bot to join a channel.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick join #chan");
+  });
+  
+  $self->{bot}->{help}->add_help('part', 'Admin', '<channel>', 'Force bot to part a channel.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02PART\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "Forces the bot to part a channel.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick part #chan");
+  });
 
   return bless($self, $class);
 }
