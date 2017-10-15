@@ -168,7 +168,7 @@ sub load_module {
 	if (-e "modules/$module_name\.pm") {
 		foreach my $loaded_mod (@loaded_modules) {
 			if ($loaded_mod eq "Shadow::Mods::".$module_name) {
-				print "$module_name module aready loaded...\n";
+				print "$module_name module already loaded...\n";
 				return;
 			}
 		}
@@ -1315,7 +1315,7 @@ sub flood_do {
 			if ($num == $limit);
 		if ($num >= $limit + 3) {
 			if ($ftype ne "all") {
-				logger(2, "autoignoring $remotenick ($hostmask) of 5 minutes");
+				logger(2, "autoignoring $remotenick ($hostmask) for 5 minutes");
 				$options{ignore}{irc_makebanmask($hostmask, 'host')} = time + 300;
 			} else {
 				logger(2, "autoignoring all for 30 seconds (triggered by $remotenick)");
