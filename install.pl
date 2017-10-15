@@ -50,7 +50,7 @@ foreach my $mod (@depends) {
 	}
 }
 
-print "\nDone.  You're enviornment is now prepared for shadow.\n";
+print "\nDone.  Your environment is now prepared for shadow.\n";
 print "Make sure you edit etc/shadow.conf then run ./shadow\n";
 my $whome = `whoami`;
 chomp $whome;
