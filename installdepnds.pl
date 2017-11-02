@@ -12,6 +12,10 @@ use CPAN;
 my @dependsRaw;
 my @depends;
 
+# Core Dependencies
+push(@dependsRaw, "JSON");
+push(@dependsRaw, "Digest::SHA");
+
 sub sortArray {
 	my %seen;
 	grep !$seen{$_}++, @_;
@@ -50,7 +54,7 @@ foreach my $mod (@depends) {
 	}
 }
 
-print "\nDone.  Your environment is now prepared for shadow.\n";
+print "\nDone.  Your enviornment is now prepared for shadow.\n";
 print "Make sure you edit etc/shadow.conf then run ./shadow\n";
 my $whome = `whoami`;
 chomp $whome;

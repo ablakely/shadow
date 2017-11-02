@@ -22,6 +22,7 @@
 #  HTTP connection keep alive support
 #  Better db format?
 #  .last channel command for last 5 feeds
+#  Make not a memory hog.
 
 
 

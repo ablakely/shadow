@@ -1,0 +1,13 @@
+Checking for warnings...Excellent!
+Checking for JSON...Excellent!
+Checking for Time::Seconds...Excellent!
+Checking for Mojo::IOLoop...Excellent!
+Checking for Mojo::UserAgent...Excellent!
+Checking for XML::Feed...Excellent!
+Checking for POSIX...Excellent!
+Checking for Proc::ProcessTable...Excellent!
+Checking for LWP::UserAgent...Excellent!
+
+Done.  Your enviornment is now prepared for shadow.
+Make sure you edit etc/shadow.conf then run ./shadow
+Party on, aaron!

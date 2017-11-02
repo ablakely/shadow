@@ -16,6 +16,7 @@ use IO::Socket::INET;
 use Config;
 use Shadow::Admin;
 use Shadow::Help;
+use Shadow::Accounts;
 
 
 # Global Variables, Arrays, and Hashes
@@ -118,6 +119,7 @@ sub new {
 	$self->{cfg} = $cfg;
 	$self->{help}  = Shadow::Help->new(bless($self, $class));
 	$self->{admin} = Shadow::Admin->new(bless($self,$class));
+	$self->{accounts} = Shadow::Accounts->new(bless($self, $class));
 	$self->{starttime} = time();
 
 	$tickcount = 0;
@@ -1091,7 +1093,7 @@ sub check_admin {
   my @tmp = @{$cfg->{Shadow}->{Admin}->{bot}->{admins}};
 
   foreach my $t (@tmp) {
-    my ($u, $h) = split(/\!/, $t);
+    my ($u, $h) = split(/\!/, $t); # split user, host by the !
 
     if ($u eq $nick || $u eq "*") {
       my ($ar, $ahm) = split(/\@/, $host);
@@ -1112,6 +1114,24 @@ sub check_admin {
   }
 
   return 0;
+}
+
+sub check_admin {
+	my ($nick, $host) = @_;
+	my @tmp = @{$cfg->{Shadow}->{Admin}->{bot}->{admins}};
+	my ($checknick, $crest) = split(/\!/, $host);
+
+	foreach my $adminstr (@tmp) {
+		my ($adminnick, $rest) = split(/\!/, $adminstr);
+
+		if ($adminnick eq $nick || $adminnick eq "*") {
+			my ($adminname, $adminhost) = split(/\@/, $rest);
+
+			if ($adminname eq "*" && $adminhost ne "*") {
+				return 1 if $
+			}
+		}
+	}
 }
 
 sub color {
