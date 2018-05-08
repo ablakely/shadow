@@ -13,6 +13,9 @@
   * `/msg bot help` 
 
 ---
+## Installing
+To install on debian/ubuntu systems you will need to following pakages:
+`sudo apt-get install libxml-libxml-perl build-essential`
 
 ## Standard Modules
 * RSS.pm - RSS Feed Reader.
