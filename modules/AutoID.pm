@@ -65,8 +65,8 @@ sub genpw {
 
 sub autoid_connected {
   if (-e $pwfile) {
-    open(my $f, "<", $pwfile) or return $bot->err("AutoID Error: ".$!, 0);
-    $nspasswd = <$f>;
+    open(my $f, "<", $pwfile) or return $bot->err("AutoID Error: $!", 0);
+    my $nspasswd = <$f>;
     close($f) or $bot->err("AutoID Error: ".$!, 0);
 
     chomp $nspasswd;

@@ -3,3 +3,11 @@ shadow.log
 /etc/feeds.db
 /etc/autojoin.db
 /etc/shadow.conf
+.AppleDouble
+.DS_Store
+/doc/.AppleDobule
+/etc/.AppleDouble
+/lib/.AppleDouble
+/lib/Shadow/.AppleDouble
+/modules/.AppleDouble
+log

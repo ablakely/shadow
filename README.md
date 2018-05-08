@@ -6,8 +6,7 @@
   it's goal is to be a stable IRC bot with cool featues.
 
 ## How do I install shadow?
-  Just run install.pl, we'll do the rest!  (You will need
-  the perl JSON module off CPAN.)
+  Just run installdepends.pl, we'll do the rest! (Might need C libs or sudo depending on your system)
 
 ## Where can I get support for shadow?
   * Try irc.bbsn.ca #ephasic

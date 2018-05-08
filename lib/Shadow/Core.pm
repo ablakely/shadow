@@ -17,11 +17,12 @@ use Config;
 use Shadow::Admin;
 use Shadow::Help;
 
-
 # Global Variables, Arrays, and Hashes
 our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
+
+my $omode = 0;
 
 %options = (
 	'flood' => {
@@ -54,7 +55,7 @@ our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users)
 # Ignore "redined subroutine" warnings
 $SIG{__WARN__} = sub {
     my $warning = shift;
-    
+
     if ($warning !~ /Subroutine .* redefined at/) {
     	return;
     } elsif ($warning !~ /keys on reference is experimental/) {
@@ -118,6 +119,7 @@ sub new {
 	$self->{cfg} = $cfg;
 	$self->{help}  = Shadow::Help->new(bless($self, $class));
 	$self->{admin} = Shadow::Admin->new(bless($self,$class));
+
 	$self->{starttime} = time();
 
 	$tickcount = 0;
@@ -177,6 +179,9 @@ sub load_module {
 		require "modules/$module_name\.pm";
 
 		eval "$module_name->loader();";
+		if ($@) {
+			print "[Core/load_module/$module_name] eval error: $@\n";
+		}
 		$loaded_modules[++$#loaded_modules] = "Shadow::Mods::".$module_name;
 		handle_handler('module', 'load', $module_name);
 		return 1;
@@ -192,6 +197,9 @@ sub unload_module {
 	foreach my $loaded_mod (@loaded_modules) {
 		if ($loaded_mod eq "Shadow::Mods::".$module_name) {
 			eval "$module_name->unloader();";
+			if ($@) {
+				print "[Core/unload_module/$module_name] eval error: $@\n";
+			}
 
 			delete $INC{'modules/'.$module_name.'.pm'};
 
@@ -346,6 +354,9 @@ sub mainloop {
 				delete($_->{'time'});
 				my ($module, $sub) = ($_->{module}, $_->{'sub'});
 				eval("$module->$sub();");
+				if ($@) {
+					print "[Core/mainloop/timers/$module/$sub] eval error: $@\n";
+				}
 			}
 		}
 	}
@@ -395,6 +406,7 @@ sub irc_reconnect {
 sub irc_in {
 	my ($response, $fh) = @_;
 	$ircping = time;
+	handle_handler("raw", "in", $response);
 
 	if ($response =~ /^PING (.*)$/) {
 		irc_raw(0, "PONG $1");
@@ -435,6 +447,10 @@ sub irc_in {
 		  # nickname is in use event
 		  irc_nicktaken($bits[3]);
 		}
+		elsif ($bits[1] eq "381") {
+			# oper event
+			irc_becameOper();
+		}
 		elsif ($bits[1] eq "353") {
 		  # names event
 		  irc_users($bits[4], split(/ /, $text));
@@ -451,13 +467,13 @@ sub irc_in {
 		}
 		elsif ($bits[1] eq "JOIN") {
 		  # join event
-		  
+
 		  if (!$text) {
 		    # support for charybdis 3.5.2
-		    
+
 		    ($command, $text) = split(/ /, $command);
 		  }
-		  
+
 		  irc_join($text, $remotenick, $bits[0]);
 		}
 		elsif ($bits[1] eq "PART") {
@@ -474,7 +490,7 @@ sub irc_in {
 		}
 		elsif ($bits[1] eq "NICK") {
 		  # nick change event
-		  
+
 		  # support for charybdis 3.5.2
 		  if (!$bits[2]) {
 		      irc_nick($remotenick, $text, $bits[0]);
@@ -554,10 +570,36 @@ sub irc_scaninfo {
 	}
 }
 
+sub irc_becameOper {
+	my $self = shift;
+	print "Oper credentials accepted\n";
+	$omode = 1;
+	handle_handler('event', 'oper', 1);
+}
+
+sub isOperMode {
+	my $self = shift;
+	if ($options{cfg}->{Shadow}->{IRC}->{bot}->{oper}) {
+		return 1;
+	}
+
+	return undef;
+}
+
+sub isOper {
+	my $self = shift;
+	return $omode;
+}
+
 sub irc_connected {
 	$nick = shift;
 	mode($nick, "+iB");
 	handle_handler('event', 'connected', $nick);
+
+	if ($options{cfg}->{Shadow}->{IRC}->{bot}->{oper}) {
+		my @o = @{$options{cfg}->{Shadow}->{IRC}->{bot}->{oper}};
+		irc_raw(1, "OPER ". $o[0] ." :".$o[1]);
+	}
 }
 
 sub irc_nicktaken {
@@ -1421,6 +1463,9 @@ sub handle_handler {
 	for (@{$handlers{$handler}{$subhandler}}) {
 		my ($module, $sub) = ($_->{module}, $_->{sub});
 		eval("${module}::$sub(\@messages);");
+		if ($@) {
+			print "[Core/handle_handler] eval sytanx error: $@\n";
+		}
 	}
 	return 1;
 }

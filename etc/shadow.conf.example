@@ -5,16 +5,20 @@
 @Shadow
 
 [IRC]
-bot.host	   = [irc-nb.bbsn.ca:6667]
-bot.nick	   = "Shadow"
-bot.name	   = "shadow"
+bot.host       = [irc-nb.bbsn.ca:6667]
+bot.nick       = "Shadow"
+bot.name       = "shadow"
 bot.channels   = [#chan1,#chan2,#etc]
 
+
 # bot.cmdchan - Bot logging/control channel
-bot.cmdchan  = "#botcmd"
+bot.cmdchan = "#botcmd"
+
+# Oper mode (used with modules like Oper, ChanServ)
+# bot.oper = [oper name,oper pass]
 
 [Bot]
-system.daemonize	= no
+system.daemonize    = no
 system.modules      = [ChanOP,AutoID]
 
 [Admin]
