@@ -2,6 +2,7 @@ package Shadow::Admin;
 
 use strict;
 use warnings;
+use Data::Dumper;
 
 our $bot;
 our %options;
@@ -15,12 +16,23 @@ sub new {
 
   $self->{bot}->add_handler('chancmd eval',  'ircadmin_eval');
   $self->{bot}->add_handler('chancmd dump',  'ircadmin_dump');
+  $self->{bot}->add_handler('chancmd cat',   'ircadmin_cat');
+  $self->{bot}->add_handler('privcmd cat',   'ircadmin_cat');
   $self->{bot}->add_handler('privcmd eval',  'ircadmin_eval');
   $self->{bot}->add_handler('privcmd join',  'ircadmin_join');
   $self->{bot}->add_handler('privcmd part',  'ircadmin_part');
   $self->{bot}->add_handler('privcmd modlist', 'ircadmin_modlist');
   $self->{bot}->add_handler('privcmd loadmod', 'ircadmin_loadmod');
   $self->{bot}->add_handler('privcmd rmmod', 'ircadmin_rmmod');
+
+  $self->{bot}->{help}->add_help('cat', 'Admin', '<file path>', 'Dump a file [F]', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02CAT\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02cat\x02 is a command that reads a file and returns its contents, like the shell command.");
+    $bot->say($nick, "\x02SYNTAX\x02: .cat <file> or /msg $Shadow::Core::nick cat <file>");
+  });
 
   $self->{bot}->{help}->add_help('modlist', 'Admin', '', 'See all modules currently loaded.', 1, sub {
     my ($nick, $host, $text) = @_;
@@ -30,7 +42,7 @@ sub new {
     $bot->say($nick, "\x02modlist\x02 is a command that lists all the modules currently loaded into Shadow.");
     $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick modlist");
   });
-  
+
   $self->{bot}->{help}->add_help('loadmod', 'Admin', '<module>', 'Load a module.', 1, sub {
     my ($nick, $host, $text) = @_;
 
@@ -47,7 +59,7 @@ sub new {
     $bot->say($nick, " ");
     $bot->say($nick, "\x02rmmod\x02 is a command for dynamically unloading shadow modules.");
   });
-  
+
   $self->{bot}->{help}->add_help('eval', 'Admin', '<text>', 'Evaluates perl code. [F]', 1, sub {
     my ($nick, $host, $text) = @_;
 
@@ -61,7 +73,7 @@ sub new {
     $bot->say($nick, " ");
     $bot->say($nick, "\x02SYNTAX\x02: .eval <perl code> or /msg $Shadow::Core::nick eval <perl code>");
   });
-  
+
   $self->{bot}->{help}->add_help('dump', 'Admin', '<var>', 'Dumps a structure and notices it to you. [F]', 1, sub {
     my ($nick, $host, $text) = @_;
 
@@ -71,7 +83,7 @@ sub new {
     $bot->say($nick, "This is helpful when debugging your custom modules.");
     $bot->say($nick, "\x02SYNTAX\x02: .dump <var|array|hash>");
   });
-  
+
   $self->{bot}->{help}->add_help('join', 'Admin', '<channel>', 'Force bot to join a channel.', 1, sub {
     my ($nick, $host, $text) = @_;
 
@@ -80,7 +92,7 @@ sub new {
     $bot->say($nick, "Forces the bot to join a channel.");
     $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick join #chan");
   });
-  
+
   $self->{bot}->{help}->add_help('part', 'Admin', '<channel>', 'Force bot to part a channel.', 1, sub {
     my ($nick, $host, $text) = @_;
 
@@ -161,6 +173,32 @@ sub ircadmin_part {
   }
 }
 
+sub ircadmin_cat {
+  my ($nick, $host, $chan, $text) = @_;
+  if (!$text) {
+    $text = $chan;
+  }
+
+  if ($bot->isbotadmin($nick, $host)) {
+    open(my $fh, "<", $text) or $bot->notice($nick, $!);
+    my @con = <$fh>;
+    close $fh;
+
+    my $lc = 0;
+    foreach my $line (@con) {
+      if ($chan !~ /^\#/) {
+        $bot->notice($nick, "$text:$lc: $line");
+      } else {
+        $bot->say($chan, "$text:$lc: $line");
+      }
+
+      $lc++;
+    }
+  } else {
+    $bot->notice($nick, "Unauthorized.")
+  }
+}
+
 sub ircadmin_eval {
 	my ($nick, $host, $chan, $text) = @_;
   if (!$text) {
@@ -169,26 +207,33 @@ sub ircadmin_eval {
 
 	if ($bot->isbotadmin($nick, $host)) {
 		eval $text;
-		$bot->notice($nick, $@) if $@;
+    if ($@) {
+      $bot->notice($nick, "Eval error: $@");
+    }
 	} else {
 		$bot->notice($nick, "Unauthorized.")
 	}
 }
 
-
 sub ircadmin_dump {
-	my ($nick, $host, $chan, $text) = @_;
+  my ($nick, $host, $chan, $text) = @_;
+  $text = $chan if !$text;
 
-	if ($bot->isbotadmin($nick, $host)) {
-		my @output;
-		eval "\@output = Dumper($text);";
+  if ($bot->isbotadmin($nick, $host)) {
+    my @output;
+    eval "\@output = Dumper(".$text.")";
+    $bot->notice($nick, "dump error: $@") if $@;
 
-		foreach my $line (@output) {
-			$bot->notice($nick, $line);
-		}
-	} else {
-		$bot->notice($nick, "Unauthorized.");
-	}
+    foreach my $line(@output) {
+      if ($chan !~ /^\#/) {
+        $bot->notice($nick, $line);
+      } else {
+        $bot->say($chan, $text);
+      }
+    }
+  } else {
+    $bot->notice($nick, "Unauthorized.");
+  }
 }
 
 1;

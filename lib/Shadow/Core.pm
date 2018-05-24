@@ -74,7 +74,11 @@ sub new {
 	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
 	$options{cfg}   = $cfg;
-    my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
+  my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
+
+	if (my $cmdprefix = $cfg->{Shadow}->{IRC}->{bot}->{cmdprefix}) {
+		$options{irc}{cmdprefix} = $cmdprefix;
+	}
 
 	$debug = $verbose;
 
@@ -512,6 +516,17 @@ sub irc_in {
 		}
 		elsif ($bits[1] eq "302") {
 			irc_userhost($text);
+			handle_handler('raw', 'userhost', $bits[2], $text);
+		}
+		elsif ($bits[1] eq "366") {
+			# end of /NAMES event
+			if (!$text) {
+		    # support for charybdis 3.5.2
+
+		    ($command, $text) = split(/ /, $command);
+		  }
+
+		  handle_handler('event', 'namesend', $bits[3]);
 		}
 		elsif ($bits[1] eq "332") {
 		  # topic event
@@ -1071,6 +1086,23 @@ sub listusers {
 	return keys %tmp;
 }
 
+ sub listusers_async {
+	 my ($self, $channel, $cb) = @_;
+
+	 my %tmp;
+	 $tmp{$_} = 1 for (keys(%{$sc{lc($channel)}{users}}));
+	 delete($tmp{$nick});
+	 delete($tmp{lc($nick)});
+
+	 &{$cb}($channel, keys %tmp);
+ }
+
+sub gethost {
+	my ($self, $chan, $nick) = @_;
+
+	return $sc{lc($chan)}{users}{$nick}{host};
+}
+
 sub flood {
 	my $self = shift;
 	return flood_check(@_);
@@ -1478,6 +1510,7 @@ sub del_handler {
 		for (@{$handlers{$event[0]}{$event[1]}}) {
 			if ($_->{sub} eq $sub) {
 				splice(@{$handlers{$event[0]}{$event[1]}}, $count, 1);
+				delete($handlers{$event[0]}{$event[1]});
 			} else {
 				$count++;
 			}

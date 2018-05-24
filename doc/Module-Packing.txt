@@ -1,16 +1,17 @@
 shadow: module packaging
 Written by Dark_Aaron on Aug 31, 2012
+As of May 22, 2018 this procedure is deprecated until further notice
 
-shadow is an IRC bot platform, we want people to share and contribute modules.  To make 
-the experience of installing a module more pleasent, we have decided the correct way of
+shadow is an IRC bot platform, we want people to share and contribute modules.  To make
+the experience of installing a module more pleasant, we have decided the correct way of
 doing such is to automate the process as much as possible.
 
 To do this, we need to first set a standard on how modules are packaged and distributed.
-Those methods and tips are explained throught this document.
+Those methods and tips are explained throughout this document.
 
 1.) The Module Sources
 
-   For sanity reasons, we must try and maintian a constant as to how we layout the code
+   For sanity reasons, we must try and maintain a constant as to how we layout the code
    for our modules.  This in the long run will make things a lot easier for both
    developers and users.  I will demonstrate the layout of a common module, named Uptime
    here:
@@ -64,4 +65,3 @@ Those methods and tips are explained throught this document.
     }
 
     For the list of values to use in module.compatibility see doc/perlos.txt
-

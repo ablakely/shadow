@@ -17,6 +17,9 @@ bot.cmdchan = "#botcmd"
 # Oper mode (used with modules like Oper, ChanServ)
 # bot.oper = [oper name,oper pass]
 
+# bot.cmdprefix - Defines which character is used to active channel commands
+bot.cmdprefix = "."
+
 [Bot]
 system.daemonize    = no
 system.modules      = [ChanOP,AutoID]
