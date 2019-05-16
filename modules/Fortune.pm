@@ -7,7 +7,7 @@ my $bot  = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
-	if (!-e "/usr/games/fortune") {
+	if (!-e "/usr/games/fortune" && !-e "/usr/bin/fortune") {
 		$bot->log("[Fortune] Couldn't find the fortune executable.  Refusing to load.");
 
 		return -1;

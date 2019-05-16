@@ -399,8 +399,8 @@ sub irc_reconnect {
 	until ($irc) {
 		for (keys %server) {
 			return if $irc = irc_connect($_.":".$server{$_}{port});
-
 		}
+
 		sleep 20 if !$irc;
 	}
 }
@@ -415,7 +415,8 @@ sub irc_in {
 	if ($response =~ /^PING (.*)$/) {
 		irc_raw(0, "PONG $1");
 	}
-	elsif ($response =~ /^NOTICE/) {
+	elsif ($response =~ /^NOTICE (.*)$/) {
+		handle_handler('raw', 'noticeUP', $1);  		
 	}
 	elsif ($response =~ /^ERROR/) {
 		$ircping = time - 100;
@@ -452,8 +453,8 @@ sub irc_in {
 		  irc_nicktaken($bits[3]);
 		}
 		elsif ($bits[1] eq "381") {
-			# oper event
-			irc_becameOper();
+		  # oper event
+		  irc_becameOper();
 		}
 		elsif ($bits[1] eq "353") {
 		  # names event
