@@ -70,11 +70,11 @@ $SIG{__WARN__} = sub {
 sub new {
 	my $class				= shift;
 	my $self				= {};
-	my ($conffile, $verbose)  = @_;
+	my ($conffile, $verbose, $nofork)  = @_;
 	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
 	$options{cfg}   = $cfg;
-  my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
+        my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
 
 	if (my $cmdprefix = $cfg->{Shadow}->{IRC}->{bot}->{cmdprefix}) {
 		$options{irc}{cmdprefix} = $cmdprefix;
@@ -107,17 +107,17 @@ sub new {
 		$loaded_modules[++$#loaded_modules] 	= $modname;
 	}
 
-	if (!$verbose) {
-		open (STDOUT, ">./shadow.log") or die $!;
-		open (STDERR, ">./shadow.log") or die $!;
-	}
-
-	if ($cfg->{Shadow}->{Bot}->{system}->{daemonize} eq "yes") {
+	if (!$nofork) {
 		exit if (fork());
 		exit if (fork());
 		sleep 1 until getppid() == 1;
 
-		print $cfg->{Shadow}->{IRC}->{bot}->{nick}."[$$]: Forked to background.\n";
+		$verbose = 0;
+	}
+
+	if (!$verbose) {
+		open (STDOUT, ">./shadow.log") or die $!;
+		open (STDERR, ">./shadow.log") or die $!;
 	}
 
 	$self->{cfg} = $cfg;
