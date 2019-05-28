@@ -9,13 +9,13 @@
   Just run installdepends.pl, we'll do the rest! (Might need C libs or sudo depending on your system)
 
 ## Where can I get support for shadow?
-  * Try irc.bbsn.ca #ephasic
+  * Try irc.alphachat.net #ephasic
   * `/msg bot help` 
 
 ---
 ## Installing
 To install on debian/ubuntu systems you will need to following pakages:
-`sudo apt-get install libxml-libxml-perl build-essential`
+`sudo apt-get install libjson-perl libxml-libxml-perl build-essential`
 
 ## Standard Modules
 * RSS.pm - RSS Feed Reader.
