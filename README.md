@@ -17,6 +17,11 @@
 To install on debian/ubuntu systems you will need to following pakages:
 `sudo apt-get install libjson-perl libxml-libxml-perl build-essential`
 
+# OS X
+I've only tested on OS X 10.4 Tiger on my iMac G4.  To require the dependencies
+for the RSS module you will need to install brew and run:
+`brew install libxml2`
+
 ## Standard Modules
 * RSS.pm - RSS Feed Reader.
 * AutoID.pm - Automatically authenticate with network services.
