@@ -8,6 +8,24 @@ package MacSysinfo;
 my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
+sub loader {
+  if ($^O !~ /darwin/) {
+    print "Error: This module is intended to run on macOS!  Refusing to load.\n";
+    return;
+  }
+
+  $bot->add_handler('chancmd sysinfo', 'sysinfo_cmd');
+  $help->add_help('sysinfo', 'Channel', '', 'System Specifications brag script. [F]', 0, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02SYSINFO\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "Prints system information into the channel.");
+    $bot->say($nick, "\x02SYNTAX\x02: .sysinfo");
+  });
+}
+
+
 sub getMacInfo {
   my @hardinfo = `system_profiler SPHardwareDataType SPSoftwareDataType`;
 
@@ -59,18 +77,6 @@ sub getMacInfo {
   $ret{hardware} .= " RAM: ".$ret{memory};
 
   return \%ret;
-}
-
-sub loader {
-  $bot->add_handler('chancmd sysinfo', 'sysinfo_cmd');
-  $help->add_help('sysinfo', 'Channel', '', 'System Specifications brag script. [F]', 0, sub {
-    my ($nick, $host, $text) = @_;
-
-    $bot->say($nick, "Help for \x02SYSINFO\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "Prints system information into the channel.");
-    $bot->say($nick, "\x02SYNTAX\x02: .sysinfo");
-  });
 }
 
 sub sysinfo_cmd {
