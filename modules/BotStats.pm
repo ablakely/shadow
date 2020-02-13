@@ -10,7 +10,10 @@ package BotStats;
 
 use POSIX;
 use Time::Seconds;
-use Proc::ProcessTable;
+
+if ($^O =~ /linux/) {
+  use Proc::ProcessTable;
+}
 
 my $LOADTIME = time();
 my $bot      = Shadow::Core;
@@ -20,7 +23,6 @@ sub loader {
   if ($^O !~ /linux/) {
     print "Error: BotStats module is deisgned for linux systems.\n";
     print "       Some functions might not work as intended on other platforms.\n";
-    return;
   }
 
   $bot->add_handler('privcmd status', 'BotStats_dostatus');

@@ -30,6 +30,7 @@ while (my $file = readdir(MODS)) {
 		while (my $line = <MODFILE>) {
 			if ($line =~ /use (.*);/) {
 				my ($pkg, $arg) = split(/ /, $1);
+				print " -- Found $pkg in $file, adding to install list.\n";
 				push(@dependsRaw, $pkg) if $pkg ne "open";
 			}
 
