@@ -6,8 +6,19 @@ package Fortune;
 my $bot  = Shadow::Core;
 my $help = Shadow::Help;
 
+sub whereisFortune {
+	my @paths = ('/usr/games/fortune', '/usr/bin/fortune', '/usr/local/Cellar/fortune/9708/bin/fortune');
+
+	foreach my $t (@paths) {
+		if (-e $t) { return $t; }
+	}
+
+	return undef;
+
+}
+
 sub loader {
-	if (!-e "/usr/games/fortune" && !-e "/usr/bin/fortune") {
+	if (!whereisFortune()) {
 		$bot->log("[Fortune] Couldn't find the fortune executable.  Refusing to load.");
 
 		return -1;
@@ -27,8 +38,9 @@ sub loader {
 
 sub doFortune {
 	my ($nick, $host, $chan, $text) = @_;
-
-	my @fortune = `fortune`;
+	
+	my $bin = whereisFortune();
+	my @fortune = `$bin -s`;
 
 	$bot->say($chan, "Here's your fortune $nick:");
 	foreach my $line (@fortune) {
