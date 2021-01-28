@@ -14,6 +14,7 @@ sub loader {
   $bot->add_handler('privcmd nsregister', 'autoid_register');
   $bot->add_handler('privcmd nspasswd', 'autoid_passwd');
   $bot->add_handler('event nicktaken', 'autoid_ghost');
+  $bot->add_handler('privcmd nsverify', 'autoid_verify');
 
   $help->add_help('nsregister', 'AutoID', '<nickserv> <email> <password>', 'Register bot with NickServ.', 1, sub {
     my ($nick, $host, $text) = @_;
@@ -31,6 +32,15 @@ sub loader {
     $bot->say($nick, " ");
     $bot->say($nick, "nspasswd will return the current password used for identifying with nickserv.");
     $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nspasswd");
+  });
+
+  $help->add_help('nsverify', 'AutoID', '<nickserv> <verication code>', 'For networks that use 2FA email varification.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02NSVERIFY\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "nsverify is used for networks like Freenode which require its users to verify their email.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nsverify <nickserv> <verification code>");
   });
 }
 
@@ -125,14 +135,26 @@ sub autoid_ghost {
   $bot->nick($taken);
 }
 
+sub autoid_verify {
+  my ($nick, $host, $text) = @_;
+
+  if ($bot->isbotadmin($nick, $host)) {
+    my ($ns, $str) = split(/ /, $text);
+
+    $bot->say($ns, "VERIFY REGISTER $Shadow::Core::nick $str");
+  }
+}
+
 sub unloader {
   $bot->del_handler('event connected', 'autoid_connected');
   $bot->del_handler('privcmd nsregister', 'autoid_register');
   $bot->del_handler('privcmd nspasswd', 'autoid_passwd');
   $bot->del_handler('event nicktaken', 'autoid_ghost');
+  $bot->del_handler('privcmd nsverify', 'autoid_verify');
 
   $bot->del_help('nsregister', 'AutoID');
   $bot->del_help('nspasswd', 'AutoID');
+  $bot->del_help('nsverify', 'AutoID');
 }
 
 1;

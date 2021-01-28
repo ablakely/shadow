@@ -416,7 +416,7 @@ sub irc_in {
 		irc_raw(0, "PONG $1");
 	}
 	elsif ($response =~ /^NOTICE (.*)$/) {
-		handle_handler('raw', 'noticeUP', $1);  		
+		handle_handler('raw', 'noticeUP', $1);
 	}
 	elsif ($response =~ /^ERROR/) {
 		$ircping = time - 100;
@@ -463,7 +463,7 @@ sub irc_in {
 		elsif ($bits[1] eq "MODE") {
 		  # mode event
 		  my $mode = join(" ", @bits[2 .. scalar(@bits) - 1]) if defined $bits[2];
-		  $mode .= $text if defined $text;
+		  $mode .= " $text" if defined $text;
 		  irc_mode($mode, $remotenick, $bits[0]);
 		}
 		elsif ($bits[1] eq "PRIVMSG") {
@@ -777,16 +777,19 @@ sub irc_mode {
 	return if !defined $mode[0];
 
 	my $channel		= $mode[0];
+
+	shift @mode;
 	my ($action)		= substr($mode[0], 0, 1);
 
 	handle_handler('event', 'mode', $remotenick, $hostmask, $channel, $action, @mode);
 
-	my $count	= 1;
+	my $count	= 0;
 	my $i		= 0;
-	my $l		= length($mode[1]) - 1;
+	my $l		= length($mode[0]);
 
 	while ($i <= $l) {
-		my $bit = substr($mode[1], $i, 1);
+		my $bit = substr($mode[0], $i, 1);
+
 
 		if ($bit eq "+" || $bit eq "-") {
 		  $action = $bit;
