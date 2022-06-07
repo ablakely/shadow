@@ -46,7 +46,7 @@ sub doNeoFetch {
 
     for (my $i = 0; $i < $#neofetch; ) {
         if ($i == 0) {
-            if ($^O !~ /msys/) {
+            if ($^O !~ /msys/ || $^O !~ /MSWin32/) {
                 $neofetch[$i] =~ s/^(.*)\@//g;
 		        $neofetch[$i] = $bot->bold().$osColor."Hostname\003".$bot->bold().": ".$neofetch[$i];
             } else {
