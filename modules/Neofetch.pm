@@ -12,7 +12,15 @@ sub doNeoFetch {
     my ($nick, $host, $chan, $text) = @_;
     my $osColor = $bot->color('white');
 
-    my @neofetch = `neofetch --off --title_fqdn on --cpu_temp F --distro_shorthand tiny --color_blocks off --memory_percent on --underline off|sed 's/\x1B\[[0-9;\?]*[a-zA-Z]//g'`;
+    my $neofetchBin = "neofetch";
+
+    if ($^O =~ /msys/ || $^O =~ /MSWin32/) {
+        $neofetchBin = "$ENV{USERPROFILE}/scoop/shims/neofetch";
+    }
+
+    print "bin: $neofetchBin\n";
+
+    my @neofetch = `$neofetchBin --off --title_fqdn on --cpu_temp F --distro_shorthand tiny --color_blocks off --memory_percent on --underline off|sed 's/\x1B\[[0-9;\?]*[a-zA-Z]//g'`;
 
     for (my $i = 0; $i < $#neofetch; $i++) {
         chomp $neofetch[$i];
