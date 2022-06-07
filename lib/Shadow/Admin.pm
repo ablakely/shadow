@@ -24,6 +24,7 @@ sub new {
   $self->{bot}->add_handler('privcmd modlist', 'ircadmin_modlist');
   $self->{bot}->add_handler('privcmd loadmod', 'ircadmin_loadmod');
   $self->{bot}->add_handler('privcmd rmmod', 'ircadmin_rmmod');
+  $self->{bot}->add_handler('privcmd reload', 'ircadmin_reload');
 
   $self->{bot}->{help}->add_help('cat', 'Admin', '<file path>', 'Dump a file [F]', 1, sub {
     my ($nick, $host, $text) = @_;
@@ -58,6 +59,16 @@ sub new {
     $bot->say($nick, "Help for \x02RMMOD\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02rmmod\x02 is a command for dynamically unloading shadow modules.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rmmod <module>");
+  });
+
+  $self->{bot}->{help}->add_help('reload', 'Admin', '<module>', 'Reloads a module.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02RELOAD\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02reload\x02 is a command for dynamically reloading shadow modules.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick reload <module>");
   });
 
   $self->{bot}->{help}->add_help('eval', 'Admin', '<text>', 'Evaluates perl code. [F]', 1, sub {
@@ -109,20 +120,49 @@ sub new {
 sub ircadmin_loadmod {
   my ($nick, $host, $text) = @_;
 
+  if ($text eq "") {
+    return $bot->notice($nick, "Command Usage: loadmod <module>")
+  }
+
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Loading module: $text");
     $bot->log("Loading module: $text [Issued by $nick]");
     $bot->load_module($text);
+  } else {
+    $bot->notice($nick, "Unauthorized.");
   }
 }
 
 sub ircadmin_rmmod {
   my ($nick, $host, $text) = @_;
 
+  if ($text eq "") {
+    return $bot->notice($nick, "Command Usage: rmmod <module>");
+  }
+
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Unloading module: $text");
     $bot->log("Unloading module: $text [Issued by $nick]");
     $bot->unload_module($text);
+  } else {
+    $bot->notice($nick, "Unauthorized.");
+  }
+}
+
+sub ircadmin_reload {
+  my ($nick, $host, $text) = @_;
+
+  if ($text eq "") {
+    return $bot->notice($nick, "Command Usage: reload <module>");
+  }
+
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->notice($nick, "Reloading module: $text");
+    $bot->log("Reloading module: $text [Issued by $nick]");
+    $bot->unload_module($text);
+    $bot->load_module($text);
+  } else {
+    $bot->notice($nick, "Unauthorized.");
   }
 }
 

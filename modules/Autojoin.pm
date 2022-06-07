@@ -63,7 +63,7 @@ sub Autojoin_writedb {
 sub Autojoin_connected {
     my $db = Autojoin_readdb();
 
-    foreach my $chan (keys $db) {
+    foreach my $chan (keys %{$db}) {
       $bot->join($chan);
     }
 }
@@ -94,7 +94,7 @@ sub autojoin {
     } elsif ($cmd eq "list") {
       my $clist = "";
 
-      foreach my $chan (keys $db) {
+      foreach my $chan (keys %{$db}) {
         $clist .= $chan.", ";
       }
 

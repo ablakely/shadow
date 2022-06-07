@@ -155,7 +155,7 @@ sub rss_irc_interface {
       $db = rss_dbread();
       my $feeds = "";
 
-      foreach my $feed (keys $db->{$arg1}) {
+      foreach my $feed (keys %{$db->{$arg1}}) {
         $feeds .= $feed.", ";
       }
 
@@ -252,8 +252,8 @@ sub rss_agrigator {
 sub rss_refresh {
   my $db = rss_dbread();
 
-  foreach my $chan (keys $db) {
-    foreach my $title (keys $db->{$chan}) {
+  foreach my $chan (keys %{$db}) {
+    foreach my $title (keys %{$db->{$chan}}) {
       my $synctime = $db->{$chan}->{$title}->{lastSync} + $db->{$chan}->{$title}->{syncInterval};
 
       if (time() >= $synctime) {
@@ -262,20 +262,35 @@ sub rss_refresh {
         rss_dbwrite($db);
 
         if (!$feedcache{$db->{$chan}->{$title}->{url}}) {
-          $ua->get($db->{$chan}->{$title}->{url} => json => {a => 'b'} => sub {
-            my ($ua, $tx) = @_;
+          #$ua->get($db->{$chan}->{$title}->{url} => json => {a => 'b'} => sub {
+          #  my ($ua, $tx) = @_;
 
-            if (my $err = $tx->error) {
+          #  if (my $err = $tx->error) {
+          #    return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
+          #  }
+
+          #  my $body = \scalar($tx->res->body);
+          #  my $parsedfeed;
+
+
+          #  $feedcache{$db->{$chan}->{$title}->{url}} = $body;
+          #  rss_agrigator($body, $title, $chan);
+          #});
+
+          my $rss_feed = $ua->get_p($db->{$chan}->{$title}->{url});
+
+          Mojo::Promise->all($rss_feed)->then(sub($rss) {
+            if (my $err = $rss->error) {
               return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
             }
 
-            my $body = \scalar($tx->res->body);
+            my $body = \scalar($rss->[0]->result->body);
             my $parsedfeed;
 
-
-            $feedcache{$db->{$chan}->{$title}->{url}} = $body;
+            $feedcache->{$db->{$chan}->{$title}->{url}} = $body;
             rss_agrigator($body, $title, $chan);
-          });
+          })->wait;
+
         } else {
           rss_agrigator($feedcache{$db->{$chan}->{$title}->{url}}, $title, $chan);
         }
