@@ -52,15 +52,16 @@ sub memusage {
     };
     
   } elsif ($^O eq "msys") {
+    print "win32\n";
     my $objWMI = Win32::OLE->GetObject('winmgmts:\\\\.\\root\\cimv2');
     my $processes = $objWMI->ExecQuery("select * from Win32_Process where ProcessId=$$");
 
     foreach my $proc (in($processes)) {
         return $proc->{WorkingSetSize};
     }
+  } else {
+    return 0;
   }
-  
-  return 0;
 }
 
 sub BotStats_dostatus {
