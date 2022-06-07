@@ -13,6 +13,8 @@ use Time::Seconds;
 
 if ($^O =~ /linux/) {
   use Proc::ProcessTable;
+} elsif ($^O =~ /msys/) {
+  use Win32::OLE;
 }
 
 my $LOADTIME = time();
@@ -20,8 +22,8 @@ my $bot      = Shadow::Core;
 my $help     = Shadow::Help;
 
 sub loader {
-  if ($^O !~ /linux/) {
-    print "Error: BotStats module is deisgned for linux systems.\n";
+  if ($^O !~ /linux/ || $^O !~ /msys/) {
+    print "Error: BotStats module is deisgned for linux or windows systems.\n";
     print "       Some functions might not work as intended on other platforms.\n";
   }
 
@@ -37,16 +39,28 @@ sub loader {
 }
 
 sub memusage {
+  if ($^O eq "linux") {
     my $pid = (defined($_[0])) ? $_[0] : $$;
     my $proc = Proc::ProcessTable->new;
     my %fields = map { $_ => 1 } $proc->fields;
     return undef unless exists $fields{'pid'};
+    
     foreach (@{$proc->table}) {
-        if ($_->pid eq $pid) {
-            return $_->size if exists $fields{'size'};
-        };
+      if ($_->pid eq $pid) {
+        return $_->size if exists $fields{'size'};
+      };
     };
-    return 0;
+    
+  } elsif ($^O eq "msys") {
+    my $objWMI = Win32::OLE->GetObject('winmgmts:\\\\.\\root\\cimv2');
+    my $processes = $objWMI->ExecQuery("select * from Win32_Process where ProcessId=$$");
+
+    foreach my $proc (in($processes)) {
+        return $proc->{WorkingSetSize};
+    }
+  }
+  
+  return 0;
 }
 
 sub BotStats_dostatus {

@@ -38,8 +38,12 @@ sub doNeoFetch {
 
     for (my $i = 0; $i < $#neofetch; ) {
         if ($i == 0) {
-            $neofetch[$i] =~ s/^(.*)\@//g;
-		    $neofetch[$i] = $bot->bold().$osColor."Hostname\003".$bot->bold().": ".$neofetch[$i];
+            if ($^O !~ /msys/) {
+                $neofetch[$i] =~ s/^(.*)\@//g;
+		        $neofetch[$i] = $bot->bold().$osColor."Hostname\003".$bot->bold().": ".$neofetch[$i];
+            } else {
+                splice(@neofetch, 0, 1);
+            }
         }
 
         $bot->say($chan, "$neofetch[$i] $neofetch[$i+1] $neofetch[$i+2] $neofetch[$i+3] $neofetch[$i+4]");
