@@ -23,11 +23,17 @@ sub loader {
 
 sub uptime_cmd {
 	my ($nick, $host, $chan, $text) = @_;
+	my $uptime;
 
-	my $uptime = `uptime`;
+	if ($^O =~ /msys/ || $^O =~ /MSWin32/) {
+		$uptime = `sh neofetch uptime`;
+	} else {
+		$uptime = "uptime: ".`uptime`;
+	}
+
 	chomp $uptime;
 
-	$bot->say($chan, "Uptime: ".$uptime);
+	$bot->say($chan, $uptime);
 }
 
 sub unloader {

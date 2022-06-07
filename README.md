@@ -34,7 +34,7 @@ To install on Windows, use [Strawberry Perl](https://strawberryperl.com) and [Gi
 * RSS.pm - RSS Feed Reader.
 * AutoID.pm - Automatically authenticate with network services.
 * ChanOP.pm - Basic channel management commands.
-* Uptime.pm - [*nix/Mac] Basic module which gives *nix uptime info
+* Uptime.pm - Basic module which gives *nix uptime info (requires neofetch for Windows).
 * Autojoin.pm - Automatically join channels on connect.
 * URLIdentifier.pm - Automatically fetches the title of a URL.
 * BotStats.pm - [Linux/Windows] Returns information about the bot, like memory usage.
