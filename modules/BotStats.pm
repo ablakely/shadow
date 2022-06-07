@@ -39,7 +39,7 @@ sub loader {
 }
 
 sub memusage {
-  if ($^O eq "linux") {
+  if ($^O =~ /linux/) {
     my $pid = (defined($_[0])) ? $_[0] : $$;
     my $proc = Proc::ProcessTable->new;
     my %fields = map { $_ => 1 } $proc->fields;
@@ -51,7 +51,7 @@ sub memusage {
       };
     };
     
-  } elsif ($^O eq "msys") {
+  } elsif ($^O =~ /msys/) {
     print "win32\n";
     my $objWMI = Win32::OLE->GetObject('winmgmts:\\\\.\\root\\cimv2');
     my $processes = $objWMI->ExecQuery("select * from Win32_Process where ProcessId=$$");
