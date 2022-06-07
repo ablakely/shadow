@@ -11,10 +11,10 @@ package BotStats;
 use POSIX;
 use Time::Seconds;
 
-if ($^O =~ /linux/) {
-  use Proc::ProcessTable;
-} elsif ($^O =~ /msys/) {
-  use Win32::OLE;
+if ($^O eq "linux") {
+  require Proc::ProcessTable;
+} elsif ($^O eq "msys") {
+  require Win32::OLE;
 }
 
 my $LOADTIME = time();
