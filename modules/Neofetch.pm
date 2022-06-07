@@ -18,8 +18,6 @@ sub doNeoFetch {
         $neofetchBin = "sh neofetch --shell_version off";
     }
 
-    print "bin: $neofetchBin\n";
-
     my @neofetch = `$neofetchBin --off --title_fqdn on --cpu_temp F --distro_shorthand tiny --color_blocks off --memory_percent on --underline off|sed 's/\x1B\[[0-9;\?]*[a-zA-Z]//g'`;
 
     for (my $i = 0; $i < $#neofetch; $i++) {
@@ -46,7 +44,7 @@ sub doNeoFetch {
 
     for (my $i = 0; $i < $#neofetch; ) {
         if ($i == 0) {
-            if ($^O !~ /msys/ || $^O !~ /MSWin32/) {
+            if ($^O !~ /msys/ && $^O !~ /MSWin32/) {
                 $neofetch[$i] =~ s/^(.*)\@//g;
 		        $neofetch[$i] = $bot->bold().$osColor."Hostname\003".$bot->bold().": ".$neofetch[$i];
             } else {
