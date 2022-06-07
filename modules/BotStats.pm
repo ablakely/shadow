@@ -22,7 +22,7 @@ my $bot      = Shadow::Core;
 my $help     = Shadow::Help;
 
 sub loader {
-  if ($^O !~ /linux/ || $^O !~ /msys/) {
+  if ($^O ne "linux" && $^O ne "msys" && $^O ne "MSWin32") {
     print "Error: BotStats module is deisgned for linux or windows systems.\n";
     print "       Some functions might not work as intended on other platforms.\n";
   }
@@ -51,7 +51,7 @@ sub memusage {
       };
     };
     
-  } elsif ($^O =~ /msys/) {
+  } elsif ($^O =~ /msys/ || $^O =~ /MSWin32/) {
     print "win32\n";
     my $objWMI = Win32::OLE->GetObject('winmgmts:\\\\.\\root\\cimv2');
     my $processes = $objWMI->ExecQuery("select * from Win32_Process where ProcessId=$$");
@@ -71,11 +71,11 @@ sub BotStats_dostatus {
     $bot->notice($nick, "\x02*** BOT STATUS ***\x02");
     my $mem = memusage();
     if ($mem) {
-      if ($^O eq "linux") {
+      #if ($^O eq "linux") {
         $mem  = $mem / 1024;
         $mem  = $mem / 1024;
         $mem  = floor($mem);
-      }
+      #}
 
       $bot->notice($nick, "Current Memory Usage: $mem MB");
     }
