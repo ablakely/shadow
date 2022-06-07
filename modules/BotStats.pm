@@ -12,9 +12,9 @@ use POSIX;
 use Time::Seconds;
 
 if ($^O eq "linux") {
-  require Proc::ProcessTable;
+  use Proc::ProcessTable;
 } elsif ($^O eq "msys") {
-  require Win32::OLE;
+  use Win32::OLE qw/in/;
 }
 
 my $LOADTIME = time();
@@ -70,9 +70,11 @@ sub BotStats_dostatus {
     $bot->notice($nick, "\x02*** BOT STATUS ***\x02");
     my $mem = memusage();
     if ($mem) {
-      $mem  = $mem / 1024;
-      $mem  = $mem / 1024;
-      $mem  = floor($mem);
+      if ($^O eq "linux") {
+        $mem  = $mem / 1024;
+        $mem  = $mem / 1024;
+        $mem  = floor($mem);
+      }
 
       $bot->notice($nick, "Current Memory Usage: $mem MB");
     }
