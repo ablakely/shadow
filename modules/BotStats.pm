@@ -52,7 +52,6 @@ sub memusage {
     };
     
   } elsif ($^O =~ /msys/ || $^O =~ /MSWin32/) {
-    print "win32\n";
     my $objWMI = Win32::OLE->GetObject('winmgmts:\\\\.\\root\\cimv2');
     my $processes = $objWMI->ExecQuery("select * from Win32_Process where ProcessId=$$");
 
@@ -71,11 +70,9 @@ sub BotStats_dostatus {
     $bot->notice($nick, "\x02*** BOT STATUS ***\x02");
     my $mem = memusage();
     if ($mem) {
-      #if ($^O eq "linux") {
-        $mem  = $mem / 1024;
-        $mem  = $mem / 1024;
-        $mem  = floor($mem);
-      #}
+      $mem  = $mem / 1024;
+      $mem  = $mem / 1024;
+      $mem  = floor($mem);
 
       $bot->notice($nick, "Current Memory Usage: $mem MB");
     }
