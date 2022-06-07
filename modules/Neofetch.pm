@@ -24,11 +24,11 @@ sub doNeoFetch {
 
             if ($t eq "OS") {
                 if ($2 =~ /Debian/ || $2 =~ /Raspbian/ || $2 =~ /Red Hat Enterprise Linux/) { $osColor = $bot->color('lightred'); }
-                elsif ($2 =~ /Arch/ || $2 =~ /elementary OS/) { $osColor = $bot->color('lightcyan'); }
+                elsif ($2 =~ /Arch/ || $2 =~ /elementary OS/ || $2 =~ /Windows/) { $osColor = $bot->color('lightcyan'); }
                 elsif ($2 =~ /Ubuntu/) { $osColor = $bot->color('orange'); }
                 elsif ($2 =~ /Linux Mint/ || $2 =~ /Manjaro/) { $osColor = $bot->color('lightgreen'); }
                 elsif ($2 =~ /Gentoo/) { $osColor = $bot->color('purple'); }
-                elsif ($2 =~ /Fedora/ || $2 =~ /Windows/) { $osColor = $bot->color('lightblue'); }
+                elsif ($2 =~ /Fedora/) { $osColor = $bot->color('lightblue'); }
                 elsif ($2 =~ /Pop\!_OS/) { $osColor = $bot->color('cyan'); }
             }
 
