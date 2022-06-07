@@ -15,7 +15,7 @@ sub doNeoFetch {
     my $neofetchBin = "neofetch";
 
     if ($^O =~ /msys/ || $^O =~ /MSWin32/) {
-        $neofetchBin = "sh $ENV{HOME}/scoop/shims/neofetch";
+        $neofetchBin = "sh neofetch --shell_version off";
     }
 
     print "bin: $neofetchBin\n";
