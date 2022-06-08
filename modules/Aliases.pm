@@ -14,6 +14,13 @@ my $dbfile = "./etc/aliases.db";
 sub loader {
     $bot->add_handler('privcmd alias', 'aliasHandler');
     $bot->add_handler('message channel', 'chanMessageHandler');
+
+    if (!-e $dbfile) {
+      $bot->log("Aliases: No alias database found, creating one.");
+      open(my $db, ">", $dbfile) or $bot->error("RSS: Error: Couldn't open $dbfile: $!");
+      print $db "{}";
+      close($db);
+    }
 }
 
 sub _dbread {
