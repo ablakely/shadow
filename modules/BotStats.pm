@@ -12,9 +12,9 @@ use POSIX;
 use Time::Seconds;
 
 if ($^O eq "linux") {
-  use Proc::ProcessTable;
-} elsif ($^O eq "msys") {
-  use Win32::OLE qw/in/;
+  require Proc::ProcessTable;
+} elsif ($^O eq "msys" || $^O eq "MSWin32") {
+  require Win32::OLE;
 }
 
 my $LOADTIME = time();

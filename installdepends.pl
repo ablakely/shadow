@@ -16,6 +16,15 @@ my @depends;
 push(@dependsRaw, "JSON");
 push(@dependsRaw, "Digest::SHA");
 
+# OS-specific for BotStats
+if ($^O eq "msys" || $^O eq "MSWin32") {
+  push(@dependsRaw, "Win32::OLE");
+} elsif ($^O eq "linux") {
+  push(@dependsRaw, "Proc::ProcessTable");
+} else {
+  print "[Warning] BotStats module only supports Windows or Linux, it will not be available on this install.\n";
+}
+
 sub sortArray {
 	my %seen;
 	grep !$seen{$_}++, @_;
