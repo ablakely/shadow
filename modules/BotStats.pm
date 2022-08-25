@@ -36,6 +36,16 @@ sub loader {
     $bot->say($nick, "\x02status\x02 will give you details about the bot such as memory usage, number of channels, and mod count.");
     $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick status");
   });
+
+  $bot->add_handler('privcmd hookstats', 'BotStats_hookstats');
+  $help->add_help('hookstats', 'Admin', '', 'Outputs events which have hooks attached.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02HOOKSTATS\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02hookstats\x02 will give you details about events which have hooks attached.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick hookstats");
+  });
 }
 
 sub memusage {
@@ -92,8 +102,48 @@ sub BotStats_dostatus {
   }
 }
 
+sub BotStats_hookstats {
+  my ($nick, $host, $text) = @_;
+
+  my @evHandlers = (
+    'event tick', 'event join_me', 'event join', 'event part_me', 'event part', 'event quit', 'event nick_me',
+    'event nick', 'event mode', 'event voice_me', 'event halfop_me', 'event op_me', 'event protect_me',
+    'event owner_me', 'event ban_me', 'event notice', 'event invite', 'event kick', 'event connected',
+    'event nicktaken', 'event topic', 'mode voice', 'mode halfop', 'mode op', 'mode protect', 'mode owner',
+    'mode ban', 'mode otherp', 'mode other', 'chancmd default', 'chanmecmd default', 'message channel',
+    'message private', 'chancmd *', 'chanmecmd *', 'privcmd *', 'ctcp *'
+  );
+
+  my %hooked;
+
+  foreach my $ehandler (@evHandlers) {
+    my ($handler, $subhandler) = split(/ /, $ehandler);
+
+    if ($subhandler eq "*") {
+      foreach my $subhandlers (keys %{$Shadow::Core::handlers{$handler}}) {
+        if (exists $hooked{$ehandler}) {
+          $hooked{$ehandler}++;
+        } else {
+          $hooked{$ehandler} = 1;
+        }
+      }
+    } else {
+      if (exists $Shadow::Core::handlers{$handler}{$subhandler}) {
+        $hooked{$ehandler} = scalar(@{$Shadow::Core::handlers{$handler}{$subhandler}});
+      }
+    }
+  }
+
+  $bot->notice($nick, "\x02---[ Hooked Event Handlers ]---\x02");
+  foreach my $hook (keys %hooked) {
+    $bot->notice($nick, "\x02$hook\x02 - Count: $hooked{$hook}");
+  }
+  $bot->notice($nick, "-------------------------------");
+}
+
 sub unloader {
   $bot->del_handler('privcmd status', 'BotStats_dostatus');
+  $bot->del_handler('privcmd hookstats', 'BotStats_hookstats');
   $help->del_help('status', 'Admin');
 }
 

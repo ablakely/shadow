@@ -152,9 +152,9 @@ sub unloader {
   $bot->del_handler('event nicktaken', 'autoid_ghost');
   $bot->del_handler('privcmd nsverify', 'autoid_verify');
 
-  $bot->del_help('nsregister', 'AutoID');
-  $bot->del_help('nspasswd', 'AutoID');
-  $bot->del_help('nsverify', 'AutoID');
+  $help->del_help('nsregister', 'AutoID');
+  $help->del_help('nspasswd', 'AutoID');
+  $help->del_help('nsverify', 'AutoID');
 }
 
 1;

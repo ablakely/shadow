@@ -46,8 +46,14 @@ sub doFortune {
 	foreach my $line (@fortune) {
 		chomp $line;
 
-		$bot->say($chan, $line);
+		if (defined &Lolcat::lolcat) {
+			Lolcat::lolcat($nick, $host, $chan, $line);
+		} else {
+			$bot->say($chan, $line);
+		}
 	}
+
+	return @fortune;
 }
 
 sub unloader {

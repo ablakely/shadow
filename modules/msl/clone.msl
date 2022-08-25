@@ -1,0 +1,35 @@
+;################
+;### By Aaron ###
+;### 12/01/08 ###
+;################
+
+on *:TEXT:!clone *:#: {
+    set %clone1 $2-
+    set %clone on
+    msg # I am now cloning $2-
+}
+
+on *:TEXT:*:#: {
+    if (%clone1 == $nick && %clone == on) { 
+        msg # $1-
+    }
+}
+
+on *:NICK:*:#: {
+    if (%clone == on && $nick == %clone1) { 
+        $+(nick $newnick,_thesecond) 
+        set %clone1 $newnick 
+    }
+}
+
+on *:ACTION:*:#: {
+    if (%clone == on && $nick == %clone1) { 
+        describe # $1- 
+    }
+}
+
+on *:TEXT:!noclone:#: { 
+    set %clone off  
+    set %clone1 $null 
+    msg # I have stopped cloning.
+}

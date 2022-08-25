@@ -52,7 +52,6 @@ Shadow is based on a callback event loop. Here's a list of all the current event
     chancmd default - $nick, $host, $chan, $text
     chanmecmd <cmd> - $nick, $host, $chan, $text - channel action cmd
     chanmecmd default -$nick, $host, $chan, $text
-    privcmd <cmd> - $nick, $host, $chan, $text
     message channel - $nick, $host, $chan, $text - channel message
     message private - $nick, $host, $chan, $text - private message
     privcmd <cmd>   - $nick, $host, $chan, $text - privmsg cmd

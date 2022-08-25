@@ -614,7 +614,8 @@ sub irc_connected {
 
 	if ($options{cfg}->{Shadow}->{IRC}->{bot}->{oper}) {
 		my @o = @{$options{cfg}->{Shadow}->{IRC}->{bot}->{oper}};
-		irc_raw(1, "OPER ". $o[0] ." :".$o[1]);
+                print "dbug: oper pw $o[1]\n";
+		irc_raw(1, "OPER $o[0] :$o[1]");
 	}
 }
 
