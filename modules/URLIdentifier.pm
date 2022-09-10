@@ -281,6 +281,7 @@ sub url_id {
   my @tmp;
 
   return if ($text =~ /facebook\.com/);
+  return if ($text =~ /\.png|\.jpg|\.jpeg$/gsi);
 
   if ($text =~ /(http\:\/\/|https\:\/\/)(.*)/) {
     my $url = "$1$2";
