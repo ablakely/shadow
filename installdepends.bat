@@ -17,7 +17,6 @@ set inspath=%inspath:"=%
 
 echo PATH: %inspath%
 
-
 IF %1.==. GOTO NOPATHEXISTS
 GOTO PATHEXISTS
 
