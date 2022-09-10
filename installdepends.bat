@@ -6,8 +6,17 @@ echo Starting Shadow IRC Bot Dependency Installer by Aaron Blakely
 echo --- DO NOT CLOSE UNTIL PROMPTED TO! ---
 echo.
 
-REM Sleep for 5 seconds 
-ping 127.0.0.1 -n 1 -w 5000 >nul
+set inspath=%*
+
+set inspath=%inspath:\=/%
+set inspath=%inspath: =\ %
+set inspath=%inspath::=%
+set inspath=/%inspath%
+set inspath=%inspath:"=%
+
+
+echo PATH: %inspath%
+
 
 IF %1.==. GOTO NOPATHEXISTS
 GOTO PATHEXISTS
@@ -18,7 +27,7 @@ GOTO PATHEXISTS
    GOTO SAFEEXIT
 
 :PATHEXISTS
-    "C:\Program Files\Git\bin\bash.exe" -c "/c/Strawberry/perl/bin/perl.exe %*/installdepends.pl"
+    "C:\Program Files\Git\bin\bash.exe" -c "/c/Strawberry/perl/bin/perl.exe %inspath%/installdepends.pl"
     GOTO SAFEEXIT
 
 :SAFEEXIT
