@@ -7,9 +7,9 @@ echo --- DO NOT CLOSE UNTIL PROMPTED TO! ---
 echo.
 
 REM Sleep for 5 seconds 
-ping 127.0.0.1 -n 1 -w 5000
+ping 127.0.0.1 -n 1 -w 5000 >nul
 
-IF %1.==. GOTO NOPATHEXISTS >nul
+IF %1.==. GOTO NOPATHEXISTS
 GOTO PATHEXISTS
 
 
