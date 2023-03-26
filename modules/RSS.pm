@@ -262,20 +262,20 @@ sub rss_refresh {
         rss_dbwrite($db);
 
         if (!$feedcache{$db->{$chan}->{$title}->{url}}) {
-          #$ua->get($db->{$chan}->{$title}->{url} => json => {a => 'b'} => sub {
-          #  my ($ua, $tx) = @_;
+          $ua->get($db->{$chan}->{$title}->{url} => json => {a => 'b'} => sub {
+            my ($ua, $tx) = @_;
 
-          #  if (my $err = $tx->error) {
-          #    return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
-          #  }
+            if (my $err = $tx->error) {
+              return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
+            }
 
-          #  my $body = \scalar($tx->res->body);
-          #  my $parsedfeed;
+            my $body = \scalar($tx->res->body);
+            my $parsedfeed;
 
 
-          #  $feedcache{$db->{$chan}->{$title}->{url}} = $body;
-          #  rss_agrigator($body, $title, $chan);
-          #});
+            $feedcache{$db->{$chan}->{$title}->{url}} = $body;
+            rss_agrigator($body, $title, $chan);
+          });
 
           my $rss_feed = $ua->get_p($db->{$chan}->{$title}->{url});
 
