@@ -65,6 +65,22 @@ sub getSiteInfo {
     $htmlResp =~ s/\r//gs;
     $htmlResp =~ s/\&nbsp\;//gs;
 
+    # pdw
+
+    if ($url =~ /patriots\.win\/p/ && $htmlResp =~ /\<span class="positive"\>\+\<span\>(.*?)<\/span\>\<\/span\> \/ \<span class="negative"\>\-\<span\>(.*?)<\/span><\/span\>/) {
+      $meta{'upvotes'} = $1;
+      $meta{'downvotes'} = $2;
+    }
+
+    if ($url =~ /patriots\.win\/p/ && $htmlResp =~ /\<span class="post-flair" data-flair=\"(.*?)\"\>(.*?)<\/span\>/) {
+      $meta{'flairtype'} = $1;
+      $meta{'flair'} = $2;
+
+      $meta{'flair'} =~ s/\&nbsp\;|\s{3,}//gis;
+
+      
+    }
+
     # geekbench page scraping
 
     if ($url =~ /browser\.geekbench\.com/ && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\"\>/gis) {
@@ -191,6 +207,8 @@ sub getSiteInfo {
       }
 		}
 
+
+
     $title =~ s/\&quot;/\"/g;
     $title =~ s/\&\#39\;/\'/g;
     $title =~ s/\&amp;/\&/g;
@@ -309,9 +327,9 @@ sub url_id {
 
       my $ytReactions = getReturnDislikeCounts($url);
       if ($ytReactions->{likes} && $ytReactions->{dislikes}) {
-        $bot->say($chan, "[\x031,0You\x030,4Tube\x03] \x02Title:\x02 \x02\x0304$meta{'name'}\x03\x02 \x02Description:\x02 $meta{'description'} [\x02\x0310Views:\x02 $meta{'interactionCount'} | \x02Likes:\x02 $ytReactions->{likes} | \x02Dislikes:\x02 $ytReactions->{dislikes} | \x02Date:\x02 $meta{'datePublished'} | \x02Duration:\x02 $meta{'duration'}\x03]");
+        $bot->say($chan, "\x030,4 ▶ \x03 \x02Title:\x02 \x02\x0304$meta{'name'}\x03\x02 \x02Description:\x02 $meta{'description'} [\x02\x0310Views:\x02 $meta{'interactionCount'} | \x02Likes:\x02 $ytReactions->{likes} | \x02Dislikes:\x02 $ytReactions->{dislikes} | \x02Date:\x02 $meta{'datePublished'} | \x02Duration:\x02 $meta{'duration'}\x03]");
       } else {
-        $bot->say($chan, "[\x031,0You\x030,4Tube\x03] \x02Title:\x02 \x02\x0304$meta{'name'}\x03\x02 \x02Description:\x02 $meta{'description'} [\x02\x0310Views:\x02 $meta{'interactionCount'} | \x02Date:\x02 $meta{'datePublished'} | \x02Duration:\x02 $meta{'duration'}\x03]");
+        $bot->say($chan, "\x030,4 ▶ \x03 \x02Title:\x02 \x02\x0304$meta{'name'}\x03\x02 \x02Description:\x02 $meta{'description'} [\x02\x0310Views:\x02 $meta{'interactionCount'} | \x02Date:\x02 $meta{'datePublished'} | \x02Duration:\x02 $meta{'duration'}\x03]");
       }
     } elsif ($url =~ /github\.com/) {
       $title =~ s/^GitHub - //;
@@ -344,6 +362,46 @@ sub url_id {
       if (!$meta{'quotetweets'}) { $meta{'quotetweets'} = 0; }
       if (!$meta{'likes'}) { $meta{'likes'} = 0; }
       $bot->say($chan, "[\x037nitter\x03] \x02$meta{'tweet'}\x02 [\x02\x037Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03]");   
+    } elsif ($url =~ /patriots\.win\/p/) {
+      $title =~ s/\s+- The Donald - America First \| Patriots Win//;
+
+      my $flairColor = "\x030,1";
+
+      if ($meta{'flairtype'} eq "chopper") {
+        $flairColor = "\x030,3";
+      } elsif ($meta{'flairtype'} eq "sleepy") {
+        $flairColor = "\x030,11";
+      } elsif ($meta{'flairtype'} eq "violent" || $meta{'flairtype'} eq "didthat" || $meta{'flairtype'} eq "fchina") {
+        $flairColor = "\x030,4";
+      } elsif ($meta{'flairtype'} eq "stable") {
+        $flairColor = "\x030,2";
+      } elsif ($meta{'flairtype'} eq "henergy") {
+        $flairColor = "\x030,6";
+      } elsif ($meta{'flairtype'} eq "tread") {
+        $flairColor = "\x030,8";
+      } elsif ($meta{'flairtype'} eq "pocrime" || $meta{'flairtype'} eq "vfn") {
+        $flairColor = "\x034,0";
+      } elsif ($meta{'flairtype'} eq "yes" || $meta{'flairtype'} eq "geotus") {
+        $flairColor = "\x030,8";
+      } elsif ($meta{'flairtype'} eq "nuclear" || $meta{'flairtype'} eq "censored") {
+        $flairColor = "\x034,1";
+      } elsif ($meta{'flairtype'} eq "kek") {
+        $flairColor = "\x030,3";
+      } elsif ($meta{'flairtype'} eq "god") {
+        $flairColor = "\x036,12";
+      } elsif ($meta{'flairtype'} eq "reeee") {
+        $flairColor = "\x030,12";
+      }
+
+      if ($meta{'flair'} ne "") {
+        $meta{'flair'} =~ s/&#39;/'/gs;
+
+        $meta{'flair'} = "\x02$flairColor\[".$meta{'flair'}."]\x03\x02";
+
+        $bot->say($chan, "[\x034patriots\x030.\x0312win\x03] \x02$title\x02 $meta{'flair'} [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
+      } else {
+        $bot->say($chan, "[\x034patriots\x030.\x0312win\x03] \x02$title\x02 [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
+      }
     } else {
       $title =~ s/\<\/title\>(.*)//gs;
       $bot->say($chan, "\x02Title:\x02 $title") if $title;

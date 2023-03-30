@@ -1,12 +1,16 @@
 # RSS - Shadow RSS Module
-# v1.0
+# v1.1
 # Written by Aaron Blakely <aaron@ephasic.org>
+#
+# Changelog:
+# v1.1 - Performance and feed compatibility improvements, formatting support
 #
 # feed.db format:
 # [
 #   "#chan": {
 #     "title": {
 #       url: "",
+#       "format": "%FEED%: %TITLE% [%URL%]",
 #       lastSync: epoch,
 #       syncInterval: seconds,
 #       read: [{
@@ -18,13 +22,8 @@
 # ]
 #
 # TODO:
-#  set command: interval, format, etc
-#  HTTP connection keep alive support
-#  Better db format?
+#  help submenus
 #  .last channel command for last 5 feeds
-#  Make not a memory hog.
-
-
 
 package RSS;
 
@@ -34,6 +33,8 @@ use Time::Seconds;
 use Mojo::IOLoop;
 use Mojo::UserAgent;
 use XML::Feed;
+use utf8;
+use Encode qw( encode_utf8 );
 
 my $bot      = Shadow::Core;
 my $help     = Shadow::Help;
@@ -42,7 +43,7 @@ my $ua       = Mojo::UserAgent->new;
 my %feedcache;
 
 sub loader {
-  $bot->log("[RSS] Loading: RSS module v1.0");
+  $bot->log("[RSS] Loading: RSS module v1.1");
   $bot->add_handler('event connected', 'rss_connected');
   $bot->add_handler('privcmd rss', 'rss_irc_interface');
   $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
@@ -67,6 +68,8 @@ sub loader {
     print $db "{}";
     close($db);
   }
+
+  $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
 }
 
 sub rss_connected {
@@ -98,7 +101,7 @@ sub rss_dbwrite {
 
 sub rss_irc_interface {
   my ($nick, $host, $text) = @_;
-  my ($command, $arg1, $arg2, $arg3, $arg4) = split(" ", $text);
+  my ($command, $arg1, $arg2, $arg3, @args) = split(" ", $text);
   my $db;
 
   if ($command eq "add" || $command eq "ADD") {
@@ -112,6 +115,7 @@ sub rss_irc_interface {
         url => $arg3,
         lastSync => 0,
         syncInterval => 300,
+        format => '%FEED%: %TITLE% [%URL%]',
         read => []
       };
 
@@ -168,22 +172,31 @@ sub rss_irc_interface {
     }
   }
   elsif ($command eq "set" || $command eq "SET") {
-    if (!$arg1 || !$arg2 || !$arg3) {
-      return $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick RSS SET <option> <chan> <feed> <value>");
-    }
-
     if ($arg1 eq "SYNCTIME" || $arg1 eq "synctime") {
+      return $bot->notice($nick, "\002SYNTAX\002: /msg $Shadow::Core::nick rss set SYNCTIME <chan> <feed> <interval in seconds>") if (!$arg2 || !$arg3 || !$args[0]);
       if ($bot->isin($arg2, $Shadow::Core::nick) && $bot->isop($nick, $arg2)) {
         $db = rss_dbread();
         $arg2 = lc($arg2);
-        $db->{$arg2}->{$arg3}->{syncInterval} = $arg4;
+        $db->{$arg2}->{$arg3}->{syncInterval} = $args[0];
         rss_dbwrite($db);
 
-        $bot->notice($nick, "Updated sync interval to $arg4 for feed $arg3 in $arg2.");
+        $bot->notice($nick, "Updated sync interval to $args[0] for feed $arg3 in $arg2.");
         $bot->log("RSS: SET SYNCTIME was used by $nick for $arg3 in $arg2.");
       }
+    } elsif ($arg1 eq "FORMAT" || $arg1 eq "format") {
+      return $bot->notice($nick, "\002SYNTAX\002: /msg $Shadow::Core::nick rss set FORMAT <chan> <feed> <format string>") if (!$arg2 || !$arg3 || !$args[0]);
+
+      if ($bot->isin($arg2, $Shadow::Core::nick) && $bot->isop($nick, $arg2)) {
+        $db = rss_dbread();
+        $arg2 = lc($arg2);
+        $db->{$arg2}->{$arg3}->{format} = join(" ", @args);
+        rss_dbwrite($db);
+
+        $bot->notice($nick, "Updated format to \002".join(" ", @args)."\002 for feed $arg3 in $arg2.");
+        $bot->log("RSS: SET FORMAT was used by $nick for $arg3 in $arg2.");
+      }
     } else {
-      $bot->notice($nick, "SET options: SYNCTIME");
+      $bot->notice($nick, "SET options: SYNCTIME FORMAT");
     }
   }
   elsif ($command eq "sync" || $command eq "SYNC") {
@@ -232,15 +245,51 @@ sub rss_agrigator {
 
   my $parsedfeed = XML::Feed->parse($rawxml) or return $bot->err("RSS: Parser error on feed $title: ".XML::Feed->errstr, 0);
   for my $entry ($parsedfeed->entries) {
-    my $read = rss_checkread($chan, $title, $entry->link());
+    my $fmtstring = $db->{$chan}->{$title}->{format};
+    my $tmplink = $entry->link();
+    my $read = rss_checkread($chan, $title, $tmplink);
+
+    my $tmptitle;
+    my @tokens;
 
     if (!$read) {
-      $bot->say($chan, "$title: ".$entry->title()." [".$entry->link()."]", 3);
-
       push(@{$db->{$chan}->{$title}->{read}}, {
-        url => $entry->link(),
+        url => $tmplink,
         lastRecieved => time()
       });
+      
+      if ($tmplink =~ /nitter\.net/) {
+        $tmplink =~ s/nitter\.net/twitter\.com/;
+      }
+
+      @tokens = split(/ /, encode_utf8($fmtstring));
+
+      print "dbug: $fmtstring\n";
+
+      for (my $i = 0; $i < scalar @tokens; $i++) {
+        if ($tokens[$i] =~ /\%FEED\%/) {
+          $tokens[$i] =~ s/\%FEED\%/$title/;
+        }
+        elsif ($tokens[$i] =~ /\%TITLE\%/) {
+          $tmptitle = $entry->title();
+          utf8::decode($tmptitle);
+          $tokens[$i] =~ s/\%TITLE\%/$tmptitle/;
+        }
+        elsif ($tokens[$i] =~ /\%URL\%/) {
+          $tokens[$i] =~ s/\%URL\%/$tmplink/;
+        } elsif ($tokens[$i] =~ /\%C\%/) {
+          $tokens[$i] =~ s/\%C\%/\003/;
+        } elsif ($tokens[$i] =~ /\%B\%/) {
+          $tokens[$i] =~ s/\%B\%/\002/;
+        }
+      }
+
+      $fmtstring = join(" ", @tokens);
+      utf8::decode($fmtstring);
+
+      print "dbug post: $fmtstring\n";
+      
+      $bot->say($chan, $fmtstring, 3);
     } else {
       rss_updateread($chan, $title, $entry->link());
     }
@@ -262,20 +311,20 @@ sub rss_refresh {
         rss_dbwrite($db);
 
         if (!$feedcache{$db->{$chan}->{$title}->{url}}) {
-          #$ua->get($db->{$chan}->{$title}->{url} => json => {a => 'b'} => sub {
-          #  my ($ua, $tx) = @_;
+          $ua->get($db->{$chan}->{$title}->{url} => {Accpet => '*/*'} => sub {
+            my ($ua, $tx) = @_;
 
-          #  if (my $err = $tx->error) {
-          #    return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
-          #  }
+            if (my $err = $tx->error) {
+              return $bot->err("RSS: Error fetching RSS feed $title [$db->{$chan}->{$title}->{url}] for $chan: ".$err->{message}, 0);
+            }
 
-          #  my $body = \scalar($tx->res->body);
-          #  my $parsedfeed;
+            my $body = \scalar($tx->res->body);
+            my $parsedfeed;
 
 
-          #  $feedcache{$db->{$chan}->{$title}->{url}} = $body;
-          #  rss_agrigator($body, $title, $chan);
-          #});
+            $feedcache{$db->{$chan}->{$title}->{url}} = $body;
+            rss_agrigator($body, $title, $chan);
+          });
 
           my $rss_feed = $ua->get_p($db->{$chan}->{$title}->{url});
 
@@ -285,6 +334,7 @@ sub rss_refresh {
             }
 
             my $body = \scalar($rss->[0]->result->body);
+
             my $parsedfeed;
 
             $feedcache->{$db->{$chan}->{$title}->{url}} = $body;

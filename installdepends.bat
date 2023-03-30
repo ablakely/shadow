@@ -26,6 +26,7 @@ GOTO PATHEXISTS
    GOTO SAFEEXIT
 
 :PATHEXISTS
+
     "C:\Program Files\Git\bin\bash.exe" -c "/c/Strawberry/perl/bin/perl.exe %inspath%/installdepends.pl"
     GOTO SAFEEXIT
 

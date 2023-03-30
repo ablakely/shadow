@@ -614,7 +614,6 @@ sub irc_connected {
 
 	if ($options{cfg}->{Shadow}->{IRC}->{bot}->{oper}) {
 		my @o = @{$options{cfg}->{Shadow}->{IRC}->{bot}->{oper}};
-                print "dbug: oper pw $o[1]\n";
 		irc_raw(1, "OPER $o[0] :$o[1]");
 	}
 }
@@ -1380,7 +1379,8 @@ sub flood_do {
 		if ($bnum >= $blimit + 3) {
 			if ($ftype ne "all") {
 				logger(2, "autoignoring $remotenick ($hostmask) for 1 minute");
-				$options{ignore}{irc_makebanmask($hostmask, 'host')} = time + 60;
+				#$options{ignore}{irc_makebanmask($hostmask, 'host')} = time + 60;
+				$options{ignore}{$hostmask} = time + 60;
 			} else {
 				logger(2, "autoignoring all for 15 seconds (triggered by $remotenick)");
 				$options{ignore}{'*!*@*'} = time + 15;
@@ -1395,7 +1395,8 @@ sub flood_do {
 		if ($num >= $limit + 3) {
 			if ($ftype ne "all") {
 				logger(2, "autoignoring $remotenick ($hostmask) for 5 minutes");
-				$options{ignore}{irc_makebanmask($hostmask, 'host')} = time + 300;
+				#$options{ignore}{irc_makebanmask($hostmask, 'host')} = time + 300;
+				$options{ignore}{$hostmask} = time + 300;
 			} else {
 				logger(2, "autoignoring all for 30 seconds (triggered by $remotenick)");
 				$options{ignore}{'*!*@*'} = time + 30;
@@ -1433,6 +1434,7 @@ sub ignore {
 	my $time = time;
 	for (keys %{$options{ignore}}) {
 		if ($options{ignore}{$_} > 2 && $options{ignore}{$_} < $time) {
+			print "Removing ignore for $remotenick [$hostmask]\n";
 			delete($options{ignore}{$_});
 			next;
 		}
@@ -1446,6 +1448,24 @@ sub logger {
 	my ($level, $class, $text) = @_;
 	handle_handler('event', 'log', $level, $class, $text);
 	return 1;
+}
+
+sub add_ignore {
+	my ($self, $remotenick, $hostmask) = @_;
+
+	print "Ignoring $remotenick [$hostmask]\n";
+
+	$options{ignore}{$hostmask} = 1;
+	$options{ignore}{$remotenick} = 1;
+}
+
+sub del_ignore {
+	my ($self, $remotenick, $hostmask) = @_;
+
+	print "Unignoring $remotenick [$hostmask]\n";
+
+	delete $options{ignore}{$hostmask} if exists $options{ignore}{$hostmask};
+	delete $options{ignore}{$remotenick} if exists $options{ignore}{$remotenick};
 }
 
 sub add_handler {
