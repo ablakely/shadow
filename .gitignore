@@ -12,3 +12,4 @@ shadow.log
 /lib/Shadow/.AppleDouble
 /modules/.AppleDouble
 log
+/modules/Test1.pm
