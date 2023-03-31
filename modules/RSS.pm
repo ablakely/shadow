@@ -295,6 +295,8 @@ sub rss_agrigator {
         elsif ($tokens[$i] =~ /\%TITLE\%/) {
           $tmptitle = $entry->title();
           utf8::decode($tmptitle);
+          chomp $tmptitle;
+
           $tokens[$i] =~ s/\%TITLE\%/$tmptitle/;
         }
         elsif ($tokens[$i] =~ /\%URL\%/) {
@@ -308,6 +310,10 @@ sub rss_agrigator {
 
       $fmtstring = join(" ", @tokens);
       utf8::decode($fmtstring);
+      chomp $fmtstring;
+      $fmtstring =~ s/\n//gs;
+      $fmtstring =~ s/^\s+|\s+$|\s+(?=\s)//g;
+
       
       $bot->say($chan, $fmtstring, 3);
     } else {
