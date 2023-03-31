@@ -90,9 +90,10 @@ sub dohelp {
 
       return;
     } else {
+      my @tsplit = split(" ", $text);
       foreach my $c (keys %cmdlist) {
         foreach my $i (keys %{$cmdlist{$c}}) {
-          if (lc($i) eq lc($text)) {
+          if (lc($i) eq lc($tsplit[0])) {
             return &{$cmdlist{$c}->{$i}{subref}}($nick, $host, $text); 
           }
         }

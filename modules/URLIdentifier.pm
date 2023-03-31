@@ -398,9 +398,17 @@ sub url_id {
 
         $meta{'flair'} = "\x02$flairColor\[".$meta{'flair'}."]\x03\x02";
 
-        $bot->say($chan, "[\x034patriots\x030.\x0312win\x03] \x02$title\x02 $meta{'flair'} [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
+        if ($nick eq "RSS.pm" && $host eq "0.0.0.0") {
+          $bot->say($chan, "\x02\x034patriots\x0312.\x034win\x03\x02: \x02$title\x02 $meta{'flair'} [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02] [\x02\x0312$url\x03\x02]");
+        } else {
+          $bot->say($chan, "[\x034patriots\x0312.\x034win\x03] \x02$title\x02 $meta{'flair'} [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
+        }
       } else {
-        $bot->say($chan, "[\x034patriots\x030.\x0312win\x03] \x02$title\x02 [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
+        if ($nick eq "RSS.pm" && $host eq "0.0.0.0") {
+          $bot->say($chan, "\x02\x034patriots\x0312.\x034win\x03\x02: \x02$title\x02 [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02] [\x02\x0312$url\x03\x02]");
+        } else {
+          $bot->say($chan, "[\x034patriots\x0312.\x034win\x03] \x02$title\x02 [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
+        }
       }
     } else {
       $title =~ s/\<\/title\>(.*)//gs;

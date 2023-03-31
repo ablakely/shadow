@@ -49,6 +49,24 @@ sub loader {
   $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
     my ($nick, $host, $text) = @_;
 
+    if ($text =~ /rss set/i) {
+        $bot->say($nick, "Help for \x02RSS SET\x02:");
+        $bot->say($nick, " ");
+        $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rss set <option> <chan> <feed name> <value>");
+        $bot->say($nick, " ");
+        $bot->say($nick, "  Options:");
+        $bot->say($nick, "    SYNCTIME - Refresh rate for a feed in seconds.");
+        $bot->say($nick, "    FORMAT   - Change the output format for a feed:");
+        $bot->say($nick, "      Example: \%FEED\%: \%TITLE\% [\%URL\%]");
+        $bot->say($nick, "      ");
+        $bot->say($nick, "      \%FEED\%: Feed name");
+        $bot->say($nick, "      \%TITLE\%: RSS entry title");
+        $bot->say($nick, "      \%URL\%: RSS entry link");
+        $bot->say($nick, "      \%C\%: mIRC color escape character (ctrl + k)");
+        $bot->say($nick, "      \%B\%: mIRC bold character (ctrl + b)");
+        return;
+    }
+
     $bot->say($nick, "Help for \x02RSS\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02rss\x02 is a command used for managing RSS feeds for each channel.");
@@ -260,11 +278,15 @@ sub rss_agrigator {
       
       if ($tmplink =~ /nitter\.net/) {
         $tmplink =~ s/nitter\.net/twitter\.com/;
-      }
+      } elsif ($tmplink =~ /patriots\.win/) {
+        if (defined &URLIdentifier::url_id) {
+            URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
+            rss_dbwrite($db);
+            return;
+        }
+    }
 
       @tokens = split(/ /, encode_utf8($fmtstring));
-
-      print "dbug: $fmtstring\n";
 
       for (my $i = 0; $i < scalar @tokens; $i++) {
         if ($tokens[$i] =~ /\%FEED\%/) {
@@ -286,8 +308,6 @@ sub rss_agrigator {
 
       $fmtstring = join(" ", @tokens);
       utf8::decode($fmtstring);
-
-      print "dbug post: $fmtstring\n";
       
       $bot->say($chan, $fmtstring, 3);
     } else {

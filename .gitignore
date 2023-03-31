@@ -4,6 +4,7 @@ shadow.log
 /etc/autojoin.db
 /etc/shadow.conf
 /etc/aliases.db
+/etc/ignore.db
 .AppleDouble
 .DS_Store
 /doc/.AppleDobule
