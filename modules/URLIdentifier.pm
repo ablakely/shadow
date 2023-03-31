@@ -355,7 +355,12 @@ sub url_id {
       if (!$meta{'retweets'}) { $meta{'retweets'} = 0; }
       if (!$meta{'quotetweets'}) { $meta{'quotetweets'} = 0; }
       if (!$meta{'likes'}) { $meta{'likes'} = 0; }
-      $bot->say($chan, "[\x0311Twitter\x03] \x02$meta{'tweet'}\x02 [\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03]");
+
+      if ($nick eq "RSS.pm" && $host eq "0.0.0.0") {
+        $bot->say($chan, "[\x0311Twitter\x03] \x02$meta{'tweet'}\x02 [\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03] [\x02$text\x02]");
+      } else {
+        $bot->say($chan, "[\x0311Twitter\x03] \x02$meta{'tweet'}\x02 [\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03]");
+      }
     } elsif ($url =~ /nitter\.net/) {
       if (!$meta{'comments'}) { $meta{'comments'} = 0; }
       if (!$meta{'retweets'}) { $meta{'retweets'} = 0; }

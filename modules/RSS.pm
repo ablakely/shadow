@@ -278,6 +278,13 @@ sub rss_agrigator {
       
       if ($tmplink =~ /nitter\.net/) {
         $tmplink =~ s/nitter\.net/twitter\.com/;
+
+        if (defined &URLIdentifier::url_id) {
+            URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
+            rss_dbwrite($db);
+            return;
+        }
+
       } elsif ($tmplink =~ /patriots\.win/) {
         if (defined &URLIdentifier::url_id) {
             URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);

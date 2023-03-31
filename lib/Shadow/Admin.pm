@@ -25,6 +25,36 @@ sub new {
   $self->{bot}->add_handler('privcmd loadmod', 'ircadmin_loadmod');
   $self->{bot}->add_handler('privcmd rmmod', 'ircadmin_rmmod');
   $self->{bot}->add_handler('privcmd reload', 'ircadmin_reload');
+  $self->{bot}->add_handler('privcmd rehash', 'ircadmin_rehash');
+  $self->{bot}->add_handler('privcmd shutdown', 'ircadmin_shutdown');
+  $self->{bot}->add_handler('privcmd restart', 'ircadmin_restart');
+
+  $self->{bot}->{help}->add_help('restart', 'Admin', '', 'Restarts the bot.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02RESTART\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02restart\x02 is used to restart the bot.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick restart");
+  });
+
+  $self->{bot}->{help}->add_help('rehash', 'Admin', '', 'Rehashes the configuration file.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02REHASH\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02rehash\x02 is used to reload the configuration file.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rehash");
+  });
+
+  $self->{bot}->{help}->add_help('shutdown', 'Admin', '', 'Shuts down the bot.', 1, sub {
+    my ($nick, $host, $text) = @_;
+
+    $bot->say($nick, "Help for \x02SHUTDOWN\x02:");
+    $bot->say($nick, " ");
+    $bot->say($nick, "\x02shutdown\x02 is used to stop the bot.");
+    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick shutdown");
+  });
 
   $self->{bot}->{help}->add_help('cat', 'Admin', '<file path>', 'Dump a file [F]', 1, sub {
     my ($nick, $host, $text) = @_;
@@ -271,6 +301,39 @@ sub ircadmin_dump {
         $bot->say($chan, $text);
       }
     }
+  } else {
+    $bot->notice($nick, "Unauthorized.");
+  }
+}
+
+sub ircadmin_rehash {
+  my ($nick, $host, $chan, $text) = @_;
+
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->rehash();
+    $bot->log("Rehashing configuration. [Issued by $nick]");
+  } else {
+    $bot->notice($nick, "Unauthorized.");
+  }
+}
+
+sub ircadmin_shutdown {
+  my ($nick, $host, $chan, $text) = @_;
+
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->log("Shutting down... [Issued by $nick]");
+    system "kill $$";
+  } else {
+    $bot->notice($nick, "Unauthorized.");
+  }
+}
+
+sub ircadmin_restart {
+  my ($nick, $host, $chan, $text) = @_;
+
+  if ($bot->isbotadmin($nick, $host)) {
+    $bot->log("Restarting... [Issued by $nick]");
+    system "$0 && sleep 1 && kill $$";
   } else {
     $bot->notice($nick, "Unauthorized.");
   }

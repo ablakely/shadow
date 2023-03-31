@@ -18,7 +18,7 @@ use Shadow::Admin;
 use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
-our ($cfg, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
+our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
 
@@ -65,13 +65,12 @@ $SIG{__WARN__} = sub {
     warn $warning;
 };
 
-
 # Constructor
 sub new {
 	my $class				= shift;
 	my $self				= {};
 	my ($conffile, $verbose, $nofork)  = @_;
-	my $cfgparser   = Shadow::Config->new($conffile, $verbose);
+	$cfgparser   = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
 	$options{cfg}   = $cfg;
         my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
@@ -129,6 +128,15 @@ sub new {
 	$tickcount = 0;
 
 	return bless($self, $class);
+}
+
+sub rehash {
+	my $self = shift;
+
+	$cfg = $cfgparser->parse();
+	$options{cfg} = $cfg;
+
+	print "Rehashing configuration file...\n";
 }
 
 # We'll handle our module stuff here
