@@ -14,3 +14,5 @@ shadow.log
 /modules/.AppleDouble
 log
 /modules/Test1.pm
+.vstags
+Dockerfile

@@ -16,7 +16,7 @@ Installing Shadow is very simple thanks to our dependency installer, just run in
 
 ## Linux
 To install on debian/ubuntu systems you will need to following pakages:
-`sudo apt-get install libjson-perl libxml-libxml-perl build-essential`
+`sudo apt-get install libjson-perl libxml-libxml-perl libxml-feed-perl build-essential`
 
 ## OS X
 I've only tested on OS X 10.4 Tiger on my iMac G4.  To require the dependencies
