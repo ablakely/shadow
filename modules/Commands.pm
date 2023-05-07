@@ -10,6 +10,7 @@ package Commands;
 my $bot = Shadow::Core;
 
 sub loader {
+  $bot->register("Commands", "v1.1", "Aaron Blakely");
   $bot->add_handler('chancmd commands', 'commands_dolist');
 }
 
@@ -36,6 +37,7 @@ sub commands_dolist {
 }
 
 sub unloader {
+  $bot->unregister("Commands");
   $bot->del_handler('chancmd commands', 'commands_dolist');
 }
 

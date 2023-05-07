@@ -35,11 +35,13 @@ sub parse {
 	foreach my $f (@confFiles) {
 		open (FH, "<$f") or die $!;
 		while(<FH>) {
+			s/\r\n/\n/gs;
+			
 			if (/^\#(.*)/) {
 				$lc++;
 				next;
 			}
-			elsif (/^\s/ || /^\r/ || /^\n/) {
+			elsif (/^\s/ || /^\r/ || /^\n/ || /^\r\n/) {
 				$lc++;
 				next;
 			}

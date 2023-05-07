@@ -17,6 +17,8 @@ my %usp = map { $_ => 1 } @usStates;
 my %cap = map { $_ => 1 } @caProvidences;
 
 sub loader {
+    $bot->register("Weather", "v0.5", "Aaron Blakely");
+
     $bot->add_handler('chancmd weather', 'doWeather');
     $bot->add_handler('chancmd w', 'doWeather');
 }
@@ -97,6 +99,8 @@ EOFC
 }
 
 sub unloader {
+    $bot->unregister("Weather");
+
     $bot->del_handler('chancmd weather', 'doWeather');
     $bot->del_handler('chancmd w', 'doWeather');
 }

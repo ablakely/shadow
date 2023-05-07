@@ -4,6 +4,8 @@ my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
+    $bot->register("Neofetch", "v2.0", "Aaron Blakely");
+
     $bot->add_handler('chancmd neofetch', 'doNeoFetch');
     $bot->add_handler('chancmd sysinfo', 'doNeoFetch');
 }
@@ -58,6 +60,8 @@ sub doNeoFetch {
 }
 
 sub unloader {
+    $bot->unregister("Neofetch");
+    
     $bot->del_handler('chancmd neofetch', 'doNeoFetch');
     $bot->del_handler('chancmd sysinfo', 'doNeoFetch');
 }

@@ -16,6 +16,7 @@ my $bot = Shadow::Core;
 
 
 sub loader {
+  $bot->register("BridgeCommands", "v0.5", "Aaron Blakely");
   $bot->add_handler("message channel", "msgHandler");
 }
 
@@ -38,6 +39,7 @@ sub msgHandler {
 }
 
 sub unloader {
+  $bot->unregister("BridgeCommands");
   $bot->del_handler("message channel", "msgHandler");
 }
 

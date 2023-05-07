@@ -7,6 +7,8 @@ my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
+  $bot->register("Oper", "v0.5", "Aaron Blakely");
+
   if ($bot->isOperMode()) {
     $bot->add_handler('privcmd kill', 'oper_kill');
   } else {
@@ -42,6 +44,8 @@ sub oper_kill {
 }
 
 sub unloader {
+  $bot->unregister("Oper");
+
   $bot->del_handler('privcmd kill', 'oper_kill');
   $help->del_help('kill', 'Oper');
 }

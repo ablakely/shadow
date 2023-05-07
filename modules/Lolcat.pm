@@ -4,7 +4,8 @@ my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
-    $bot->add_handler('chancmd lolcat', 'lolcat'); 
+    $bot->register("Lolcat", "v1.0", "Aaron Blakely");
+    $bot->add_handler('chancmd lolcat', 'lolcat');
 }
 
 sub lolcat {
@@ -49,5 +50,6 @@ sub lolcat {
 }
 
 sub unloader {
+    $bot->unregister("Lolcat");
     $bot->del_handler('chancmd lolcat', 'lolcat');
 }

@@ -1,11 +1,22 @@
 package URLIdentifier;
 
 # Shadow Module: URLIdentifier
-# Automatic URL title fetching.
+# Automatic URL title/meta fetching
+#
+# Supported sites for metadata parsing:
+#  youtube.com, youtu.be
+#  twitter.com, nitter.net
+#  browser.geekbench.com
+#  ebay.com
+#  reddit.com
+#  patriots.win
 #
 # Written by Aaron Blakely <aaron@ephasic.org>
 # Change Log:
 #   6/22/22 - Updated to give more details about videos from Odysee and Youtube
+#   4/11/23 - Strip <a> tags out of tweets
+#             Fix ebay scraping
+
 
 
 use utf8;
@@ -18,6 +29,8 @@ our $bot  = Shadow::Core;
 our $help = Shadow::Help;
 
 sub loader {
+  $bot->register("URLIdentifier", "v1.5", "Aaron Blakely");
+
   $bot->add_handler('message channel', 'url_id');
 }
 
@@ -137,18 +150,21 @@ sub getSiteInfo {
       my $nl = $html[$i+1].">";
       my $nl2 = $html[$i+2].">";
       my $nl3 = $html[$i+3].">";
+      my $nl4 = $html[$i+4].">";
+      my $nl5 = $html[$i+5].">";
+      my $nl6 = $html[$i+6].">";
     
       $nl =~ s/\n//gs;
       $nl =~ s/\r//gs;
 
 
-      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\/usr\/(.*?)\?/gsi) {
+      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /https\:\/\/www.ebay.com\/usr\/(.*?)\?/gsi) {
         $meta{'seller'} = $1;
       }
 
-      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\<span (.*?) itemprop\=\"price\"[^>]+\>/gsi) {
-        $meta{'price'} = $nl;
-        $meta{'price'} =~ s/\<\/span\>//;
+      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\<span itemprop\=price content\=(.*?)\>/gsi) {
+        $meta{'price'} = $nl6;
+        $meta{'price'} =~ s/\<\!--F\/--\>//gs;
       }
 
       if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\"accessibilityText\"\:\"(\d+)\(feedback score\)\"/gsi) {
@@ -312,8 +328,6 @@ sub url_id {
 
     $bot->log("URLIdentifier: Fetching URL [$url] for $nick in $chan.");
 
-
-
     if ($url =~ /ebay\.[[:alpha:]]/) {
       $title =~ s/\| eBay//;
 
@@ -356,6 +370,8 @@ sub url_id {
       if (!$meta{'quotetweets'}) { $meta{'quotetweets'} = 0; }
       if (!$meta{'likes'}) { $meta{'likes'} = 0; }
 
+      $meta{'tweet'} =~ s/\<a href\=\"(.*?)\"\>(.*?)\<\/a\>/$2/gs;
+
       if ($nick eq "RSS.pm" && $host eq "0.0.0.0") {
         $bot->say($chan, "[\x0311Twitter\x03] \x02$meta{'tweet'}\x02 [\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03] [\x02$text\x02]");
       } else {
@@ -366,6 +382,10 @@ sub url_id {
       if (!$meta{'retweets'}) { $meta{'retweets'} = 0; }
       if (!$meta{'quotetweets'}) { $meta{'quotetweets'} = 0; }
       if (!$meta{'likes'}) { $meta{'likes'} = 0; }
+
+      print "here\n";
+      $meta{'tweet'} =~ s/\<a href\=\"(.*?)\"\>(.*?)\<\/a\>/$2/gs;
+       
       $bot->say($chan, "[\x037nitter\x03] \x02$meta{'tweet'}\x02 [\x02\x037Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03]");   
     } elsif ($url =~ /patriots\.win\/p/) {
       $title =~ s/\s+- The Donald - America First \| Patriots Win//;
@@ -423,6 +443,8 @@ sub url_id {
 }
 
 sub unloader {
+  $bot->unregister("URLIdentifer");
+
   $bot->del_handler('message channel', 'url_id');
 }
 

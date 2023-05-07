@@ -14,6 +14,7 @@ sub loader {
     return;
   }
 
+  $bot->register("MacSysinfo", "v0.5", "Aaron Blakely");
   $bot->add_handler('chancmd sysinfo', 'sysinfo_cmd');
   $help->add_help('sysinfo', 'Channel', '', 'System Specifications brag script. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
@@ -87,6 +88,7 @@ sub sysinfo_cmd {
 }
 
 sub unloader {
+  $bot->unregister("MacSysinfo");
   $bot->del_handler('chancmd sysinfo', 'sysinfo_cmd');
   $help->del_help('sysinfo', 'Channel');
 }

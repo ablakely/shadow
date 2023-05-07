@@ -8,6 +8,7 @@
 use strict;
 use warnings;
 use CPAN;
+use lib './modules';
 
 my @dependsRaw;
 my @depends;

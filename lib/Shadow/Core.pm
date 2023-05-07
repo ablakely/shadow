@@ -19,10 +19,11 @@ use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
 our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
-our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
-our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users);
+our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins, @log, @termbuf);
+our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg);
 
 my $omode = 0;
+our $tmpclient;
 
 %options = (
 	'flood' => {
@@ -137,6 +138,18 @@ sub rehash {
 	$options{cfg} = $cfg;
 
 	print "Rehashing configuration file...\n";
+
+	handle_handler('event', 'rehash', $cfg);
+}
+
+sub updatecfg {
+	my ($self, $cfg) = @_;
+
+	open(my $fh, ">", "./etc/shadow.conf") or return err($self, "[WebAdmin] Cannot write config: $!");
+    #select($fh);
+    
+	print $fh $cfg;
+	close($fh);
 }
 
 # We'll handle our module stuff here
@@ -166,14 +179,29 @@ sub err {
 	if ($debug) {
 		print $err."\n";
 	}
+
 	my $cmdchan = $cfg->{Shadow}->{IRC}->{bot}->{cmdchan};
 	irc_raw(1, "PRIVMSG $cmdchan :$err");
+
+	push(@log, $err);
 
 	if ($fatal) {
 		irc_raw(1, "PRIVMSG $cmdchan :[FATAL] Encountered fatal error.  Exiting...");
 		print "[FATAL] Encountered fatal error.  Exiting...\n";
 		die();
 	}
+}
+
+sub isloaded {
+	my ($self, $module_name) = @_;
+	
+	foreach my $loaded_mod (@loaded_modules) {
+		if ($loaded_mod eq "Shadow::Mods::".$module_name) {
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 sub load_module {
@@ -226,6 +254,22 @@ sub unload_module {
 	}
 
 	return undef;
+}
+
+sub register {
+	my ($self, $name, $version, $author) = @_;
+
+	$modreg{$name} = {};
+	$modreg{$name}{version} = $version;
+	$modreg{$name}{author}  = $author;
+}
+
+sub unregister {
+	my ($self, $name) = @_;
+
+	if (exists($modreg{$name})) {
+		delete $modreg{$name};
+	}
 }
 
 sub module_stats {
@@ -527,6 +571,9 @@ sub irc_in {
 			irc_userhost($text);
 			handle_handler('raw', 'userhost', $bits[2], $text);
 		}
+		elsif ($bits[1] eq "311") {
+			irc_userhost($bits[3], $bits[4]."\@".$bits[5]);
+		}
 		elsif ($bits[1] eq "366") {
 			# end of /NAMES event
 			if (!$text) {
@@ -646,7 +693,16 @@ sub irc_users {
 
 	my $ul = join(" ", @users);
 	$ul =~ s/[\+|\%|\@|\&\~]//gs;
+		
 	irc_raw(1, "userhost $ul"); # Figure out our user hosts
+
+	if ($omode) {
+		foreach my $user (@users) {
+			$user =~ s/[\+|\%|\@|\&|\~]//gs;
+
+			irc_raw(1, "whois $user");
+		}
+	}
 
 	for (@users) {
 		my ($owner, $protect, $op, $halfop, $voice);
@@ -674,7 +730,18 @@ sub irc_users {
 }
 
 sub irc_userhost {
-	my ($text) = @_;
+	my ($text, $host) = @_;
+
+	if ($host) {
+		foreach my $chan (keys %sc) {
+			if ($sc{$chan}{users}{$text}) {
+				$sc{$chan}{users}{$text}{host} = $host;
+			}
+		}
+
+		return;
+	}
+
 	my @users  = split(/ /, $text);
 	my $isoper = 0;
 
@@ -719,6 +786,8 @@ sub irc_join {
 		handle_handler('event', 'join_me', $remotenick, $hostmask, $channel);
 	}
 
+
+	irc_raw(1, "whois $remotenick");
 	$sc{lc($channel)}{users}{$remotenick}		= {};
 	$sc{lc($channel)}{users}{$remotenick}{hostmask}	= $hostmask;
 
@@ -991,7 +1060,12 @@ sub irc_say {
 	my ($target, $text, $level) = @_;
 
 	$level = 2 if !defined $level;
-	irc_raw($level, "PRIVMSG $target :$text");
+
+	if ($target =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
+		$WebAdmin::outbuf{$WebAdmin::sockmap{$target}} .= formatTerm($text);
+	} else {
+		irc_raw($level, "PRIVMSG $target :$text");
+	}
 }
 
 
@@ -1012,12 +1086,44 @@ sub ctcp {
 	irc_ctcp(@_);
 }
 
+sub formatTerm {
+	my $text = shift;
+
+	my %colors = (
+		0  => "#FFFFFF",
+		1  => "#000000",
+		2  => "#00007F",
+		3  => "#009300",
+		4  => "#FF0000",
+		5  => "#7F0000",
+		6  => "#9C009C",
+		7  => "#FC7F00",
+		8  => "#FFFF00",
+		9  => "#00FC00",
+		10 => "#009393",
+		11 => "#00FFFF",
+		12 => "#0000FC",
+		13 => "#FF00FF",
+		14 => "#7F7F7F",
+		15 => "#D2D2D2"
+	);
+
+	$text = "$text\r\n";
+
+	return $text;
+}
+
 sub notice {
 	my $self = shift;
 	my ($target, $text, $level) = @_;
 
 	$level = 2 if !$level;
-	irc_raw($level, "NOTICE $target :$text");
+
+	if ($target =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
+		$WebAdmin::outbuf{$WebAdmin::sockmap{$target}} .= formatTerm($text);
+	} else {
+		irc_raw($level, "NOTICE $target :$text");
+	}
 }
 
 sub emote {
@@ -1110,9 +1216,13 @@ sub listusers {
  }
 
 sub gethost {
-	my ($self, $chan, $nick) = @_;
+	my ($self, $nick) = @_;
 
-	return $sc{lc($chan)}{users}{$nick}{host};
+	foreach my $chan (keys %sc) {
+		if (exists($sc{$chan}{users}{$nick}{host})) {
+			return $sc{$chan}{users}{$nick}{host};
+		}
+	}
 }
 
 sub flood {
@@ -1145,6 +1255,10 @@ sub isprotect {
 
 sub isop {
 	my ($self, $nick, $channel) = @_;
+	if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
+		return 1;
+	}
+
 	if (defined($sc{lc($channel)}{users}{$nick}{op}))
 	{
 		return 1;
@@ -1241,6 +1355,10 @@ sub bold {
 
 sub isbotadmin {
 	my ($self, $nick, $host) = @_;
+
+	if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/ && $host eq "-TERM-") {
+		return 1;
+	}
 
 	return check_admin($nick, $host);
 }
@@ -1525,14 +1643,23 @@ sub add_handler_parsed {
 sub handle_handler {
 	my ($handler, $subhandler, @messages) = @_;
 	return 0 if (!defined($handlers{$handler}{$subhandler}));
+
 	for (@{$handlers{$handler}{$subhandler}}) {
 		my ($module, $sub) = ($_->{module}, $_->{sub});
+
 		eval("${module}::$sub(\@messages);");
 		if ($@) {
-			print "[Core/handle_handler] eval sytanx error: $@\n";
+			print "[Core/handle_handler] eval sytanx error: $@\ncode: $module :: $sub\(@messages\)\n\n";
 		}
 	}
 	return 1;
+}
+
+sub handle_term_privcmd {
+	my ($self, $client, $cmd, $args) = @_;
+
+	handle_handler('privcmd', $cmd, '-TERM-', $client, $args);
+
 }
 
 sub del_handler {

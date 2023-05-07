@@ -10,6 +10,8 @@ my $bot    = Shadow::Core;
 my $help   = Shadow::Help;
 
 sub loader {
+  $bot->register("AutoID", "v1.0", "Aaron Blakely");
+
   $bot->add_handler('event connected', 'autoid_connected');
   $bot->add_handler('privcmd nsregister', 'autoid_register');
   $bot->add_handler('privcmd nspasswd', 'autoid_passwd');
@@ -54,7 +56,7 @@ sub genpw {
 
     $maxchars = $maxchars / 2;
 
-    my $alisas;
+    my $alias;
     my ($x, $y);
 
     for (my $i = 0; $i < $maxchars; $i++) {
@@ -146,6 +148,7 @@ sub autoid_verify {
 }
 
 sub unloader {
+  $bot->unregister("AutoID");
   $bot->del_handler('event connected', 'autoid_connected');
   $bot->del_handler('privcmd nsregister', 'autoid_register');
   $bot->del_handler('privcmd nspasswd', 'autoid_passwd');

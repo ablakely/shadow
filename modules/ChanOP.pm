@@ -15,6 +15,7 @@ my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
+  $bot->register("ChanOP", "v0.9", "Aaron Blakely");
   $bot->add_handler('chancmd op',    'chanop_op');
   $bot->add_handler('privcmd op',    'chanop_op');
   $bot->add_handler('chancmd voice', 'chanop_voice');
@@ -141,6 +142,7 @@ sub chanop_voice {
 }
 
 sub unloader {
+  $bot->unregister("ChanOP");
   $bot->del_handler('chancmd op',    'chanop_op');
   $bot->del_handler('privcmd op',    'chanop_op');
   $bot->del_handler('chancmd voice', 'chanop_voice');

@@ -24,6 +24,7 @@ sub loader {
 		return -1;
 	}
 
+	$bot->register("Fortune", "v1.0", "Aaron Blakely");
 	$bot->add_handler('chancmd fortune', 'doFortune');
 	$help->add_help("fortune", "Game", "", "Fortune cookie! [F]", 0, sub {
 		my ($nick, $host, $text) = @_;
@@ -57,6 +58,7 @@ sub doFortune {
 }
 
 sub unloader {
+	$bot->unregister("Fortune");
 	$bot->del_handler('chancmd fortune', 'doFortune');
 	$help->del_help('fortune', 'Misc.');
 }

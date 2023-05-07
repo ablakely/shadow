@@ -10,6 +10,8 @@ my $bot = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
+	$bot->register("Uptime", "v1.0", "Aaron Blakely");
+
 	$bot->add_handler('chancmd uptime', 'uptime_cmd');
 	$help->add_help("uptime", 'Channel', "", "Prints system's uptime to channel. [F]", 0, sub {
 		my ($nick, $host, $text) = @_;
@@ -37,6 +39,8 @@ sub uptime_cmd {
 }
 
 sub unloader {
+	$bot->unregister("Uptime");
+
 	$bot->del_handler('chancmd uptime', 'uptime_cmd');
 	$help->del_help("uptime", 'Channel');
 }

@@ -12,6 +12,8 @@ my $help = Shadow::Help;
 my $dbfile = "./etc/aliases.db";
 
 sub loader {
+    $bot->register("Aliases", "v1.0", "Aaron Blakely");
+
     $bot->add_handler('privcmd alias', 'aliasHandler');
     $bot->add_handler('message channel', 'chanMessageHandler');
 
@@ -132,6 +134,7 @@ sub chanMessageHandler {
 }
 
 sub unloader {
+    $bot->unregister("Aliases");
     $bot->del_handler('privcmd alias', 'aliasHandler');
     $bot->del_handler('message channel', 'chanMessageHandler');
 }

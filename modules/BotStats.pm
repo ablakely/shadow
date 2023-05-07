@@ -27,6 +27,7 @@ sub loader {
     print "       Some functions might not work as intended on other platforms.\n";
   }
 
+  $bot->register("BotStats", "v1.2", "Aaron Blakely");
   $bot->add_handler('privcmd status', 'BotStats_dostatus');
   $help->add_help('status', 'Admin', '', 'Outputs current stats about the bot.', 1, sub {
     my ($nick, $host, $text) = @_;
@@ -142,6 +143,7 @@ sub BotStats_hookstats {
 }
 
 sub unloader {
+  $bot->unregister("BotStats");
   $bot->del_handler('privcmd status', 'BotStats_dostatus');
   $bot->del_handler('privcmd hookstats', 'BotStats_hookstats');
   $help->del_help('status', 'Admin');
