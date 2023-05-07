@@ -23,9 +23,10 @@ my $loadedBotStats = 0;
 our $sock;
 our (%inbuf, %outbuf, %ready, %sockmap);
 
-my $cfg = Shadow::Core::cfg->{Modules}->{WebAdmin};
+my $cfg;
 
 sub loader {
+    $cfg = $Shadow::Core::cfg->{Modules}->{WebAdmin};
     $bot->register("WebAdmin", "v0.5", "Aaron Blakely");
 
     require WebAdmin::Routes;
@@ -39,8 +40,8 @@ sub loader {
     $router = WebAdmin::Router->new();    
     $routes = WebAdmin::Routes->new($bot, $router);
 
-    my $host = exists($cfg->{httpd}->{addr}) ? $cfg->{httpd}->{addr} : "0.0.0.0";
-    my $port = exists($cfg->{httpd}->{port}) ? $cfg->{httpd}->{port} : 8888;
+    my $host = $cfg->{httpd}->{addr} ? $cfg->{httpd}->{addr} : "0.0.0.0";
+    my $port = $cfg->{httpd}->{port} ? $cfg->{httpd}->{port} : 8888;
 
     $sock = IO::Socket::INET->new(
         LocalHost  => $host,
