@@ -39,19 +39,22 @@ sub loader {
     $router = WebAdmin::Router->new();    
     $routes = WebAdmin::Routes->new($bot, $router);
 
+    my $host = exists($cfg->{httpd}->{addr}) ? $cfg->{httpd}->{addr} : "0.0.0.0";
+    my $port = exists($cfg->{httpd}->{port}) ? $cfg->{httpd}->{port} : 8888;
+
     $sock = IO::Socket::INET->new(
-        LocalHost  => exists($cfg->{httpd}->{addr}) ? $cfg->{httpd}->{addr} : "0.0.0.0",
-        LocalPort  => exists($cfg->{httpd}->{port}) ? $cfg->{httpd}->{port} : 8888,
+        LocalHost  => $host,
+        LocalPort  => $port,
         Proto      => 'tcp',
         Listen     => SOMAXCONN,
         Blocking   => 0,
         Reuse      => 1,
         # Timeout    => .1
-    ) or return $bot->err("WebAdmin: Cannot create socket on port 8888.");
+    ) or return $bot->err("WebAdmin: Cannot create socket on port $port.");
 
     $select->add($sock);
 
-    $bot->log("WebAdmin: HTTP Server started on port 8888.");
+    $bot->log("WebAdmin: HTTP Server started on port $port.");
 
     $routes->initRoutes();
 
