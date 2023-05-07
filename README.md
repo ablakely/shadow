@@ -12,6 +12,13 @@ shadow is a modular IRC bot written in Perl by Aaron Blakely, it's goal is to be
 
 
 # Installing
+
+## Docker
+    sudo docker -d -p 1337:1337 -e IRC_NICK=MyBot --name shadow ab3800/shadow
+
+See [shadow-docker](https://github.com/ablakely/shadow) for more information about configuring the bot with enviornment variables.
+
+## Bare
 Installing Shadow is very simple thanks to our dependency installer, just run installdepends and let the script prepare your enviornment.  See below for specific instructuins related to your operating system.
 
 ## Linux
