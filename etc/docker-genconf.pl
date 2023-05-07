@@ -10,7 +10,7 @@ print $FH <<END;
 # Written by Aaron Blakely
 
 
-@Shadow
+\@Shadow
 
 [IRC]
 bot.host       = [$ENV{IRC_HOST}:$ENV{IRC_PORT}]
@@ -36,7 +36,7 @@ system.modules      = [ChanOP,AutoID,WebAdmin]
 # Comma separated list of hostnames (wildcards are accepted)
 bot.admins = [$ENV{IRC_ADMINHOSTS}]
 
-@Modules
+\@Modules
 # Modules Section - Define settings for configuring modules.
 
 [WebAdmin]
