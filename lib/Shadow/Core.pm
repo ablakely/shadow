@@ -71,19 +71,32 @@ sub new {
 	my $class				= shift;
 	my $self				= {};
 	my ($conffile, $verbose, $nofork)  = @_;
-	$cfgparser   = Shadow::Config->new($conffile, $verbose);
+
+	$cfgparser      = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
 	$options{cfg}   = $cfg;
-        my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
 
 	if (my $cmdprefix = $cfg->{Shadow}->{IRC}->{bot}->{cmdprefix}) {
 		$options{irc}{cmdprefix} = $cmdprefix;
 	}
 
 	$debug = $verbose;
+	my @serverlist  = @{$cfg->{Shadow}->{IRC}->{bot}->{host}};
+
+	# $ENV overrides
+	$cfg->{Shadow}->{IRC}->{bot}->{cmdchan} = $ENV{IRC_CMDCHAN} if exists($ENV{IRC_CMDCHAN});
+	$cfg->{Shadow}->{IRC}->{bot}->{admins}  = split(/,/, $ENV{IRC_ADMINS}) if exists($ENV{IRC_ADMINS});
+
+	if ($cfg->{Modules}->{WebAdmin}->{httpd}->{publicURL} && exists($ENV{HTTP_PUBURL})) {
+		$cfg->{Modules}->{WebAdmin}->{httpd}->{publicURL} = $ENV{HTTP_PUBURL};
+	}
 
 	foreach my $ircserver (@serverlist) {
 		my ($serverhost, $serverport)	= split(/:/, $ircserver);
+
+		$serverhost = $ENV{IRC_HOST} if exists($ENV{IRC_HOST});
+		$serverport = $ENV{IRC_PORT} if exists($ENV{IRC_PORT});
+
 		$server{$serverhost}		= {};
 		$server{$serverhost}{port}	= $serverport || 6667;
 	}
@@ -93,8 +106,8 @@ sub new {
 	my $whoami = `whoami`;
 	chomp $whoami;
 	$whoami .= "bot";
-	$options{config}{nick}		= $cfg->{Shadow}->{IRC}->{bot}->{nick} || $whoami;
-	$options{config}{name}		= $cfg->{Shadow}->{IRC}->{bot}->{name} || $nick;
+	$options{config}{nick}		= $ENV{IRC_NICK} || $cfg->{Shadow}->{IRC}->{bot}->{nick} || $whoami;
+	$options{config}{name}		= $ENV{IRC_NAME} || $cfg->{Shadow}->{IRC}->{bot}->{name} || $nick;
 	$options{config}{reconnect}	= 200;
 
 	# to put something in there
@@ -487,7 +500,7 @@ sub irc_in {
 		    # connected event
 		    irc_connected($bits[2]);
 
-		    my @chans = @{$cfg->{Shadow}->{IRC}->{bot}->{channels}};
+		    my @chans = exists($ENV{IRC_CHANS}) ? split(/,/, $ENV{IRC_CHANS}) : @{$cfg->{Shadow}->{IRC}->{bot}->{channels}};
 		    foreach my $channel (@chans) {
 					print "Attempting to join $channel\n";
 					irc_raw(1, "JOIN :$channel");
