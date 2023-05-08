@@ -14,7 +14,7 @@ Installing Shadow is very simple thanks to our dependency installer, just run `i
 ## Docker
     sudo docker -d -p 1337:1337 -e IRC_NICK=MyBot --name shadow ab3800/shadow
 
-See [shadow-docker](https://github.com/ablakely/shadow) for more information about configuring the bot with environment variables.
+See [shadow-docker](https://github.com/ablakely/shadow-docker) for more information about configuring the bot with environment variables.
 
 ## Linux
 To install on debian/ubuntu systems you will need to following packages:
