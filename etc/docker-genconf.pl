@@ -45,7 +45,7 @@ bot.admins = [$ENV{IRC_ADMINHOSTS}]
 httpd.addr = "0.0.0.0"
 
 # httpd.port - Defines which port the WebAdmin HTTP server will listen on.
-httpd.port = "1337"
+httpd.port = "$ENV{HTTP_PORT}"
 
 # httpd.publicURL - Defines the URL that the webadmin is located at.
 httpd.publicURL = "$ENV{HTTP_PUBURL}"
