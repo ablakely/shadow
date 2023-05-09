@@ -41,3 +41,6 @@ httpd.port = "8888"
 
 # httpd.publicURL - Defines the URL that the webadmin is located at.
 httpd.publicURL = "http://10.0.0.104:8888/"
+
+# sys.checkupdate - Automatically check for updates with git fetch
+sys.checkupdate = yes

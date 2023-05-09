@@ -92,6 +92,12 @@ sub rehashBot {
     $bot->rehash();
 }
 
+sub installUpdates {
+    $bot->log("[WebAdmin] Installing updates, the bot will restart.");
+
+    system "git pull";
+    system "$0 && sleep 1 && kill -9 $$";
+}
 
 sub initRoutes {
     my ($self) = @_;
@@ -358,8 +364,12 @@ sub initRoutes {
         if (checkSession($headers)) {
             $router->headers($client);
 
+            my $checkTime = $WebAdmin::updateLastCheck ? localtime($WebAdmin::updateLastCheck) : "N/A";
+
             EJS::Template->process("$tdir/dash-maint.ejs", {
-                favicon => $router->b64img("../favicon.ico")
+                favicon => $router->b64img("../favicon.ico"),
+                updateReady => $WebAdmin::updateReady,
+                updateLastCheck => $checkTime
             }, \$buf);
 
             $WebAdmin::outbuf{$client} .= $buf;
@@ -430,6 +440,32 @@ sub initRoutes {
 
 
             $router->redirect($client, "/maintance?msg=reloaded-webadmin");
+        } else {
+            $router->redirect($client, "/");
+        }
+    });
+
+    $router->get('/maintance/check-update', sub {
+        my ($client, $params, $headers) = @_;
+
+        if (checkSession($headers)) {
+            &WebAdmin::checkGitUpdate();
+            $bot->log("[WebAdmin] Checking for updates [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            
+            $router->redirect($client, "/maintance");
+        } else {
+            $router->redirect($client, "/");
+        }
+    });
+
+    $router->get('/maintance/install-update', sub {
+        my ($client, $params, $headers) = @_;
+
+        if (checkSession($headers)) {
+            $bot->add_timeout(60, "installUpdates");
+            $bot->log("[WebAdmin] Installing updates in 1 minute [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+
+            $router->redirect($client, "/maintance?msg=installing-updates");
         } else {
             $router->redirect($client, "/");
         }

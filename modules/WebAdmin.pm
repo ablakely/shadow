@@ -22,6 +22,8 @@ my $loadedBotStats = 0;
 
 our $sock;
 our (%inbuf, %outbuf, %ready, %sockmap);
+our $updateLastCheck;
+our $updateReady = 0;
 
 my $cfg;
 
@@ -64,8 +66,42 @@ sub loader {
     }
 
     $bot->add_handler('event tick', 'wa_tick');
-    $bot->add_handler('privcmd webpass', 'wa_webpass');
+
+    $bot->add_timeout(43200, "wa_checkupdate");
+
+
+    gitCheckUpdate() if ($cfg->{sys}->{checkupdate});
 }
+
+sub checkGitUpdate {
+    $bot->log("[WebAdmin - Update Checker] Checking for updates.");
+    $updateLastCheck = time;
+
+    system "git fetch";
+
+    my $currver = `git rev-parse HEAD`;
+    my $newver  = `git rev-parse \@{u}`;
+
+    chomp $currver;
+    chomp $newver;
+
+    if ($currver eq $newver) {
+        $updateReady = 0;
+    } else {
+        $updateReady = 1;
+    }
+}
+
+sub wa_checkupdate {
+    checkGitUpdate();
+
+    if ($updateReady) {
+        $bot->log("[WebAdmin - Update Checker] Update is available.");
+    } else {
+        $bot->add_timeout(43200, "wa_checkupdate");
+    }
+}
+
 
 sub reloadRoutes {
     delete $INC{'WebAdmin/Routes.pm'};
@@ -242,15 +278,11 @@ sub parseHeaders {
     return (\%headers, @raw);
 }
 
-sub wa_webpass {
-
-}
-
 sub unloader {
     $bot->unregister("WebAdmin");
 
     $bot->del_handler('event tick', 'wa_tick');
-    $bot->del_handler('privcmd webpass', 'wa_webpass');
+
 
     delete $INC{'WebAdmin/Router.pm'};
     delete $INC{'WebAdmin/Routes.pm'};

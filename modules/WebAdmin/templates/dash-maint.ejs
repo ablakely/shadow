@@ -262,7 +262,7 @@
         </div -->
       </div>
 
-      <table class="table">
+      <table class="table table-borderless">
         <tr>
           <td><a href="/maintance/rehash" class="btn btn-sm btn-success">Rehash</a></td>
           <td><p>Reloads configuration file and applies settings.</p></td>
@@ -280,6 +280,31 @@
           <td><p>Shutdown Shadow completely.</p></td>
         </tr>
       </table>
+
+      <br />
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h3 class="h3">Updates</h3>
+      
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group me-2">
+            <% if (updateReady === 0) { %>
+            <a class="btn btn-sm btn-info" href="/maintance/check-update">Check Now</a>
+            <% } else { %>
+            <a class="btn btn-sm btn-info" href="/maintiance/install-update">Install Update</a>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <% if (updateReady === 0) { %>
+      <h5 class="h5">No update is available.</h5>
+      <% } else { %>
+      <h5 class="h5">Updates are available.</h5>
+      <p>Installing updates will restart the bot.</p>
+      <% } %>
+      
+      <br />
+      <p><b>Last Check:</b> <%= updateLastCheck %></p>
 
     </main>
   </div>

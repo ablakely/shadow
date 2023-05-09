@@ -1683,7 +1683,7 @@ sub del_handler {
 		for (@{$handlers{$event[0]}{$event[1]}}) {
 			if ($_->{sub} eq $sub) {
 				splice(@{$handlers{$event[0]}{$event[1]}}, $count, 1);
-				delete($handlers{$event[0]}{$event[1]});
+				#delete($handlers{$event[0]}{$event[1]});
 			} else {
 				$count++;
 			}
