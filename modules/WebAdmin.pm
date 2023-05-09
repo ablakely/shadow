@@ -29,7 +29,7 @@ my $cfg;
 
 sub loader {
     $cfg = $Shadow::Core::cfg->{Modules}->{WebAdmin};
-    $bot->register("WebAdmin", "v0.5", "Aaron Blakely");
+    $bot->register("WebAdmin", "v1.0", "Aaron Blakely");
 
     require WebAdmin::Routes;
     require WebAdmin::Router;

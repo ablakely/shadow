@@ -159,7 +159,7 @@
     <div>
       <h3 class="float-md-start mb-0">Shadow</h3>
       <nav class="nav nav-masthead justify-content-center float-md-end">
-        <a class="nav-link fw-bold py-1 px-0 active" aria-current="page" href="#">Login</a>
+        <a class="nav-link fw-bold py-1 px-0 active" aria-current="page" href="/">Login</a>
       </nav>
     </div>
   </header>
@@ -168,6 +168,12 @@
     <h1>Enter your IRC nick.</h1>
     <p class="lead">If you have admin access, the bot will message you a authentication code used to access the WebAdmin panel.</p>
     
+    <% if (msg === "invalidnick") { %>
+      <div class="mb3 alert alert-info">
+        Invalid nick or unauthorized user.
+      </div>  
+    <% } %>
+
     <form method="post" action="/login">
         <div class="input-group mb-3">
             <input type="text" name="ircnick" class="form-control" placeholder="IRC Nick" aria-label="IRC Nick" aria-describedby="submitbtn">

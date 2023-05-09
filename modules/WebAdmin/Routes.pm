@@ -96,7 +96,6 @@ sub installUpdates {
     $bot->log("[WebAdmin] Installing updates, the bot will restart.");
 
     system "git pull";
-    system "$0";
     exit;
 }
 
@@ -159,7 +158,8 @@ sub initRoutes {
             $router->headers($client);
 
             EJS::Template->process("$tdir/login.ejs", {
-                favicon => $router->b64img("../favicon.ico")
+                favicon => $router->b64img("../favicon.ico"),
+                msg => $params->{msg} ne "" ? $params->{msg} : undef
             }, \$buf);
 
             $WebAdmin::outbuf{$client} .= $buf;
@@ -188,7 +188,7 @@ sub initRoutes {
 
                 $WebAdmin::outbuf{$client} .= $buf;
             } else {
-                $router->redirect($client, "/login?err=invalidNick");
+                $router->redirect($client, "/login?err=invalidnick");
             }
 
         }
@@ -214,6 +214,8 @@ sub initRoutes {
                 $router->redirect($client, "/", \@cookies);
             }
         }
+
+        $router->redirect($client, "/");
     });
 
     $router->get('/logout', sub {
@@ -265,7 +267,8 @@ sub initRoutes {
                 favicon => $router->b64img("../favicon.ico"),
                 mods => \@tmp,
                 unloaded => \@diff,
-                modreg   => \%Shadow::Core::modreg
+                modreg   => \%Shadow::Core::modreg,
+                msg      => $params->{msg} ne "" ? $params->{msg} : undef
             }, \$buf);
 
             $WebAdmin::outbuf{$client} .= $buf;
@@ -384,7 +387,8 @@ sub initRoutes {
             EJS::Template->process("$tdir/dash-maint.ejs", {
                 favicon => $router->b64img("../favicon.ico"),
                 updateReady => $WebAdmin::updateReady,
-                updateLastCheck => $checkTime
+                updateLastCheck => $checkTime,
+                msg => $params->{msg} ne "" ? $params->{msg} : undef
             }, \$buf);
 
             $WebAdmin::outbuf{$client} .= $buf;
@@ -401,7 +405,7 @@ sub initRoutes {
             $bot->add_timeout(10, "rehashBot");
 
             $bot->log("[WebAdmin] Rehashing configuration file [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
-
+            $router->redirect($client, "/maintance?msg=rehashing");
         } else {
             $router->redirect($client, "/");
         }
@@ -413,7 +417,7 @@ sub initRoutes {
         if (checkSession($headers)) {
             $bot->log("[WebAdmin] Shutting down... [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
 
-            system "sleep 3 && kill $$";
+            system "sleep 3 && kill -9 $$";
             close $client
         } else {
             $router->redirect($client, "/");
@@ -433,28 +437,15 @@ sub initRoutes {
         }
     });
 
-    $router->get('/maintance/reload-routes', sub {
-        my ($client, $params, $headers) = @_;
-
-        if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Reloading WebAdmin::Routes [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
-            $router->redirect($client, "/maintance?msg=reloaded-routes");
-
-            reloadRoutes();
-        } else {
-            $router->redirect($client, "/");
-        }
-    });
-
     $router->get('/maintance/reload-webadmin', sub {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
+            $router->redirect($client, "/maintance?msg=reloading-webadmin");
+            
             $bot->add_timeout(10, "reloadWebAdmin");
             $bot->log("[WebAdmin] Reloading WebAdmin [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
 
-
-            $router->redirect($client, "/maintance?msg=reloaded-webadmin");
         } else {
             $router->redirect($client, "/");
         }

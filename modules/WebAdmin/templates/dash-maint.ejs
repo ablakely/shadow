@@ -103,6 +103,8 @@
       .bd-mode-toggle {
         z-index: 1500;
       }
+
+      
     </style>
 
     
@@ -168,6 +170,7 @@
     <span class="navbar-toggler-icon"></span>
   </button>
   <!-- input class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search" aria-label="Search" -->
+  
   <div class="navbar-nav">
     <div class="nav-item text-nowrap">
       <a class="nav-link px-3" href="/logout">Sign out</a>
@@ -260,6 +263,20 @@
             This week
           </button>
         </div -->
+
+        <% if (msg === "installing-updates") { %>
+          <div class="alert alert-fixed alert-warning" role="alert">
+            Updates are scheduled to install in less than one minute.
+          </div>
+        <% } else if (msg === "rehashing") { %>
+          <div class="alert alert-fixed alert-info" role="alert">
+            The bot will rehash in less then 10 seconds.
+          </div>
+        <% } else if (msg === "reloading-webadmin") { %>
+          <div class="alert alert-fixed alert-warning" role="alert">
+            WebAdmin is reloading in less than 10 seconds.
+          </div>  
+        <% } %>
       </div>
 
       <table class="table table-borderless">
