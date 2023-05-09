@@ -337,13 +337,13 @@
 
     <div class="modal fade" id="depinstallModal" tabindex="-1" aria-labelledby="depinstallModalLabel" aria-hidden="true">
       <form action="/modules/download" method="post">
-        <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-scrollable modal-xl">
           <div class="modal-content">
            <div class="modal-header">
-              <h1 class="modal-title fs-5" id="depinstallModalLabel">Dependencies Installer</h1>
+              <h1 class="modal-title fs-5" id="depinstallModalLabel">Dependency Installer</h1>
             </div>
             <div class="modal-body">
-              <div id="termarea">Loading...</div>
+              <div id="termarea">Running dependency installer...</div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-sm btn-outline-danger" data-bs-dismiss="modal" aria-label="Close">Close</button>
@@ -374,7 +374,6 @@
       })
 
       diModal.addEventListener('shown.bs.modal', () => {
-        $("#termarea").html("");
         term = $("#termarea").terminal(function(cmd) {}, {
           greetings: "./installdepends.pl",
           prompt: function(cb) { cb('') }
