@@ -188,7 +188,7 @@ sub initRoutes {
 
                 $WebAdmin::outbuf{$client} .= $buf;
             } else {
-                $router->redirect($client, "/login?err=invalidnick");
+                $router->redirect($client, "/login?msg=invalidnick");
             }
 
         }
