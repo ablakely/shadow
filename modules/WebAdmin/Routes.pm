@@ -96,7 +96,8 @@ sub installUpdates {
     $bot->log("[WebAdmin] Installing updates, the bot will restart.");
 
     system "git pull";
-    system "$0 && sleep 1 && kill -9 $$";
+    system "$0";
+    exit;
 }
 
 sub initRoutes {
