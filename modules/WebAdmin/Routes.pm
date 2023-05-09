@@ -314,6 +314,20 @@ sub initRoutes {
         }
     });
 
+    $router->post('/modules/download', sub {
+        my ($client, $params, $headers) = @_;
+
+        if (checkSession($headers)) {
+            $bot->log("[WebAdmin] Downloading module from ".$params->{url}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+
+            system "wget -O ./modules/".$params->{filename}." ".$params->{url};
+
+            $router->redirect($client, "/modules");
+        } else {
+            $router->redirect($client, "/");
+        }
+    });
+
     $router->get('/configuration', sub {
         my ($client, $params, $headers, $buf) = @_;
 

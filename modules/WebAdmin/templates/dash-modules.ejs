@@ -250,14 +250,14 @@
     <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Modules</h1>
-        <!-- div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group me-2">
-            <button type="button" class="btn btn-outline-primary">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#downloadModal">
               <span data-feather="download-cloud"></span>
               Download Module
             </button>
           </div>
-        </div -->
+        </div>
       </div>
 
       <form action="/modules/load" method="post">
@@ -300,10 +300,53 @@
         </tbody>
       </table>
     </main>
+
+    <div class="modal fade" id="downloadModal" tabindex="-1" aria-labelledby="downloadModalLabel" aria-hidden="true">
+      <form action="/modules/download" method="post">
+        <div class="modal-dialog">
+          <div class="modal-content">
+           <div class="modal-header">
+              <h1 class="modal-title fs-5" id="downloadModalLabel">Download Module</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="moduleURL" class="form-label">URL</label>
+                <input name="url" type="text" class="form-control" id="moduleURL" placeholder="https://example.com/Module.pm">
+              </div>
+              <div class="mb-3">
+                <label for="fileName" class="form-label">Filename</label>
+                <input name="filename" type="text" class="form-control" id="fileName" placeholder="Module.pm">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Download</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
+  <script>
+    const dlModal = document.getElementById('downloadModal')
+    const dlURLInput = document.getElementById('moduleURL')
 
+    dlModal.addEventListener('shown.bs.modal', () => {
+      dlURLInput.focus()
+    });
+
+    $("#moduleURL").on("change", function() {
+      var url = $("#moduleURL").val();
+
+      if (matches = /(.*)\/(.*?)\.pm/.exec(url)) {
+        $("#fileName").val(matches[2]+".pm");
+      }
+    })
+  </script>
+
+    <script src="/js/jquery.js"></script>
     <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
       <script src="/js/feather.min.js"  crossorigin="anonymous"></script>
