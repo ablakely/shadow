@@ -20,7 +20,6 @@ var colors = {
 };
 
 $(document).ready(function() {
-    console.log("ready");
     $("#term").terminal(function(cmd) {
         var ins = this;
 

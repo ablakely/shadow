@@ -3,6 +3,7 @@
 <html lang="en" data-bs-theme="auto">
   <head>
     <script src="/js/jquery.js"></script>
+    <script src="/js/jqterm.js"></script>
     <script src="/js/color-modes.js"></script>
 
     <meta charset="utf-8">
@@ -19,6 +20,7 @@
     
 
 <link href="/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<link href="/css/terminal.css" rel="stylesheet">
 
     <!-- Favicons
 <link rel="apple-touch-icon" href="/docs/5.3/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
@@ -252,6 +254,10 @@
         <h1 class="h2">Modules</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
           <div class="btn-group me-2">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#depinstallModal">
+              <span data-feather="download"></span>
+              Install Dependencies
+            </button>
             <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#downloadModal">
               <span data-feather="download-cloud"></span>
               Download Module
@@ -273,6 +279,7 @@
           <button class="btn btn-outline-primary" type="submit">Load</button>
         </div>
       </form>
+      <br />
 
       <table class="table">
         <thead>
@@ -318,6 +325,7 @@
                 <label for="fileName" class="form-label">Filename</label>
                 <input name="filename" type="text" class="form-control" id="fileName" placeholder="Module.pm">
               </div>
+              <p class="text-sm">Be sure to run dependency installer after downloading new modules before loading them.</p>
             </div>
             <div class="modal-footer">
               <button type="submit" class="btn btn-primary">Download</button>
@@ -326,27 +334,77 @@
         </div>
       </form>
     </div>
+
+    <div class="modal fade" id="depinstallModal" tabindex="-1" aria-labelledby="depinstallModalLabel" aria-hidden="true">
+      <form action="/modules/download" method="post">
+        <div class="modal-dialog modal-dialog-scrollable">
+          <div class="modal-content">
+           <div class="modal-header">
+              <h1 class="modal-title fs-5" id="depinstallModalLabel">Dependencies Installer</h1>
+            </div>
+            <div class="modal-body">
+              <div id="termarea">Loading...</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-outline-danger" data-bs-dismiss="modal" aria-label="Close">Close</button>
+            </div>
+        </div>
+      </form>
+    </div>
+
   </div>
 </div>
 
   <script>
-    const dlModal = document.getElementById('downloadModal')
-    const dlURLInput = document.getElementById('moduleURL')
+    (function() {
+      const dlModal = document.getElementById('downloadModal')
+      const dlURLInput = document.getElementById('moduleURL')
+      const diModal = document.getElementById('depinstallModal')
 
-    dlModal.addEventListener('shown.bs.modal', () => {
-      dlURLInput.focus()
-    });
+      dlModal.addEventListener('shown.bs.modal', () => {
+        dlURLInput.focus()
+      });
 
-    $("#moduleURL").on("change", function() {
-      var url = $("#moduleURL").val();
+      $("#moduleURL").on("change", function() {
+        var url = $("#moduleURL").val();
 
-      if (matches = /(.*)\/(.*?)\.pm/.exec(url)) {
-        $("#fileName").val(matches[2]+".pm");
-      }
-    })
+        if (matches = /(.*)\/(.*?)\.pm/.exec(url)) {
+          $("#fileName").val(matches[2]+".pm");
+        }
+      })
+
+      diModal.addEventListener('shown.bs.modal', () => {
+        $("#termarea").html("");
+        term = $("#termarea").terminal(function(cmd) {}, {
+          greetings: "./installdepends.pl",
+          prompt: function(cb) { cb('') }
+        });
+
+        $.ajax({
+          type: "POST",
+          url: "/terminal/api",
+          data: { cmd: 'sys "./installdepends.pl"'},
+          async: false,
+          success: function(data) {
+            var tmp = data.split("\n");
+
+            for (var i = 0; i < tmp.length; i++) {
+              if (tmp[i]) {
+                term.echo(tmp[i]);
+              }
+            }
+          }
+        })
+      });
+
+      diModal.addEventListener('hide.bs.modal', () => {
+        term.clear();
+      })
+
+    })();
   </script>
 
-    <script src="/js/jquery.js"></script>
+
     <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
       <script src="/js/feather.min.js"  crossorigin="anonymous"></script>
