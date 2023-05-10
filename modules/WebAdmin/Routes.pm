@@ -71,7 +71,7 @@ sub checkSession {
 sub updateCfg {
     my ($cfg) = @_;
 
-    $bot->log("[WebAdmin] Rehashing configuration.");
+    $bot->log("[WebAdmin] Rehashing configuration.", "WebAdmin");
 
     $bot->updatecfg($newcfg);
     $bot->rehash();
@@ -203,7 +203,7 @@ sub initRoutes {
             my $nick = $params->{n};
             my $code = $params->{k};
 
-            $bot->log("[WebAdmin] Login from $nick [".$client->peerhost()."]\n");
+            $bot->log("[WebAdmin] Login from $nick [".$client->peerhost()."]", "WebAdmin");
 
             if ($code eq $WebAdmin::auth{$nick}) {
                 my @cookies;
@@ -281,7 +281,7 @@ sub initRoutes {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Unloading module ".$params->{mod}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Unloading module ".$params->{mod}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             $bot->unload_module($params->{mod});
             $router->redirect($client, "/modules");
@@ -294,7 +294,7 @@ sub initRoutes {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Reloading module ".$params->{mod}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Reloading module ".$params->{mod}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]"), "WebAdmin";
             
             $bot->unload_module($params->{mod});
             $bot->load_module($params->{mod});
@@ -309,7 +309,7 @@ sub initRoutes {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Loading module ".$params->{module}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Loading module ".$params->{module}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             $bot->load_module($params->{module});
             $router->redirect($client, "/modules");
@@ -322,7 +322,7 @@ sub initRoutes {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Downloading module from ".$params->{url}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Downloading module from ".$params->{url}." [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             system "wget -O ./modules/".$params->{filename}." ".$params->{url};
 
@@ -369,7 +369,7 @@ sub initRoutes {
 
             $bot->add_timeout(10, "updateCfg");
 
-            $bot->log("[WebAdmin] Configuration file updated [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Configuration file updated [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
         } else {
             $router->redirect($client, "/");
@@ -404,7 +404,7 @@ sub initRoutes {
         if (checkSession($headers)) {
             $bot->add_timeout(10, "rehashBot");
 
-            $bot->log("[WebAdmin] Rehashing configuration file [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Rehashing configuration file [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
             $router->redirect($client, "/maintance?msg=rehashing");
         } else {
             $router->redirect($client, "/");
@@ -415,7 +415,7 @@ sub initRoutes {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Shutting down... [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Shutting down... [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             system "sleep 3 && kill -9 $$";
             close $client
@@ -428,7 +428,7 @@ sub initRoutes {
         my ($client, $params, $headers) = @_;
 
         if (checkSession($headers)) {
-            $bot->log("[WebAdmin] Restarting [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Restarting [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             $router->redirect($client, "/");
             system "sleep 5s && $0 && sleep 1 && kill $$";
@@ -444,7 +444,7 @@ sub initRoutes {
             $router->redirect($client, "/maintance?msg=reloading-webadmin");
             
             $bot->add_timeout(10, "reloadWebAdmin");
-            $bot->log("[WebAdmin] Reloading WebAdmin [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Reloading WebAdmin [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
         } else {
             $router->redirect($client, "/");
@@ -456,7 +456,7 @@ sub initRoutes {
 
         if (checkSession($headers)) {
             &WebAdmin::checkGitUpdate();
-            $bot->log("[WebAdmin] Checking for updates [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Checking for updates [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
             
             $router->redirect($client, "/maintance");
         } else {
@@ -469,7 +469,7 @@ sub initRoutes {
 
         if (checkSession($headers)) {
             $bot->add_timeout(60, "installUpdates");
-            $bot->log("[WebAdmin] Installing updates in 1 minute [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]");
+            $bot->log("[WebAdmin] Installing updates in 1 minute [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             $router->redirect($client, "/maintance?msg=installing-updates");
         } else {

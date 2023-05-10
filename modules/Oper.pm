@@ -12,7 +12,7 @@ sub loader {
   if ($bot->isOperMode()) {
     $bot->add_handler('privcmd kill', 'oper_kill');
   } else {
-    $bot->log("[Oper] Error: Oper credentials not supplied")
+    $bot->log("[Oper] Error: Oper credentials not supplied", "System")
   }
 
   $help->add_help('kill', 'Oper', '<who> <reason>', 'Uses the IRC Operator KILL command on a user.', 1, sub {
@@ -36,10 +36,10 @@ sub oper_kill {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->raw("KILL $who :$reason");
-    $bot->log("[Oper] KILL[$who :$reason] command executed by $nick ($host)");
+    $bot->log("[Oper] KILL[$who :$reason] command executed by $nick ($host)", "Modules");
   } else {
     $bot->notice($nick, "Access denied.");
-    $bot->log("[Oper] KILL[$who :$reason] command attempt [non bot admin] by $nick ($host)");
+    $bot->log("[Oper] KILL[$who :$reason] command attempt [non bot admin] by $nick ($host)", "Modules");
   }
 }
 

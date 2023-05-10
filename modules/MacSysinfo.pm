@@ -10,7 +10,7 @@ my $help = Shadow::Help;
 
 sub loader {
   if ($^O !~ /darwin/) {
-    print "Error: This module is intended to run on macOS!  Refusing to load.\n";
+    $bot->err("Error: This module is intended to run on macOS!  Refusing to load.", 0, "Modules");
     return;
   }
 

@@ -19,7 +19,7 @@ sub whereisFortune {
 
 sub loader {
 	if (!whereisFortune()) {
-		$bot->log("[Fortune] Couldn't find the fortune executable.  Refusing to load.");
+		$bot->log("[Fortune] Couldn't find the fortune executable.  Refusing to load.", "Modules");
 
 		return -1;
 	}

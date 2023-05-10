@@ -33,7 +33,7 @@ sub loader {
   });
 
   if (!-e $dbfile) {
-    open(my $fh, ">", $dbfile) or $bot->err("Autojoin Error creating db: ".$!, 0);
+    open(my $fh, ">", $dbfile) or $bot->err("Autojoin Error creating db: ".$!, 0, "Modules");
     print $fh "{}";
     close($fh);
   }
@@ -42,7 +42,7 @@ sub loader {
 sub Autojoin_readdb {
   my $data;
 
-  open(my $db, "<", $dbfile) or return $bot->err("Autojoin Error opening $dbfile: $!", 0);
+  open(my $db, "<", $dbfile) or return $bot->err("Autojoin Error opening $dbfile: $!", 0, "Modules");
   @data = <$db>;
   close($db);
 
@@ -56,7 +56,7 @@ sub Autojoin_writedb {
 
   $json_text   = to_json( $data, { ascii => 1, pretty => 0} );
 
-  open(my $db, ">", $dbfile) or return $bot->err("Autojoin Error opening $dbfile: $!", 0);
+  open(my $db, ">", $dbfile) or return $bot->err("Autojoin Error opening $dbfile: $!", 0, "Modules");
   print $db $json_text;
   close($db);
 }

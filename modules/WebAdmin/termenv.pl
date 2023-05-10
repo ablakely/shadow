@@ -25,7 +25,11 @@ sub help {
     } elsif ($topic =~ /load/) {
         echo("[[b;;]Syntax:] load(\"<module>\")\n \nLoads <module>.");
     } elsif ($topic =~ /viewlog/) {
-        echo("[[b;;]Syntax:] viewlog(\"<opts>\")\n \nPrints the last 15 lines from the log to the terminal\nUse [[b;;]--full] in <opts> for full log.")
+        echo("[[b;;]Syntax:] viewlog(\"<opts>\")\n \nPrints the last 15 lines from the log to the terminal\nUse [[b;;]--n <number>] to change the number of lines.\nUse [[b;;]--full] in <opts> for full log.\nUse [[b;;]--type <type>] to view different log types.\n \nAvailable types:");
+        
+        foreach my $k (keys %Shadow::Core::log) {
+            echo("\t[[b;;]$k]");
+        }
     } elsif ($topic =~ /sys/) {
         echo("[[b;;]Syntax:] sys(\"<command>\")\n \nRuns the <command> on the host system and prints it's output to the terminal.");
     } elsif ($topic =~ /irc/) {
@@ -67,17 +71,35 @@ sub unload {
 }
 
 sub viewlog {
-    my $mode = shift;
+    my $args = shift;
 
-    if ($mode eq "--full") {
-        foreach my $l (@Shadow::Core::log) {
-            $tmp =~ s/\]/\x07/gs;
-            $tmp =~ s/\[/\x08/gs;
+    my $fulllog = 0;
+    my $n       = 15;
+    my $queue = "All";
+
+    my @tmparg = split(/ /, $args);
+    for (my $i = 0; $i < scalar(@tmparg); $i++) {
+        if ($tmparg[$i] =~ /-[-]?(.*)/) {
+            my $an = $1;
+            my $av = $tmparg[$i+1];
+
+            $queue   = $av if ($an =~ /^type$/i);
+            $fulllog = 1 if ($an =~ /^full$/i);
+            $n       = $av if ($an =~ /^n$/i);
+
+            $i++;
+        }
+    }
+
+    if ($fulllog) {
+        foreach my $l (@{$Shadow::Core::log{$queue}}) {
+            $l =~ s/\]/\x07/gs;
+            $l =~ s/\[/\x08/gs;
             echo("[[b;#4AF626;]$l]");
         }
     } else {
-        for (my $i = -15; $i < 0; $i++) {
-            my $tmp = $Shadow::Core::log[$i];
+        for (my $i = $n * -1; $i < 0; $i++) {
+            my $tmp = $Shadow::Core::log{$queue}[$i];
             $tmp =~ s/\]/\x07/gs;
             $tmp =~ s/\[/\x08/gs;
 

@@ -18,7 +18,7 @@ sub loader {
     $bot->add_handler('privcmd unignore', 'ignore_del');
 
     if (!-e $dbfile) {
-        $bot->log("Ignore: No ignore database found, creating one.");
+        $bot->log("Ignore: No ignore database found, creating one.", "Modules");
         open(my $db, ">", $dbfile) or $bot->error("Ignore: Error: Couldn't open $dbfile: $!");
         print $db "[]";
         close($db);
@@ -76,7 +76,7 @@ sub ignore_add {
 
     $bot->add_ignore($rnick, $rhost);
     $bot->notice($nick, "Ignoring $rnick [$rhost]");
-    $bot->log("Ignoring $rnick ($rhost) [Issued by $nick]");
+    $bot->log("Ignoring $rnick ($rhost) [Issued by $nick]", "Modules");
 
     push(@{$db}, $rnick);
     if ($rhost ne "") {
@@ -108,7 +108,7 @@ sub ignore_del {
     if ($found == 1) {
         $bot->del_ignore($rnick, $rhost);
         $bot->notice($nick, "Unignoring $rnick [$rhost]");
-        $bot->log("Unignoring $rnick ($rhost) [Issued by $nick]");
+        $bot->log("Unignoring $rnick ($rhost) [Issued by $nick]", "Modules");
     } else {
         $bot->notice($nick, "$rnick ($rhost) is not being ignored.");
         return;

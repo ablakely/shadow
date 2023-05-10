@@ -326,7 +326,7 @@ sub url_id {
 
     my ($title, %meta) = getSiteInfo($url);
 
-    $bot->log("URLIdentifier: Fetching URL [$url] for $nick in $chan.");
+    $bot->log("URLIdentifier: Fetching URL [$url] for $nick in $chan.", "Modules");
 
     if ($url =~ /ebay\.[[:alpha:]]/) {
       $title =~ s/\| eBay//;

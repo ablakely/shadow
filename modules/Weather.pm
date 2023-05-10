@@ -32,15 +32,12 @@ sub fetchWeatherJSON {
         my $res = $ua->get("http://api.openweathermap.org/data/2.5/weather?zip=$loc&units=imperial&appid=$API_KEY");
 
         if ($res->is_success) {
-            print $res->decoded_content;
-
             return from_json($res->decoded_content, { utf8 => 1 });
         }
     } else {
         my $res = $ua->get("http://api.openweathermap.org/data/2.5/weather?q=$loc&units=metric&appid=$API_KEY");
 
         if ($res->is_success) {
-            print $res->decoded_content;
             return from_json($res->decoded_content, { utf8 => 1 });
         }
     }

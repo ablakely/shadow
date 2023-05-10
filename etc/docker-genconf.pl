@@ -22,6 +22,18 @@ bot.channels   = [$ENV{IRC_CHANS}]
 # bot.cmdchan - Bot logging/control channel
 bot.cmdchan = "$ENV{IRC_CMDCHAN}"
 
+# bot.cmdchanlogtype - Defines which types of logs will be sent to log channel
+# Types:
+#   All      - All log messages (do not use with other types)
+#   Error    - Error messages
+#   System   - IRC/Core module related log messages
+#   Modules  - Module activity such as loading, reloading, and unloading log messages
+#   WebAdmin - HTTP/WebAdmin activity log messages
+#
+# Modules may add their own log types.
+
+bot.cmdchanlogtype = [System]
+
 # Oper mode (used with modules like Oper, ChanServ)
 # bot.oper = [oper name,oper pass]
 
@@ -49,4 +61,7 @@ httpd.port = "$ENV{HTTP_PORT}"
 
 # httpd.publicURL - Defines the URL that the webadmin is located at.
 httpd.publicURL = "$ENV{HTTP_PUBURL}"
+
+# sys.checkupdate - Automatically check for updates with git fetch
+sys.checkupdate = yes
 END

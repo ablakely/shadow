@@ -20,10 +20,10 @@ sub get {
     my ($self, $path, $subref) = @_;
 
     if (!exists($self->{GET_MAP}{$path})) {
-        $bot->log("[WebAdmin::Router] Adding GET route: $path");
+        $bot->log("[WebAdmin::Router] Adding GET route: $path", "WebAdmin");
         $self->{GET_MAP}{$path} = $subref;
     } else {
-        $bot->err("[WebAdmin::Router] Path already exists: $path");
+        $bot->err("[WebAdmin::Router] Path already exists: $path", 0, "WebAdmin");
     }
 }
 
@@ -31,10 +31,10 @@ sub post {
     my ($self, $path, $subref) = @_;
 
     if (!exists($self->{POST_MAP}{$path})) {
-        $bot->log("[WebAdmin::Router] Adding POST route: $path");
+        $bot->log("[WebAdmin::Router] Adding POST route: $path", "WebAdmin");
         $self->{POST_MAP}{$path} = $subref;
     } else {
-        $bot->err("[WebAdmin::Router] Path already exists: $path");
+        $bot->err("[WebAdmin::Router] Path already exists: $path", 0, "WebAdmin");
     }
 }
 

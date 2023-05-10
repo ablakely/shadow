@@ -19,8 +19,8 @@ use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
 our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
-our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins, @log, @termbuf);
-our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg);
+our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
+our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg, %log);
 
 my $omode = 0;
 our $tmpclient;
@@ -150,7 +150,7 @@ sub rehash {
 	$cfg = $cfgparser->parse();
 	$options{cfg} = $cfg;
 
-	print "Rehashing configuration file...\n";
+	Shadow::Core::log(1, "Rehashing configuration file...", "System");
 
 	handle_handler('event', 'rehash', $cfg);
 }
@@ -177,15 +177,20 @@ sub shadowuse {
 }
 
 sub log {
-	my ($self, $string) = @_;
-	err($self, $string, 0);
+	my ($self, $string, $queue) = @_;
+	err($self, $string, 0, $queue);
 }
 
 sub err {
-	my ($self, $err, $fatal) = @_;
+	my ($self, $err, $fatal, $queue) = @_;
 	if (!$fatal) {
 		$fatal = 0;
 	}
+
+	if (!$queue) {
+		$queue = "System";
+	}
+
 
 	chomp $err;
 
@@ -193,15 +198,25 @@ sub err {
 		print $err."\n";
 	}
 
-	my $cmdchan = $cfg->{Shadow}->{IRC}->{bot}->{cmdchan};
-	irc_raw(1, "PRIVMSG $cmdchan :$err");
+	if ($err =~ /Error/i) {
+		push(@{$log{Error}}, $err);
+	}
 
-	push(@log, $err);
+	push(@{$log{$queue}}, $err);
+	push(@{$log{All}}, $err);
+
+	my $cmdchan = $cfg->{Shadow}->{IRC}->{bot}->{cmdchan};
 
 	if ($fatal) {
 		irc_raw(1, "PRIVMSG $cmdchan :[FATAL] Encountered fatal error.  Exiting...");
-		print "[FATAL] Encountered fatal error.  Exiting...\n";
-		die();
+		print "\n[FATAL] Encountered fatal error.  Exiting...\n";
+		exit;
+	} else {
+		foreach my $cmdchanlogtype (@{$cfg->{Shadow}->{IRC}->{bot}->{cmdchanlogtype}}) {
+			if ($queue eq $cmdchanlogtype || $cmdchanlogtype eq "All") {
+				irc_raw(1, "PRIVMSG $cmdchan :$err");
+			}
+		}
 	}
 }
 
@@ -223,23 +238,23 @@ sub load_module {
 	if (-e "modules/$module_name\.pm") {
 		foreach my $loaded_mod (@loaded_modules) {
 			if ($loaded_mod eq "Shadow::Mods::".$module_name) {
-				print "$module_name module already loaded...\n";
+				err(1, "Refusing to load $module_name: module already loaded.", 0, "Modules");
 				return;
 			}
 		}
 
-		print "Loading module: $module_name\n";
+		Shadow::Core::log(1, "Loading module: $module_name", "Modules");
 		require "modules/$module_name\.pm";
 
 		eval "$module_name->loader();";
 		if ($@) {
-			print "[Core/load_module/$module_name] eval error: $@\n";
+			err(1, "[Core/load_module/$module_name] eval error: $@", 0, "Modules");
 		}
 		$loaded_modules[++$#loaded_modules] = "Shadow::Mods::".$module_name;
 		handle_handler('module', 'load', $module_name);
 		return 1;
 	} else {
-		print "Error: No such module $module_name\n";
+		err(1, "Error: No such module $module_name", 0, "Modules");
 		return undef;
 	}
 }
@@ -251,7 +266,7 @@ sub unload_module {
 		if ($loaded_mod eq "Shadow::Mods::".$module_name) {
 			eval "$module_name->unloader();";
 			if ($@) {
-				print "[Core/unload_module/$module_name] eval error: $@\n";
+				err(1, "[Core/unload_module/$module_name] eval error: $@", 0, "Modules");
 			}
 
 			delete $INC{'modules/'.$module_name.'.pm'};
@@ -424,7 +439,7 @@ sub mainloop {
 				my ($module, $sub) = ($_->{module}, $_->{'sub'});
 				eval("$module->$sub();");
 				if ($@) {
-					print "[Core/mainloop/timers/$module/$sub] eval error: $@\n";
+					err(1, "[Core/mainloop/timers/$module/$sub] eval error: $@", 0, "Modules");
 				}
 			}
 		}
@@ -436,7 +451,7 @@ sub mainloop {
 sub irc_connect {
 	my ($ircserver, $ircport) = split(/:/, $_[0], 2);
 
-	print "Connecting to IRC server... [server=$ircserver, port=$ircport]\n";
+	Shadow::Core::log(1, "Connecting to IRC server... [server=$ircserver, port=$ircport]", 0, "System");
 	$irc = IO::Socket::INET->new(
 		Proto		=> 'TCP',
 		PeerAddr	=> $ircserver,
@@ -502,11 +517,11 @@ sub irc_in {
 
 		    my @chans = exists($ENV{IRC_CHANS}) ? split(/,/, $ENV{IRC_CHANS}) : @{$cfg->{Shadow}->{IRC}->{bot}->{channels}};
 		    foreach my $channel (@chans) {
-					print "Attempting to join $channel\n";
+					Shadow::Core::log(1, "Attempting to join $channel", "System");
 					irc_raw(1, "JOIN :$channel");
 		    }
 
-			  print "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}."\n";
+			  Shadow::Core::log(1, "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}, "System");
 			  irc_raw(1, "JOIN :".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan});
 		}
 		elsif ($bits[1] eq "005") {
@@ -656,7 +671,7 @@ sub irc_scaninfo {
 
 sub irc_becameOper {
 	my $self = shift;
-	print "Oper credentials accepted\n";
+	Shadow::Core::log(1, "Oper credentials accepted", "System");
 	$omode = 1;
 	handle_handler('event', 'oper', 1);
 }
@@ -690,10 +705,10 @@ sub irc_nicktaken {
 	my ($taken) = @_;
 	my $cfgnick = $options{cfg}->{Shadow}->{IRC}->{bot}->{nick};
 
-	print "Nickname [$cfgnick] is currently in use.\n";
+	Shadow::Core::log(1, "Nickname [$cfgnick] is currently in use.", "System");
 	if ($taken) {
 		my $tmpnick = $cfgnick . int(rand(9)) . int(rand(9)) . int(rand(9));
-		print "Using new nickname: $tmpnick\n";
+		Shadow::Core::log(1, "Using new nickname: $tmpnick", "System");
 
 		$nick = $tmpnick;
 		irc_raw(1, "NICK :$tmpnick");
@@ -1573,7 +1588,7 @@ sub ignore {
 	my $time = time;
 	for (keys %{$options{ignore}}) {
 		if ($options{ignore}{$_} > 2 && $options{ignore}{$_} < $time) {
-			print "Removing ignore for $remotenick [$hostmask]\n";
+			Shadow::Core::log(1, "Removing ignore for $remotenick [$hostmask]", "System");
 			delete($options{ignore}{$_});
 			next;
 		}
@@ -1586,13 +1601,15 @@ sub ignore {
 sub logger {
 	my ($level, $class, $text) = @_;
 	handle_handler('event', 'log', $level, $class, $text);
+
+	Shadow::Core::log(1, "[$level:$class] $text", "System");
 	return 1;
 }
 
 sub add_ignore {
 	my ($self, $remotenick, $hostmask) = @_;
 
-	print "Ignoring $remotenick [$hostmask]\n";
+	Shadow::Core::log(1, "Ignoring $remotenick [$hostmask]", "System");
 
 	$options{ignore}{$hostmask} = 1;
 	$options{ignore}{$remotenick} = 1;
@@ -1601,7 +1618,7 @@ sub add_ignore {
 sub del_ignore {
 	my ($self, $remotenick, $hostmask) = @_;
 
-	print "Unignoring $remotenick [$hostmask]\n";
+	Shadow::Core::log(1, "Unignoring $remotenick [$hostmask]", "System");
 
 	delete $options{ignore}{$hostmask} if exists $options{ignore}{$hostmask};
 	delete $options{ignore}{$remotenick} if exists $options{ignore}{$remotenick};
@@ -1662,7 +1679,7 @@ sub handle_handler {
 
 		eval("${module}::$sub(\@messages);");
 		if ($@) {
-			print "[Core/handle_handler] eval sytanx error: $@\ncode: $module :: $sub\(@messages\)\n\n";
+			err(1, "[Core/handle_handler] eval sytanx error: $@\ncode: $module :: $sub\(@messages\)", 0, "System");
 		}
 	}
 	return 1;

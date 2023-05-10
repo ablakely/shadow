@@ -14,6 +14,18 @@ bot.channels   = [#chan1,#chan2,#etc]
 # bot.cmdchan - Bot logging/control channel
 bot.cmdchan = "#botcmd"
 
+# bot.cmdchanlogtype - Defines which types of logs will be sent to log channel
+# Types:
+#   All      - All log messages (do not use with other types)
+#   Error    - Error messages
+#   System   - IRC/Core module related log messages
+#   Modules  - Module activity such as loading, reloading, and unloading log messages
+#   WebAdmin - HTTP/WebAdmin activity log messages
+#
+# Modules may add their own log types.
+
+bot.cmdchanlogtype = [System]
+
 # Oper mode (used with modules like Oper, ChanServ)
 # bot.oper = [oper name,oper pass]
 

@@ -99,7 +99,7 @@ sub BotStats_dostatus {
     $bot->notice($nick, "Bot Uptime: ".$uptime->pretty);
   } else {
     $bot->notice($nick, "Access denied.");
-    $bot->log("BotStats: STATUS command denied for $nick.");
+    $bot->log("BotStats: STATUS command denied for $nick.", "Modules");
   }
 }
 

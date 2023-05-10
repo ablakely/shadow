@@ -57,7 +57,7 @@ sub loader {
 
     $select->add($sock);
 
-    $bot->log("WebAdmin: HTTP Server started on port $port.");
+    $bot->log("WebAdmin: HTTP Server started on port $port.", "System");
 
     $routes->initRoutes();
 
@@ -67,14 +67,15 @@ sub loader {
 
     $bot->add_handler('event tick', 'wa_tick');
 
-    $bot->add_timeout(43200, "wa_checkupdate");
 
-
-    gitCheckUpdate() if ($cfg->{sys}->{checkupdate});
+    if ($cfg->{sys}->{checkupdate}) {
+        checkGitUpdate();
+        $bot->add_timeout(43200, "wa_checkupdate");
+    }
 }
 
 sub checkGitUpdate {
-    $bot->log("[WebAdmin - Update Checker] Checking for updates.");
+    $bot->log("[WebAdmin - Update Checker] Checking for updates.", "WebAdmin");
     $updateLastCheck = time;
 
     system "git fetch";
@@ -96,7 +97,7 @@ sub wa_checkupdate {
     checkGitUpdate();
 
     if ($updateReady) {
-        $bot->log("[WebAdmin - Update Checker] Update is available.");
+        $bot->log("[WebAdmin - Update Checker] Update is available.", "System");
     } else {
         $bot->add_timeout(43200, "wa_checkupdate");
     }
@@ -189,7 +190,7 @@ sub handleHTTPRequest {
     my ($headers, @raw) = parseHeaders($client, $data);
     $sockmap{$client->peerhost()} = $client;
 
-    $bot->log("[WebAdmin] Received HTTP request from ".$client->peerhost().": ".$headers->{method}." ".$headers->{url});
+    $bot->log("[WebAdmin] Received HTTP request from ".$client->peerhost().": ".$headers->{method}." ".$headers->{url}, "WebAdmin");
 
     my $tmpstr = join("", @raw);
     chomp $tmpstr;
