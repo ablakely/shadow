@@ -23,7 +23,13 @@ $(document).ready(function() {
     $("#term").terminal(function(cmd) {
         var ins = this;
 
-        if (cmd === "") return;
+        if (cmd === "") {
+            setTimeout(function() {
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 3);
+
+            return;
+        }
 
         $.ajax({
             type: "POST",
@@ -56,7 +62,6 @@ $(document).ready(function() {
                                     tmp[i] = tmp[i].replace(matches[0], `[[${matches[1]}]${$.terminal.escape_brackets(matches[2]+msg+matches[4])}]`);
                                 }
 
-                                ins.echo(tmp[i]);
                             } else if (/(\x03|\x02\x03)([0-9]{1,2})[,]?([0-9]{1,2})?(\x02)?(.*?)(\x02)?(\x03|\x02\x03)/.test(tmp[i])) {
                                 while (matches = /(\x03|\x02\x03)([0-9]{1,2})[,]?([0-9]{1,2})?(\x02)?(.*?)(\x02)?(\x03|\x02\x03)/.exec(tmp[i])) {
                                     /* parse mIRC formatting codes */
@@ -74,16 +79,24 @@ $(document).ready(function() {
                                     tmp[i] = tmp[i].replace(matches[0], `[[${fmt}${fg}${bg}]${$.terminal.escape_brackets(text)}]`);
                                 }
 
-                                ins.echo(tmp[i]);
-                            } else {
-                                ins.echo(tmp[i]);
+                            } else if (/\x02(.*?)\x02/.test(tmp[i])) {
+                                while (matches = /\x02(.*?)\x02/.exec(tmp[i])) {
+                                    tmp[i] = tmp[i].replace(matches[0], `[[b;;]${matches[1]}]`);
+                                }
                             }
+
+                            ins.echo(tmp[i])
                         }
                     }
                 }
+
+                setTimeout(function() {
+                    window.scrollTo(0, document.body.scrollHeight);
+                }, 15);
             }
         });
     }, {
-        greetings: greetings.innerHTML
+        greetings: greetings.innerHTML,
+        scrollOnEcho: true
     });
 });

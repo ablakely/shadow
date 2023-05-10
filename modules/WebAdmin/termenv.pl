@@ -25,7 +25,7 @@ sub help {
     } elsif ($topic =~ /load/) {
         echo("[[b;;]Syntax:] load(\"<module>\")\n \nLoads <module>.");
     } elsif ($topic =~ /viewlog/) {
-        echo("[[b;;]Syntax:] viewlog(\"<opts>\")\n \nPrints the last 15 lines from the log to the terminal\nUse [[b;;]--n <number>] to change the number of lines.\nUse [[b;;]--full] in <opts> for full log.\nUse [[b;;]--type <type>] to view different log types.\n \nAvailable types:");
+        echo("[[b;;]Syntax:] viewlog(\"<opts>\")\n \nPrints the last 15 lines from the log to the terminal\nUse [[b;;]--n <number>] to change the number of lines.\nUse [[b;;]--full] for full log.\nUse [[b;;]--type <type>] to view different log types.\n \nAvailable types:");
         
         foreach my $k (keys %Shadow::Core::log) {
             echo("\t[[b;;]$k]");
