@@ -32,7 +32,7 @@ bot.cmdchan = "$ENV{IRC_CMDCHAN}"
 #
 # Modules may add their own log types.
 
-bot.cmdchanlogtype = [System]
+bot.cmdchanlogtype = [System,Error]
 
 # Oper mode (used with modules like Oper, ChanServ)
 # bot.oper = [oper name,oper pass]

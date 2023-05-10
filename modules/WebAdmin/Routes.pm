@@ -77,6 +77,15 @@ sub updateCfg {
     $bot->rehash();
 }
 
+sub updateCfgRestart {
+    my ($cfg) = @_;
+
+    $bot->log("[WebAdmin] Updated configuration and restarting.", "WebAdmin");
+    $bot->updatecfg($newcfg);
+
+    exit;
+}
+
 sub reloadRoutes {
     my $self = shift;
 
@@ -96,6 +105,7 @@ sub installUpdates {
     $bot->log("[WebAdmin] Installing updates, the bot will restart.");
 
     system "git pull";
+    system "./installdepends.pl";
     exit;
 }
 
@@ -367,7 +377,12 @@ sub initRoutes {
 
             $router->redirect($client, "/configuration");
 
-            $bot->add_timeout(10, "updateCfg");
+
+            if ($params->{restart} eq "true") {
+                $bot->add_timeout(10, "updateCfgRestart");
+            } else {
+                $bot->add_timeout(10, "updateCfg");
+            }
 
             $bot->log("[WebAdmin] Configuration file updated [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
@@ -417,8 +432,12 @@ sub initRoutes {
         if (checkSession($headers)) {
             $bot->log("[WebAdmin] Shutting down... [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
-            system "sleep 3 && kill -9 $$";
+            my $cmd = "sleep 3 && kill -9 ";
+            $cmd .= exists($ENV{STARTER_PID}) ? $ENV{STARTER_PID} : $$;
+
             close $client
+            system $cmd;
+            exit;
         } else {
             $router->redirect($client, "/");
         }
@@ -431,7 +450,12 @@ sub initRoutes {
             $bot->log("[WebAdmin] Restarting [Issued by ".$headers->{cookies}->{nick}.":".$client->peerhost()."]", "WebAdmin");
 
             $router->redirect($client, "/");
-            system "sleep 5s && $0 && sleep 1 && kill $$";
+           
+            if (exists($ENV{STARTER_PID})) {
+                exit;
+            } else {
+                system "sleep 5s && $0 && sleep 1 && kill $$";
+            }
         } else {
             $router->redirect($client, "/");
         }

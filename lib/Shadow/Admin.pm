@@ -322,7 +322,13 @@ sub ircadmin_shutdown {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->log("Shutting down... [Issued by $nick]");
-    system "kill $$";
+
+    if (exists($ENV{STARTER_PID})) {
+      system "kill -9 ".$ENV{STARTER_PID};
+      exit;
+    } else {
+      exit;
+    }
   } else {
     $bot->notice($nick, "Unauthorized.");
   }
@@ -333,7 +339,12 @@ sub ircadmin_restart {
 
   if ($bot->isbotadmin($nick, $host)) {
     $bot->log("Restarting... [Issued by $nick]");
-    system "$0 && sleep 1 && kill $$";
+
+    if (exists($ENV{STARTER_PID})) {
+      exit;
+    } else {
+      system "$0 && sleep 1 && kill $$";
+    }
   } else {
     $bot->notice($nick, "Unauthorized.");
   }

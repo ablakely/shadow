@@ -1,4 +1,4 @@
-# Shadow::Config	- Configuration Module Parser
+# Shadow::Config	- Configuration Parser Module
 # Written by Aaron Blakely <aaron@ephasic.org>
 #
 # Copyright 2012 (C) Aaron Blakely
@@ -8,7 +8,7 @@ package Shadow::Config;
 use strict;
 use warnings;
 
-our $VERSION = "0.1";
+our $VERSION = "0.6";
 our @confFiles;
 
 sub new {
@@ -62,7 +62,7 @@ sub parse {
 			}
 			elsif (/^(\w+)\.(\w+)\s*\=\s*\[(.*)\]$/) {
 				$lc++;
-				@tmp = split(/\,/, $3);
+				@tmp = split(/\,[\s]?/, $3);
 
 				for ($i = 0; $i < scalar(@tmp); $i++) {
 					$c{$cur}->{$curr}->{$1}->{$2}[$i] = $tmp[$i];
