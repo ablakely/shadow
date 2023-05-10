@@ -4,6 +4,7 @@
 #
 # Changelog:
 # v1.1 - Performance and feed compatibility improvements, formatting support
+# v1.2 - Remove Mojo
 #
 # feed.db format:
 # [
@@ -30,8 +31,7 @@ package RSS;
 use warnings;
 use JSON;
 use Time::Seconds;
-use Mojo::IOLoop;
-use Mojo::UserAgent;
+use LWP::UserAgent;
 use XML::Feed;
 use utf8;
 use Encode qw( encode_utf8 );
@@ -39,11 +39,11 @@ use Encode qw( encode_utf8 );
 my $bot      = Shadow::Core;
 my $help     = Shadow::Help;
 my $feedfile = "./etc/feeds.db";
-my $ua       = Mojo::UserAgent->new;
+my $ua       = LWP::UserAgent->new;
 my %feedcache;
 
 sub loader {
-  $bot->register("RSS", "v1.1", "Aaron Blakely");
+  $bot->register("RSS", "v1.2", "Aaron Blakely");
 
   $bot->log("[RSS] Loading: RSS module v1.1", "Modules");
   $bot->add_handler('event connected', 'rss_connected');
@@ -89,7 +89,7 @@ sub loader {
     close($db);
   }
 
-  $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
+  $ua->agent("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
 }
 
 sub rss_connected {
@@ -360,22 +360,6 @@ sub rss_refresh {
             $feedcache{$db->{$chan}->{$title}->{url}} = $body;
             rss_agrigator($body, $title, $chan);
           });
-
-          my $rss_feed = $ua->get_p($db->{$chan}->{$title}->{url});
-
-          Mojo::Promise->all($rss_feed)->then(sub($rss) {
-            if (my $err = $rss->error) {
-              return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
-            }
-
-            my $body = \scalar($rss->[0]->result->body);
-
-            my $parsedfeed;
-
-            $feedcache->{$db->{$chan}->{$title}->{url}} = $body;
-            rss_agrigator($body, $title, $chan);
-          })->wait;
-
         } else {
           rss_agrigator($feedcache{$db->{$chan}->{$title}->{url}}, $title, $chan);
         }
@@ -386,7 +370,7 @@ sub rss_refresh {
 }
 
 sub rss_tick {
-  Mojo::IOLoop->one_tick();
+  #Mojo::IOLoop->one_tick();
   rss_refresh();
 }
 

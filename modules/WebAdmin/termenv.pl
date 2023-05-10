@@ -103,7 +103,7 @@ sub viewlog {
             $tmp =~ s/\]/\x07/gs;
             $tmp =~ s/\[/\x08/gs;
 
-            echo("[[b;#4AF626;]$tmp]");
+            echo("[[b;#4AF626;]$tmp]") if ($tmp);
         }
     }
 }
