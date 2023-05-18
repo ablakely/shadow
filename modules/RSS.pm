@@ -177,14 +177,15 @@ sub rss_irc_interface {
 
     if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
       $db = rss_dbread();
-      my $feeds = "";
+      my @out;
+
+      push(@out, "*** $arg1 RSS FEEDS ***");
+      push(@out, $feeds);
 
       foreach my $feed (keys %{$db->{$arg1}}) {
-        $feeds .= $feed.", ";
+        push(@out,);
       }
 
-      $bot->notice($nick, "*** $arg1 RSS FEEDS ***");
-      $bot->notice($nick, $feeds);
       $bot->log("RSS: LIST command issued by $nick for $arg1", "Modules");
     } else {
       $bot->notice($nick, "Command requres channel op (+o) mode.");
