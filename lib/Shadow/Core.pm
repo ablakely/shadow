@@ -1158,7 +1158,9 @@ sub fastnotice {
 	my $level = 0;
 
 	if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
-		$WebAdmin::outbuf{$WebAdmin::sockmap{$nick}} .= formatTerm($text);
+		foreach my $text (@raw) {
+			$WebAdmin::outbuf{$WebAdmin::sockmap{$nick}} .= formatTerm($text);
+		}
 		return;
 	}
 
@@ -1197,7 +1199,9 @@ sub fastsay {
 	my $level = 0;
 
 	if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
-		$WebAdmin::outbuf{$WebAdmin::sockmap{$nick}} .= formatTerm($text);
+		foreach my $text (@raw) {
+			$WebAdmin::outbuf{$WebAdmin::sockmap{$nick}} .= formatTerm($text);
+		}
 		return;
 	}
 
