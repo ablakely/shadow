@@ -31,116 +31,152 @@ sub new {
 
   $self->{bot}->{help}->add_help('restart', 'Admin', '', 'Restarts the bot.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02RESTART\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02restart\x02 is used to restart the bot.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick restart");
+    push(@out, "Help for \x02RESTART\x02:");
+    push(@out, " ");
+    push(@out, "\x02restart\x02 is used to restart the bot.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick restart");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('rehash', 'Admin', '', 'Rehashes the configuration file.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02REHASH\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02rehash\x02 is used to reload the configuration file.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rehash");
+    push(@out, "Help for \x02REHASH\x02:");
+    push(@out, " ");
+    push(@out, "\x02rehash\x02 is used to reload the configuration file.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rehash");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('shutdown', 'Admin', '', 'Shuts down the bot.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02SHUTDOWN\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02shutdown\x02 is used to stop the bot.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick shutdown");
+    push(@out, "Help for \x02SHUTDOWN\x02:");
+    push(@out, " ");
+    push(@out, "\x02shutdown\x02 is used to stop the bot.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick shutdown");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('cat', 'Admin', '<file path>', 'Dump a file [F]', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02CAT\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02cat\x02 is a command that reads a file and returns its contents, like the shell command.");
-    $bot->say($nick, "\x02SYNTAX\x02: .cat <file> or /msg $Shadow::Core::nick cat <file>");
+    push(@out, "Help for \x02CAT\x02:");
+    push(@out, " ");
+    push(@out, "\x02cat\x02 is a command that reads a file and returns its contents, like the shell command.");
+    push(@out, "\x02SYNTAX\x02: .cat <file> or /msg $Shadow::Core::nick cat <file>");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('modlist', 'Admin', '', 'See all modules currently loaded.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02MODLIST\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02modlist\x02 is a command that lists all the modules currently loaded into Shadow.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick modlist");
+    push(@out, "Help for \x02MODLIST\x02:");
+    push(@out, " ");
+    push(@out, "\x02modlist\x02 is a command that lists all the modules currently loaded into Shadow.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick modlist");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('loadmod', 'Admin', '<module>', 'Load a module.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02LOADMOD\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02loadmod\x02 is a command for dynamically loading shadow modules.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick loadmod <module>");
+    push(@out, "Help for \x02LOADMOD\x02:");
+    push(@out, " ");
+    push(@out, "\x02loadmod\x02 is a command for dynamically loading shadow modules.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick loadmod <module>");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('rmmod', 'Admin', '<module>', 'Unload a module.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02RMMOD\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02rmmod\x02 is a command for dynamically unloading shadow modules.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rmmod <module>");
+    push(@out, "Help for \x02RMMOD\x02:");
+    push(@out, " ");
+    push(@out, "\x02rmmod\x02 is a command for dynamically unloading shadow modules.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rmmod <module>");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('reload', 'Admin', '<module>', 'Reloads a module.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02RELOAD\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02reload\x02 is a command for dynamically reloading shadow modules.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick reload <module>");
+    push(@out, "Help for \x02RELOAD\x02:");
+    push(@out, " ");
+    push(@out, "\x02reload\x02 is a command for dynamically reloading shadow modules.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick reload <module>");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('eval', 'Admin', '<text>', 'Evaluates perl code. [F]', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02EVAL\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02eval\x02 is a command that executes perl code.  Do not play with this unless you know what you're doing.");
-    $bot->say($nick, "Examples:");
-    $bot->say($nick, '  .eval for (my $i = 0; $i < 10; $i++) { $bot->say($chan, "hi Scally"); }');
-    $bot->say($nick, '  .eval $Shadow::Core::options{irc}->{cmdprfix} = "!";');
-    $bot->say($nick, '  .eval system "kill $$";');
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02SYNTAX\x02: .eval <perl code> or /msg $Shadow::Core::nick eval <perl code>");
+    push(@out, "Help for \x02EVAL\x02:");
+    push(@out, " ");
+    push(@out, "\x02eval\x02 is a command that executes perl code.  Do not play with this unless you know what you're doing.");
+    push(@out, "Examples:");
+    push(@out, '  .eval for (my $i = 0; $i < 10; $i++) { $bot->say($chan, "hi Scally"); }');
+    push(@out, '  .eval $Shadow::Core::options{irc}->{cmdprfix} = "!";');
+    push(@out, '  .eval system "kill $$";');
+    push(@out, " ");
+    push(@out, "\x02SYNTAX\x02: .eval <perl code> or /msg $Shadow::Core::nick eval <perl code>");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('dump', 'Admin', '<var>', 'Dumps a structure and notices it to you. [F]', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02DUMP\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02dump\x02 uses the Perl Data::Dumper module to dump a data structure and then it notices it to you.");
-    $bot->say($nick, "This is helpful when debugging your custom modules.");
-    $bot->say($nick, "\x02SYNTAX\x02: .dump <var|array|hash>");
+    push(@out, "Help for \x02DUMP\x02:");
+    push(@out, " ");
+    push(@out, "\x02dump\x02 uses the Perl Data::Dumper module to dump a data structure and then it notices it to you.");
+    push(@out, "This is helpful when debugging your custom modules.");~
+    push(@out, "\x02SYNTAX\x02: .dump <var|array|hash>");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('join', 'Admin', '<channel>', 'Force bot to join a channel.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02JOIN\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "Forces the bot to join a channel.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick join #chan");
+    push(@out, "Help for \x02JOIN\x02:");
+    push(@out, " ");
+    push(@out, "Forces the bot to join a channel.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick join #chan");
+
+    $bot->fastsay($nick, @out);
   });
 
   $self->{bot}->{help}->add_help('part', 'Admin', '<channel>', 'Force bot to part a channel.', 1, sub {
     my ($nick, $host, $text) = @_;
+    my @out;
 
-    $bot->say($nick, "Help for \x02PART\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "Forces the bot to part a channel.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick part #chan");
+    push(@out, "Help for \x02PART\x02:");
+    push(@out, " ");
+    push(@out, "Forces the bot to part a channel.");
+    push(@out, "\x02SYNTAX\x02: /msg $Shadow::Core::nick part #chan");
+
+    $bot->fastsay($nick, @out);
   });
 
   return bless($self, $class);
@@ -252,17 +288,19 @@ sub ircadmin_cat {
   if ($bot->isbotadmin($nick, $host)) {
     open(my $fh, "<", $text) or $bot->notice($nick, $!);
     my @con = <$fh>;
+    my @out;
     close $fh;
 
     my $lc = 0;
     foreach my $line (@con) {
-      if ($chan !~ /^\#/) {
-        $bot->notice($nick, "$text:$lc: $line");
-      } else {
-        $bot->say($chan, "$text:$lc: $line");
-      }
-
+      push(@out), "$text:$lc: $line");
       $lc++;
+    }
+
+    if ($chan !~ /^\#/) {
+      $bot->fastsay($chan, @out);
+    } else {
+      $bot->fastnotice($chan, @out);
     }
   } else {
     $bot->notice($nick, "Unauthorized.")
@@ -294,13 +332,12 @@ sub ircadmin_dump {
     eval "\@output = Dumper(".$text.")";
     $bot->notice($nick, "dump error: $@") if $@;
 
-    foreach my $line(@output) {
-      if ($chan !~ /^\#/) {
-        $bot->notice($nick, $line);
-      } else {
-        $bot->say($chan, $text);
-      }
+    if ($chan !~ /^\#/) {
+      $bot->fastnotice($nick, @output);
+    } else {
+      $bot->fastsay($nick, @output);
     }
+
   } else {
     $bot->notice($nick, "Unauthorized.");
   }

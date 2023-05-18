@@ -1155,7 +1155,12 @@ sub fastnotice {
 	my $self = shift;
 	my ($nick, @raw) = @_;
 
-	my $level = 1;
+	my $level = 0;
+
+	if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
+		$WebAdmin::outbuf{$WebAdmin::sockmap{$nick}} .= formatTerm($text);
+		return;
+	}
 
 	my $out = "";
 	my $tmpl = "NOTICE $nick :";
@@ -1190,6 +1195,11 @@ sub fastsay {
 	my ($nick, @raw) = @_;
 
 	my $level = 0;
+
+	if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
+		$WebAdmin::outbuf{$WebAdmin::sockmap{$nick}} .= formatTerm($text);
+		return;
+	}
 
 	my $out = "";
 	my $tmpl = "PRIVMSG $nick :";
