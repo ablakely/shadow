@@ -1141,6 +1141,84 @@ sub formatTerm {
 	return $text;
 }
 
+sub fastout {
+	my ($self, $out) = @_;
+
+	sendfh($irc, $out);
+
+	foreach my $fh ($sel->can_write(0)) {
+		flush_out($fh);
+	}
+}
+
+sub fastnotice {
+	my $self = shift;
+	my ($nick, @raw) = @_;
+
+	my $level = 1;
+
+	my $out = "";
+	my $tmpl = "NOTICE $nick :";
+	my $i = 0;
+
+	while (1) {		
+		if ($i >= scalar(@raw)) {
+			$self->fastout($out);
+
+			last;
+		}
+
+		chomp $raw[$i];
+		my $nextline = $tmpl.$raw[$i]."\r\n";
+		my $outlen   = length($out);
+		my $newoutlen = $outlen + length($nextline);
+
+		if ($newoutlen > 510) {
+			$self->fastout($out);
+
+			$level++;
+			$out = "";
+		} else {
+			$out .= $nextline;
+			$i++;
+		}
+	}
+}
+
+sub fastsay {
+	my $self = shift;
+	my ($nick, @raw) = @_;
+
+	my $level = 0;
+
+	my $out = "";
+	my $tmpl = "PRIVMSG $nick :";
+	my $i = 0;
+
+	while (1) {		
+		if ($i >= scalar(@raw)) {
+			$self->fastout($out);
+			
+			last;
+		}
+
+		chomp $raw[$i];
+		my $nextline = $tmpl.$raw[$i]."\r\n";
+		my $outlen   = length($out);
+		my $newoutlen = $outlen + length($nextline);
+
+		if ($newoutlen > 510) {
+			$self->fastout($out);
+
+			$level++;
+			$out = "";
+		} else {
+			$out .= $nextline;
+			$i++;
+		}
+	}
+}
+
 sub notice {
 	my $self = shift;
 	my ($target, $text, $level) = @_;

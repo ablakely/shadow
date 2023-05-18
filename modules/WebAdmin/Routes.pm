@@ -435,7 +435,7 @@ sub initRoutes {
             my $cmd = "sleep 3 && kill -9 ";
             $cmd .= exists($ENV{STARTER_PID}) ? $ENV{STARTER_PID} : $$;
 
-            close $client
+            close $client;
             system $cmd;
             exit;
         } else {

@@ -12,6 +12,8 @@ sub loader {
 
 sub doNeoFetch {
     my ($nick, $host, $chan, $text) = @_;
+    my @out;
+
     my $osColor = $bot->color('white');
 
     my $neofetchBin = "neofetch";
@@ -54,9 +56,11 @@ sub doNeoFetch {
             }
         }
 
-        $bot->say($chan, "$neofetch[$i] $neofetch[$i+1] $neofetch[$i+2] $neofetch[$i+3] $neofetch[$i+4]");
+        push(@out, "$neofetch[$i] $neofetch[$i+1] $neofetch[$i+2] $neofetch[$i+3] $neofetch[$i+4]");
         $i = $i+5;
     }
+
+    $bot->fastsay($chan, @out);
 }
 
 sub unloader {

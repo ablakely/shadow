@@ -10,12 +10,15 @@ package URLIdentifier;
 #  ebay.com
 #  reddit.com
 #  patriots.win
+#  rumble.com
+#  odysee.com
 #
 # Written by Aaron Blakely <aaron@ephasic.org>
 # Change Log:
 #   6/22/22 - Updated to give more details about videos from Odysee and Youtube
 #   4/11/23 - Strip <a> tags out of tweets
 #             Fix ebay scraping
+#   5/18/23 - Added rumble.com scraping
 
 
 
@@ -89,9 +92,29 @@ sub getSiteInfo {
       $meta{'flairtype'} = $1;
       $meta{'flair'} = $2;
 
-      $meta{'flair'} =~ s/\&nbsp\;|\s{3,}//gis;
+      $meta{'flair'} =~ s/\&nbsp\;|\s{3,}//gis; 
+    }
 
-      
+    # rumble
+    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<h1.*?\>(.*?)\<\/h1\>/) {
+      print "dbug title: $1\n";
+      $meta{'title'} = $1;
+    }
+
+    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<span class="rumbles-up-votes"\>(.*?)\<\/span\>/) {
+      $meta{'upvotes'} = $1;
+    }
+
+    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<span class="rumbles-down-votes"\>(.*?)\<\/span\>/) {
+      $meta{'downvotes'} = $1;
+    }
+
+    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<div class="video-counters--item video-item--views"\>[[:space:]]?[\s]*?\<svg.*?\<\/svg\>(.*?)[\s]*?\<\/div\>/) {
+      $meta{'views'} = $1;
+    }
+
+    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<div class="video-counters--item video-item--comments"\>[[:space:]]?[\s]*?\<svg.*?\<\/svg\>(.*?)[\s]*?\<\/div\>/) {
+      $meta{'comments'} = $1;
     }
 
     # geekbench page scraping
@@ -154,7 +177,7 @@ sub getSiteInfo {
       my $nl5 = $html[$i+5].">";
       my $nl6 = $html[$i+6].">";
     
-      $nl =~ s/\n//gs;
+      $nl =~ s/\n/ /gs;
       $nl =~ s/\r//gs;
 
 
@@ -309,6 +332,19 @@ sub getReturnDislikeCounts {
   }
 }
 
+sub shortenURL {
+  my ($url) = @_;
+
+  my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
+
+  my $response = $ua->get("https://v.gd/create.php?format=simple&url=".$url);
+  if ( $response->is_success ) {
+    return $response->decoded_content();
+  } else {
+    return $url;
+  }
+}
+
 sub url_id {
   my ($nick, $host, $chan, $text) = @_;
 
@@ -372,8 +408,25 @@ sub url_id {
 
       $meta{'tweet'} =~ s/\<a href\=\"(.*?)\"\>(.*?)\<\/a\>/$2/gs;
 
+      # shorten tweet
+      if (length $meta{'tweet'} > 240) {
+        $meta{'tweet'} = substr($meta{'tweet'}, 0, 240)."...";
+      }
+
+      # add spaces after punctuation
+      $meta{'tweet'} =~ s/(.*?)([[:punct:]])([A-Z\#])/\1\2 \3/gs;
+
       if ($nick eq "RSS.pm" && $host eq "0.0.0.0") {
-        $bot->say($chan, "[\x0311Twitter\x03] \x02$meta{'tweet'}\x02 [\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03] [\x02$text\x02]");
+        $text = shortenURL($text);
+
+        my $tweet = $meta{'tweet'} ? "[\x0311Twitter $meta{'username'}\x03] \x02$meta{'tweet'}\x02" : "[\x0311Twitter\x03]";
+        my $author = $meta{'tweet'} ? "[\x02\x0311Author:\x02 $meta{'fullname'}" : "[\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'})";
+
+        if ($meta{'tweet'}) {
+          $bot->raw("PRIVMSG $chan :$tweet\r\nPRIVMSG $chan :$author | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03] [\x02$text\x02]");
+        } else {
+          $bot->raw("PRIVMSG $chan :$tweet $author | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03] [\x02$text\x02]");
+        }
       } else {
         $bot->say($chan, "[\x0311Twitter\x03] \x02$meta{'tweet'}\x02 [\x02\x0311Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03]");
       }
@@ -383,7 +436,6 @@ sub url_id {
       if (!$meta{'quotetweets'}) { $meta{'quotetweets'} = 0; }
       if (!$meta{'likes'}) { $meta{'likes'} = 0; }
 
-      print "here\n";
       $meta{'tweet'} =~ s/\<a href\=\"(.*?)\"\>(.*?)\<\/a\>/$2/gs;
        
       $bot->say($chan, "[\x037nitter\x03] \x02$meta{'tweet'}\x02 [\x02\x037Author:\x02 $meta{'fullname'} ($meta{'username'}) | \x02Comments:\x02 $meta{'comments'} | \x02Retweets:\x02 $meta{'retweets'} | \x02Quote Tweets:\x02 $meta{'quotetweets'} | \x02Likes:\x02 $meta{'likes'} | \x02Published:\x02 $meta{'published'}\x03]");   
@@ -435,6 +487,9 @@ sub url_id {
           $bot->say($chan, "[\x034patriots\x0312.\x034win\x03] \x02$title\x02 [\x02\x039+$meta{'upvotes'}\x03 / \x034-$meta{'downvotes'}\x03\x02]");
         }
       }
+    } elsif ($url =~ /rumble\.com/) {
+      print "dbug: ".$meta{'title'}."\n";
+      $bot->say($chan, "[\x039▶ rumble\x03] \x02$meta{'title'}\x02 [\x02\x039Views: $meta{'views'} | Upvotes: $meta{'upvotes'} | Downvotes: $meta{'downvotes'} | Comments: $meta{'comments'}\x03\x02]");
     } else {
       $title =~ s/\<\/title\>(.*)//gs;
       $bot->say($chan, "\x02Title:\x02 $title") if $title;

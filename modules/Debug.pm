@@ -7,28 +7,28 @@ my $bot  = Shadow::Core;
 my $help = Shadow::Help;
 
 sub loader {
-  $bot->add_handler('raw in', 'debug_rawEvent');
-  $bot->add_handler('event mode', 'debug_modeEvent');
+  $bot->register("Debug", "v0.5", "Aaron Blakely");
+
+  $bot->add_handler('raw in', 'debug_rawInEvent');
+  $bot->add_handler('raw out', 'debug_rawOutEvent');
 }
 
-sub debug_rawEvent {
+sub debug_rawInEvent {
   my ($raw) = @_;
-  print "[DEBUG/RAW]: $raw\n";
+  $bot->log("[DEBUG/RAW]: --> $raw", "Debug");
 }
 
-sub debug_modeEvent {
-  my ($nick, $host, $chan, $act, @mode) = @_;
+sub debug_rawOutEvent {
+  my ($raw) = @_;
 
-  print "MODE SET: $nick, $host, $chan, $act, [";
-  foreach my $m (@mode) {
-    print "$m,";
-  }
-  print "]\n";
+  $bot->log("[DEBUG/RAW]: <-- $raw", "Debug");
 }
 
 sub unloader {
-  $bot->del_handler('raw in', 'debug_rawEvent');
-  $bot->del_handler('event mode', 'debug_modeEvent');
+  $bot->unregister("Debug");
+  
+  $bot->del_handler('raw in', 'debug_rawInEvent');
+  $bot->del_handler('raw out', 'debug_rawOutEvent');
 }
 
 1;

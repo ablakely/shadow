@@ -116,3 +116,5 @@ sub irc {
 
     Shadow::Core::handle_handler('privcmd', $cmd, $host, "-TERM-", $args);
 }
+
+

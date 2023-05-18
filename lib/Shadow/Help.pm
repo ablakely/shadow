@@ -75,18 +75,19 @@ sub check_admin_class {
 sub dohelp {
   my ($nick, $host, $text) = @_;
   my $tab = "    ";
+  my @out;
 
   my $nmax = 0;
   my $smax = 0;
 
-  $bot->say($nick, "\x02*** SHADOW HELP ***\x02");
+  push(@out, "\x02*** SHADOW HELP ***\x02");
 
   if ($text) {
     if ($text eq "help" || $text eq "HELP") {
-      $bot->say($nick, "Help for \x02HELP\x02:");
-      $bot->say($nick, " ");
-      $bot->say($nick, "Displays information for commands.");
-      $bot->say($nick, "\x02SYNTAX\x02: help <command>");
+      push(@out, "Help for \x02HELP\x02:");
+      push(@out, " ");
+      push(@out, "Displays information for commands.");
+      push(@out, "\x02SYNTAX\x02: help <command>");
 
       return;
     } else {
@@ -100,7 +101,7 @@ sub dohelp {
       }
     }
 
-    return $bot->say($nick, "\x02Error\x02: No such help topic: $text");
+    return push(@out, "\x02Error\x02: No such help topic: $text");
   }
 
   my ($ci, $cfmt, $si, $sfmt) = (0, "", 0, "");
@@ -115,12 +116,12 @@ sub dohelp {
   foreach my $c (keys %cmdlist) {
     if (check_admin_class($c)) {
       if ($bot->isbotadmin($nick, $host)) {
-        $bot->say($nick, " ");
-        $bot->say($nick, "\x02$c Commands\x02");
+        push(@out, " ");
+        push(@out, "\x02$c Commands\x02");
       }
     } else {
-      $bot->say($nick, " ");
-      $bot->say($nick, "\x02$c Commands\x02");
+      push(@out, " ");
+      push(@out, "\x02$c Commands\x02");
     }
 
     foreach my $k (keys %{$cmdlist{$c}}) {
@@ -135,21 +136,29 @@ sub dohelp {
 
       if ($cmdlist{$c}->{$k}{adminonly}) {
         if ($bot->isbotadmin($nick, $host)) {
-          $bot->say($nick, "$tab\x02".$cmdlist{$c}->{$k}{cmd}."\x02".$cfmt."$tab".
+          push(@out, "$tab\x02".$cmdlist{$c}->{$k}{cmd}."\x02".$cfmt."$tab".
                $cmdlist{$c}->{$k}{syntax}.$sfmt."$tab".$cmdlist{$c}->{$k}{shortdesc});
         } else {
           next;
         }
       } else {
-        $bot->say($nick, "$tab\x02".$cmdlist{$c}->{$k}{cmd}."\x02".$cfmt."$tab".
+        push(@out, "$tab\x02".$cmdlist{$c}->{$k}{cmd}."\x02".$cfmt."$tab".
               $cmdlist{$c}->{$k}{syntax}.$sfmt."$tab".$cmdlist{$c}->{$k}{shortdesc});
       }
     }
   }
 
-  $bot->say($nick, " ");
-  $bot->say($nick, "[F] means the command can also be executed in a channel.  Example: .op user");
-  $bot->say($nick, "Use \x02/msg $Shadow::Core::nick help <topic>\x02 for command specific information.");
+  push(@out, " ");
+  push(@out, "[F] means the command may be used in a channel.  Example: ".$Shadow::Core::options{irc}->{cmdprefix}."op user");
+  push(@out, "Use \x02/msg $Shadow::Core::nick help <topic>\x02 for command specific information.");
+
+  if ($nick =~ =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
+    foreach my $line (@out) {
+      $bot->notice($nick, $line);
+    }
+  } else {
+    $bot->fastsay($nick, @out);
+  }
 }
 
 
