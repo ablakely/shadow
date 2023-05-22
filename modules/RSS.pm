@@ -28,6 +28,8 @@
 package RSS;
 
 use warnings;
+use lib '../lib';
+use utf8;
 use JSON;
 use Time::Seconds;
 use Mojo::IOLoop;
@@ -36,8 +38,13 @@ use XML::Feed;
 use utf8;
 use Encode qw( encode_utf8 );
 
-my $bot      = Shadow::Core;
-my $help     = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+use Shadow::Formatter;
+
+
+my $bot      = Shadow::Core->new();
+my $help     = Shadow::Help->new();
 my $feedfile = "./etc/feeds.db";
 my $ua       = Mojo::UserAgent->new;
 my %feedcache;
@@ -90,6 +97,8 @@ sub loader {
   }
 
   $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
+
+  rss_connected() if ($bot->connected());
 }
 
 sub rss_connected {
@@ -178,13 +187,26 @@ sub rss_irc_interface {
     if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
       $db = rss_dbread();
       my @out;
+      my $fmt = Shadow::Formatter->new();
 
       push(@out, "*** $arg1 RSS FEEDS ***");
-      push(@out, $feeds);
+      
+      $fmt->table_header("Feed", "URL", "Inverval", "Format");
 
       foreach my $feed (keys %{$db->{$arg1}}) {
-        push(@out,);
+        $fmt->table_row(
+          $feed,
+          $db->{$arg1}->{$feed}->{url},
+          $db->{$arg1}->{$feed}->{syncInterval}." seconds",
+          $db->{$arg1}->{$feed}->{format}
+        )
       }
+
+      foreach my $line ($fmt->table()) {
+        push(@out, $line);
+      }
+
+      $bot->fastsay($nick, @out);
 
       $bot->log("RSS: LIST command issued by $nick for $arg1", "Modules");
     } else {

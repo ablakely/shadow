@@ -18,7 +18,7 @@ use Shadow::Admin;
 use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
-our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug);
+our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug, $connected);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg, %log);
 
@@ -71,6 +71,10 @@ sub new {
 	my $class				= shift;
 	my $self				= {};
 	my ($conffile, $verbose, $nofork)  = @_;
+
+    if (!$conffile) {
+        return $class;
+    }
 
 	$cfgparser      = Shadow::Config->new($conffile, $verbose);
 	$cfg            = $cfgparser->parse();
@@ -431,7 +435,10 @@ sub mainloop {
 			irc_raw(3, "NOTICE $nick :anti-reconnect"); # ping fail back
 		}
 
-		irc_reconnect() if ($ircping + $options{config}{reconnect} <= $time);
+		if ($ircping + $options{config}{reconnect} <= $time) {
+            $connected = 0;
+            irc_reconnect()
+        }
 
 		for (@timeout) {
 			if (defined($_->{'time'}) && $time >= $_->{'time'}) {
@@ -699,6 +706,8 @@ sub irc_connected {
 		my @o = @{$options{cfg}->{Shadow}->{IRC}->{bot}->{oper}};
 		irc_raw(1, "OPER $o[0] :$o[1]");
 	}
+
+    $connected = 1;
 }
 
 sub irc_nicktaken {
@@ -728,7 +737,7 @@ sub irc_users {
 		foreach my $user (@users) {
 			$user =~ s/[\+|\%|\@|\&|\~]//gs;
 
-			irc_raw(1, "whois $user");
+			irc_raw(1, "whois $user") if ($user ne $nick);
 		}
 	}
 
@@ -1102,6 +1111,13 @@ sub irc_knock {
 }
 
 # IRC Command routines for modules
+
+sub connected {
+    my $self = shift;
+
+    return $connected;
+}
+
 
 sub say {
 	my $self = shift;

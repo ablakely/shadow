@@ -22,6 +22,8 @@ sub new {
   my $self             = {};
   $bot                 = $shadow;
 
+  return $class if (!$shadow);
+
   $bot->add_handler("privcmd help", 'dohelp');
   return bless($self, $class);
 }
@@ -152,7 +154,7 @@ sub dohelp {
   push(@out, "[F] means the command may be used in a channel.  Example: ".$Shadow::Core::options{irc}->{cmdprefix}."op user");
   push(@out, "Use \x02/msg $Shadow::Core::nick help <topic>\x02 for command specific information.");
 
-  if ($nick =~ =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
+  if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
     foreach my $line (@out) {
       $bot->notice($nick, $line);
     }

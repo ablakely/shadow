@@ -149,7 +149,7 @@ sub new {
     push(@out, "Help for \x02DUMP\x02:");
     push(@out, " ");
     push(@out, "\x02dump\x02 uses the Perl Data::Dumper module to dump a data structure and then it notices it to you.");
-    push(@out, "This is helpful when debugging your custom modules.");~
+    push(@out, "This is helpful when debugging your custom modules.");
     push(@out, "\x02SYNTAX\x02: .dump <var|array|hash>");
 
     $bot->fastsay($nick, @out);
@@ -234,33 +234,31 @@ sub ircadmin_reload {
 
 sub ircadmin_modlist {
   my ($nick, $host, $text) = @_;
-
-  my $ALL_MODS = 0;
-
-  if ($text =~ /all/) {
-    $ALL_MODS = 1;
-  }
-
   return if !$bot->isbotadmin($nick, $host);
 
-  $bot->notice($nick, "\x02*** LOADED MODULES ***\x02");
+  my $fmt = Shadow::Formatter->new();
+
+  $fmt->table_header("Module", "Version", "Author");
 
   my %modlist = $bot->module_stats();
-  my $modstr  = "";
+  my %modreg  = %Shadow::Core::modreg;
+
+  my @tmp;
   foreach my $mod (keys %modlist) {
     next if ($mod eq "loadedmodcount");
 
-    if ($ALL_MODS) {
-      $modstr .= "$mod, ";
-    } else {
-      if ($mod =~ /Shadow\:\:Mods\:\:/) {
-        $modstr .= "$mod, ";
+    if ($mod =~ /Shadow\:\:Mods\:\:(.*)/) {
+      if (exists($modreg{$1})) {
+        $fmt->table_row(
+          $1,
+          exists($modreg{$1}->{version}) ? $modreg{$1}->{version} : "N/A",
+          exists($modreg{$1}->{author}) ? $modreg{$1}->{author} : "N/A"
+        );
       }
     }
   }
 
-  $bot->notice($nick, $modstr);
-  $bot->notice($nick, "There are ".$modlist{loadedmodcount}." modules loaded.");
+  $bot->fastsay($nick, $fmt->table());
 }
 
 sub ircadmin_join {
@@ -293,7 +291,7 @@ sub ircadmin_cat {
 
     my $lc = 0;
     foreach my $line (@con) {
-      push(@out), "$text:$lc: $line");
+      push(@out, "$text:$lc: $line");
       $lc++;
     }
 
