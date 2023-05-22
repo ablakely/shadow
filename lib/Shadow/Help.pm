@@ -1,4 +1,10 @@
 package Shadow::Help;
+# Shadow::Help - Shadow Help System
+#
+# This provides a built in help command that modules may extend
+# as well as handle their own subtopics with.
+#
+# Written by Aaron Blakely <aaron@ephasic.org>
 
 use strict;
 use warnings;
@@ -25,6 +31,7 @@ sub new {
 
   if (!$shadow) {
       $bot = Shadow::Core->new();
+      return $class;
   }
 
   $bot->add_handler("privcmd help", 'dohelp');
