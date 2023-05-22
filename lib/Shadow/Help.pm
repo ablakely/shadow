@@ -2,6 +2,7 @@ package Shadow::Help;
 
 use strict;
 use warnings;
+use Shadow::Core;
 
 our $bot;
 our $module;
@@ -22,7 +23,9 @@ sub new {
   my $self             = {};
   $bot                 = $shadow;
 
-  return $class if (!$shadow);
+  if (!$shadow) {
+      $bot = Shadow::Core->new();
+  }
 
   $bot->add_handler("privcmd help", 'dohelp');
   return bless($self, $class);
