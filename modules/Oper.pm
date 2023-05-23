@@ -18,7 +18,7 @@ sub loader {
   $help->add_help('kill', 'Oper', '<who> <reason>', 'Uses the IRC Operator KILL command on a user.', 1, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
 
     $bot->say($nick, "Help for \x02kill\x02:");

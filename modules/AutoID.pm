@@ -21,7 +21,7 @@ sub loader {
   $help->add_help('nsregister', 'AutoID', '<nickserv> <email> <password>', 'Register bot with NickServ.', 1, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02NSREGISTER\x02:");
@@ -33,7 +33,7 @@ sub loader {
   $help->add_help('nspasswd', 'AutoID', '', 'Prints current NickServ password.', 1, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02NSPASSWD\x02:");
@@ -45,7 +45,7 @@ sub loader {
   $help->add_help('nsverify', 'AutoID', '<nickserv> <verication code>', 'For networks that use 2FA email varification.', 1, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02NSVERIFY\x02:");
@@ -102,7 +102,7 @@ sub autoid_register {
   my ($ns, $email, $pw) = split(/ /, $text);
   $pw = genpw() if !$pw;
 
-  my $cmdprefix = "/msg $Shadow::Core::nick ";
+  my $cmdprefix = "/msg $Shadow::Core::nick";
   $cmdprefix = "/" if ($bot->is_term_user($nick));
     
   return $bot->notice($nick, "Syntax: $cmdprefix nsregister <nickserv> <email> [password]") if !$ns;
