@@ -47,6 +47,9 @@ $(document).ready(function() {
                 ins.echo(e);
             }
 
+            setTimeout(function() {
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 3);
             return;
         }
 
