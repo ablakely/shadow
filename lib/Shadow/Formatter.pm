@@ -33,6 +33,19 @@ sub table_row {
     push(@{$self->{body}}, \@cols);
 }
 
+sub table_row_count {
+    my ($self) = @_;
+
+    return $self->{body} ? scalar(@{$self->{body}}) : 0;
+}
+
+sub table_reset {
+    my ($self) = @_;
+
+    $self->{header} = ();
+    $self->{body}   = ();
+}
+
 sub count_emojis {
     my ($string) = @_;
     my $count = () = $string =~ /[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]/gu;
@@ -139,9 +152,7 @@ sub table {
         $rowstr = " ";
     }
 
-    #push(@ret, $bar);
     return @ret;
-
 }
 
 1;

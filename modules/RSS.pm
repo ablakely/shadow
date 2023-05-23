@@ -184,28 +184,67 @@ sub rss_irc_interface {
 
     $arg1 = lc($arg1);
 
-    if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
+    my $chanauth = $bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1);
+
+    if (!$chanauth && $arg1 =~ /all/i) {
+        if ($bot->isbotadmin($nick, $host)) {
+            $chanauth = 1;
+        } else {
+            $bot->log("RSS: Commanded denied for $nick: LIST ALL", "Modules");
+            return $bot->notice($nick, "\x02RSS LIST ALL\x02 requires botadmin privileges.");
+        }
+    }
+
+    if ($chanauth) {
       $db = rss_dbread();
       my @out;
       my $fmt = Shadow::Formatter->new();
 
-      push(@out, "*** $arg1 RSS FEEDS ***");
+      if ($arg1 =~ /all/i) {
+          foreach my $chan (keys %{$db}) {
+              $fmt->table_reset();
+              $fmt->table_header("Feed", "URL", "Inverval", "Format");
+
+              foreach my $feed (keys %{$db->{$chan}}) {
+                  next if (!$db->{$chan}->{$feed}->{url});
+
+                  $fmt->table_row(
+                      $feed,
+                      $db->{$chan}->{$feed}->{url},
+                      $db->{$chan}->{$feed}->{syncInterval}." seconds",
+                      $db->{$chan}->{$feed}->{format}
+                  )
+              }
+
+
+              next if ($fmt->table_row_count() == 0);
+
+              push(@out, "\x02*** $chan RSS FEEDS ***\x02");
+              foreach my $line ($fmt->table()) {
+                  push(@out, $line);
+              }
+
+              push(@out, " ");
+          }
+      } else {
+          push(@out, "\x02*** $arg1 RSS FEEDS ***\x02");
+
+          $fmt->table_header("Feed", "URL", "Inverval", "Format");
+
+          foreach my $feed (keys %{$db->{$arg1}}) {
+              $fmt->table_row(
+                  $feed,
+                  $db->{$arg1}->{$feed}->{url},
+                  $db->{$arg1}->{$feed}->{syncInterval}." seconds",
+                  $db->{$arg1}->{$feed}->{format}
+              )
+          }
+
+          foreach my $line ($fmt->table()) {
+              push(@out, $line);
+          }
+      }
       
-      $fmt->table_header("Feed", "URL", "Inverval", "Format");
-
-      foreach my $feed (keys %{$db->{$arg1}}) {
-        $fmt->table_row(
-          $feed,
-          $db->{$arg1}->{$feed}->{url},
-          $db->{$arg1}->{$feed}->{syncInterval}." seconds",
-          $db->{$arg1}->{$feed}->{format}
-        )
-      }
-
-      foreach my $line ($fmt->table()) {
-        push(@out, $line);
-      }
-
       $bot->fastsay($nick, @out);
 
       $bot->log("RSS: LIST command issued by $nick for $arg1", "Modules");

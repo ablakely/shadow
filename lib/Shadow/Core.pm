@@ -7,7 +7,7 @@
 
 package Shadow::Core;
 
-use Carp;
+use Carp qw(cluck confess longmess);
 use Encode qw(encode);
 use strict;
 use warnings;
@@ -199,12 +199,19 @@ sub err {
 	chomp $err;
 
 	if ($debug) {
-		print $err."\n";
+	    print("$err\n");
 	}
 
 	if ($err =~ /Error/i) {
 		push(@{$log{Error}}, $err);
-	}
+    
+        my $i = 1;
+        push(@{$log{Error}}, "Stack Trace:");
+        while ( (my @call_details = (caller($i++))) ){
+            push(@{$log{Error}}, "    ".$call_details[1].":".$call_details[2]." in function ".$call_details[3]);
+            print "    ".$call_details[1].":".$call_details[2]." in function ".$call_details[3]."\n";
+        }
+    }
 
 	push(@{$log{$queue}}, $err);
 	push(@{$log{All}}, $err);
@@ -213,8 +220,7 @@ sub err {
 
 	if ($fatal) {
 		irc_raw(1, "PRIVMSG $cmdchan :[FATAL] Encountered fatal error.  Exiting...");
-		print "\n[FATAL] Encountered fatal error.  Exiting...\n";
-		exit;
+		confess "\n[FATAL] Encountered fatal error.  Exiting...\n";
 	} else {
 		foreach my $cmdchanlogtype (@{$cfg->{Shadow}->{IRC}->{bot}->{cmdchanlogtype}}) {
 			if ($queue eq $cmdchanlogtype || $cmdchanlogtype eq "All") {
@@ -1788,7 +1794,7 @@ sub handle_handler {
 		eval("${module}::$sub(\@messages);");
 		if ($@) {
 			err(1, "[Core/handle_handler] eval sytanx error: $@\ncode: $module :: $sub\(@messages\)", 0, "System");
-		}
+        }
 	}
 	return 1;
 }
