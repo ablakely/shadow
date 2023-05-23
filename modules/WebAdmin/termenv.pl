@@ -12,6 +12,7 @@ sub help {
         echo("\n ");
         echo("This console uses Perl for it's shell. (Perl Version: $^V)");
         echo("Use [[b;;]help \"<subtopic>\"] for help information on individual commands.");
+        echo("[[b;;]/<command>] is a shortcut for [[b;;]irc \"<command>\"].");
     } elsif ($topic =~ /say/) {
         echo("[[b;;]Syntax:] say(\"<target>\", \"<msg>\")\n \nSends \$msg to \$target on IRC.");
     } elsif ($topic =~ /echo/) {

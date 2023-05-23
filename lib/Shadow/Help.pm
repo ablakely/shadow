@@ -162,13 +162,14 @@ sub dohelp {
 
   push(@out, " ");
   push(@out, "[F] means the command may be used in a channel.  Example: ".$Shadow::Core::options{irc}->{cmdprefix}."op user");
-  push(@out, "Use \x02/msg $Shadow::Core::nick help <topic>\x02 for command specific information.");
 
   if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
+    push(@out, "Use \x02/help <topic>\x02 for command specific information.");
     foreach my $line (@out) {
       $bot->notice($nick, $line);
     }
   } else {
+    push(@out, "Use \x02/msg $Shadow::Core::nick help <topic>\x02 for command specific information.");
     $bot->fastsay($nick, @out);
   }
 }

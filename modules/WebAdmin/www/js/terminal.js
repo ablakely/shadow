@@ -31,6 +31,13 @@ $(document).ready(function() {
             return;
         }
 
+        if (cmd[0] === "/") {
+            var tmp = cmd.split("");
+
+            tmp.shift();
+            cmd = `irc "${tmp.join("")}"`;
+        }
+
         $.ajax({
             type: "POST",
             url:  "/terminal/api",

@@ -85,7 +85,7 @@ sub table {
     }
 
     my $i = 0;
-    my $headerstr = "| ";
+    my $headerstr = " ";
     foreach my $cval (@{$self->{header}}) {
         my $spacing = $colspacing[$i] - len($cval) > 0 ? $colspacing[$i] - len($cval) : $colspacing[$i];
         $spacing    = " "x$spacing;
@@ -100,7 +100,7 @@ sub table {
     push(@ret, $headerstr);
     push(@ret, $bar);
 
-    my $rowstr = "| ";
+    my $rowstr = " ";
     for (my $row = 0; $row < scalar(@{$self->{body}}); $row++) {
         for (my $col = 0; $col < scalar(@{$self->{body}[$row]}); $col++) {
             my $cval = $self->{body}[$row][$col];
@@ -136,10 +136,10 @@ sub table {
         }
 
         push(@ret, $rowstr);
-        $rowstr = "| ";
+        $rowstr = " ";
     }
 
-    push(@ret, $bar);
+    #push(@ret, $bar);
     return @ret;
 
 }

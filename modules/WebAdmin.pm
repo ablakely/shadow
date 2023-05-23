@@ -1,5 +1,6 @@
 package WebAdmin;
 
+use Encode qw(encode);
 use lib './modules';
 use IO::Socket::INET;
 use IO::Select;
@@ -9,11 +10,13 @@ use File::MimeInfo;
 use MIME::Base64;
 use URL::Encode qw/url_params_mixed/;
 
+use Shadow::Core;
+use Shadow::Help;
+
 use Data::Dumper;
 
-
-my $bot    = Shadow::Core;
-my $help   = Shadow::Help;
+my $bot    = Shadow::Core->new();
+my $help   = Shadow::Help->new();
 my $select = new IO::Select;
 our $router;
 our $routes;
@@ -158,6 +161,7 @@ sub wa_tick {
     foreach my $client ($select->can_write(1)) {
         next unless exists $outbuf{$client};
 
+        $outbuf{$client} = encode('UTF-8', $outbuf{$client});
         my $count = $client->send($outbuf{$client}, 0) or return closeClient($client);
         if ($!) {
             closeClient($client) if ($! =~ /Cannot determine peer address/);
