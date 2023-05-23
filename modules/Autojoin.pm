@@ -21,6 +21,9 @@ sub loader {
   $help->add_help('autojoin', 'Admin', '<add|del|list> <chan> [key]', 'Shadow Autojoin Module', 0, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02AUTOJOIN\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02autojoin\x02 is a command for managing which channels the bot automatically joins on connect.");
@@ -29,7 +32,7 @@ sub loader {
     $bot->say($nick, "  \x02del\x02 - Removes a channel from the autojoin list.");
     $bot->say($nick, "  \x02list\x02 - Lists all the channels the bot automatically joins.");
     $bot->say($nick, " ");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick autojoin <add|del|list> [chan] [key]");
+    $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix autojoin <add|del|list> [chan] [key]");
   });
 
   if (!-e $dbfile) {

@@ -58,10 +58,14 @@ sub loader {
   $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix    = "/" if ($bot->is_term_user($nick));
+
     if ($text =~ /rss set/i) {
         $bot->say($nick, "Help for \x02RSS SET\x02:");
         $bot->say($nick, " ");
-        $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rss set <option> <chan> <feed name> <value>");
+        $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix rss set <option> <chan> <feed name> <value>");
+
         $bot->say($nick, " ");
         $bot->say($nick, "  Options:");
         $bot->say($nick, "    SYNCTIME - Refresh rate for a feed in seconds.");
@@ -86,7 +90,7 @@ sub loader {
     $bot->say($nick, "  \x02list\x02 #chan - Lists all of the feeds for a given channel.");
     $bot->say($nick, "  \x02sync\x02 - Forces the bot to sync all feeds.");
     $bot->say($nick, " ");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick rss <add|del|list|set|sync> [#chan] [feed name] [url]");
+    $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix rss <add|del|list|set|sync> [#chan] [feed name] [url]");
   });
 
   if (!-e $feedfile) {
@@ -229,7 +233,7 @@ sub rss_irc_interface {
       } else {
           push(@out, "\x02*** $arg1 RSS FEEDS ***\x02");
 
-          $fmt->table_header("Feed", "URL", "Inverval", "Format");
+          $fmt->table_header("Feed", "URL", "Interval", "Format");
 
           foreach my $feed (keys %{$db->{$arg1}}) {
               $fmt->table_row(

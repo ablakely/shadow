@@ -1835,4 +1835,14 @@ sub add_timeout {
 	);
 }
 
+sub is_term_user {
+    my ($self, $usr) = @_;
+
+	if ($usr =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/) {
+        return 1;
+    }
+
+    return 0;
+}
+
 1;

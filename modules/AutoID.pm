@@ -21,28 +21,37 @@ sub loader {
   $help->add_help('nsregister', 'AutoID', '<nickserv> <email> <password>', 'Register bot with NickServ.', 1, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02NSREGISTER\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "nsregister will register the bot with NickServ.");
     $bot->say($nick, "If no password is given then the bot will generate it's own password.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nsregister <nickserv> <email> <password>");
+    $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix nsregister <nickserv> <email> <password>");
   });
   $help->add_help('nspasswd', 'AutoID', '', 'Prints current NickServ password.', 1, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02NSPASSWD\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "nspasswd will return the current password used for identifying with nickserv.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nspasswd");
+    $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix nspasswd");
   });
 
   $help->add_help('nsverify', 'AutoID', '<nickserv> <verication code>', 'For networks that use 2FA email varification.', 1, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02NSVERIFY\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "nsverify is used for networks like Freenode which require its users to verify their email.");
-    $bot->say($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick nsverify <nickserv> <verification code>");
+    $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix nsverify <nickserv> <verification code>");
   });
 }
 
@@ -93,7 +102,10 @@ sub autoid_register {
   my ($ns, $email, $pw) = split(/ /, $text);
   $pw = genpw() if !$pw;
 
-  return $bot->notice($nick, "Syntax: /msg $Shadow::Core::nick nsregister <nickserv> <email> [password]") if !$ns;
+  my $cmdprefix = "/msg $Shadow::Core::nick ";
+  $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
+  return $bot->notice($nick, "Syntax: $cmdprefix nsregister <nickserv> <email> [password]") if !$ns;
 
   if ($bot->isbotadmin($nick, $host)) {
     open(my $f, ">", $pwfile) or return $bot->err("AutoID Error: ".$!, 0, "Modules");

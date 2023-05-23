@@ -10,9 +10,10 @@ sub help {
     if (!$topic) {
         echo("[[b;;]Commands:] irc, say, echo, clear, load, unload, reload, viewlog, sys");
         echo("\n ");
-        echo("This console uses Perl for it's shell. (Perl Version: $^V)");
+        echo("This console uses Perl for it's shell (Perl Version: $^V)");
         echo("Use [[b;;]help \"<subtopic>\"] for help information on individual commands.");
         echo("[[b;;]/<command>] is a shortcut for [[b;;]irc \"<command>\"].");
+        echo("[[b;;].<code>] can be used to evaluate javascript with your browser.");
     } elsif ($topic =~ /say/) {
         echo("[[b;;]Syntax:] say(\"<target>\", \"<msg>\")\n \nSends \$msg to \$target on IRC.");
     } elsif ($topic =~ /echo/) {

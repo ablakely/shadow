@@ -29,13 +29,25 @@ $(document).ready(function() {
             }, 3);
 
             return;
-        }
-
-        if (cmd[0] === "/") {
+        } else if (cmd[0] === "/") {
             var tmp = cmd.split("");
 
             tmp.shift();
             cmd = `irc "${tmp.join("")}"`;
+        } else if (cmd[0] === ".") {
+            var tmp = cmd.split("");
+
+            tmp.shift();
+
+            var ret = window.eval.call(ins, '(function (ins) { '+tmp.join("")+' })')(ins);
+
+            try {
+                if (typeof ret !== "undefined") ins.echo(ret);
+            } catch(e) {
+                ins.echo(e);
+            }
+
+            return;
         }
 
         $.ajax({

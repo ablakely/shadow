@@ -28,37 +28,49 @@ sub loader {
   $help->add_help('op', 'Channel', '<user> <channel>', 'Give or removes operator mode to a user. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02OP\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02op\x02 grants or revokes operator status from a user.");
-    $bot->say($nick, "\x02SYNTAX\x02: .op <nick> or /msg $Shadow::Core::nick op <chan> <nick>");
+    $bot->say($nick, "\x02SYNTAX\x02: .op <nick> or $cmdprefix op <chan> <nick>");
   });
   
   $help->add_help('voice', 'Channel', '<user> <channel>', 'Gives or removes voice from a user. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02VOICE\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02voice\x02 grants or revokes voice status from a user.");
-    $bot->say($nick, "\x02SYNTAX\x02: .voice <nick> or /msg $Shadow::Core::nick voice <chan> <nick>");
+    $bot->say($nick, "\x02SYNTAX\x02: .voice <nick> or $cmdprefix voice <chan> <nick>");
   });
   
   $help->add_help('kick', 'Channel', '<user> <channel> <reason>', 'Kicks a user from a channel. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02KICK\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02kick\x02 removes a user from a channel.");
-    $bot->say($nick, "\x02SYNTAX\x02: .kick <user> <reason> or /msg $Shadow::Core::nick kick <user> <channel> <reason>");
+    $bot->say($nick, "\x02SYNTAX\x02: .kick <user> <reason> or $cmdprefix kick <user> <channel> <reason>");
   });
   
   $help->add_help('ban', 'Channel', '<user> <channel> <reason>', 'Bans a user from a channel. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
+    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    
     $bot->say($nick, "Help for \x02BAN\x02:");
     $bot->say($nick, " ");
     $bot->say($nick, "\x02ban\x02 will kick and ban a user from a channel.");
-    $bot->say($nick, "\x02SYNTAX\x02: .ban <user> <reason> or /msg $Shadow::Core::nick ban <user> <channel> <reason>");
+    $bot->say($nick, "\x02SYNTAX\x02: .ban <user> <reason> or $cmdprefix ban <user> <channel> <reason>");
   });
 }
 
