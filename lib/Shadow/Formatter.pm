@@ -90,12 +90,12 @@ sub table {
         my $spacing = $colspacing[$i] - len($cval) > 0 ? $colspacing[$i] - len($cval) : $colspacing[$i];
         $spacing    = " "x$spacing;
 
-        $headerstr .= "$cval$spacing | ";
+        $headerstr .= ($i + 1) < scalar(@{$self->{header}}) ? "$cval$spacing | " : "$cval$spacing ";
 
         $i++;
     }
 
-    my $bar = "-" x (len($headerstr) - 1);
+    my $bar = "-" x len($headerstr);
 
     push(@ret, $headerstr);
     push(@ret, $bar);
@@ -116,31 +116,22 @@ sub table {
                 $ccnt += -1 * $ecnt;
             }
             
+
             $spacing += $ccnt;
-            print "pre -- $spacing\n";
-
-
             my $headerlen = len($self->{header}[$col]);
 
-            print "dd: $headerlen\n";
-
-            if (($colspacing[$col] - len($cval)) < $headerlen) {
-                    $spacing = $headerlen+$spacing-len($cval);
+            if ($headerlen > len($cval)) {
+                if (($headerlen + $spacing) > $colspacing[$col]) { 
+                    $spacing = (len($cval) + $headerlen) > $colspacing[$col] ? $headerlen+$spacing : $spacing;
+                }
             }
-
-                #if ($headerlen > len($cval)) {
-                    #    if (($headerlen + $spacing) 
-                        #$spacing = $headerlen+$spacing;
-                        #}
-                    #}
-            print "spacing[$row:$col]: ".$colspacing[$col]." - ".len($cval)." = ".($spacing)."\n";
 
             if ($spacing > 0) {
                 $spacing    = " "x($spacing);
 
-                $rowstr .= "$cval$spacing | ";
+                $rowstr .= ($col + 1) < scalar(@{$self->{body}[$row]}) ? "$cval$spacing | " : "$cval$spacing ";
             } else {
-                $rowstr .= "$cval | ";
+                $rowstr .=  ($col + 1) < scalar(@{$self->{body}[$row]}) ? "$cval | " : "$cval ";
             }
         }
 
@@ -149,7 +140,6 @@ sub table {
     }
 
     push(@ret, $bar);
-
     return @ret;
 
 }
