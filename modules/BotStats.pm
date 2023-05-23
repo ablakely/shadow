@@ -30,7 +30,7 @@ sub loader {
     print "       Some functions might not work as intended on other platforms.\n";
   }
 
-  $bot->register("BotStats", "v1.2", "Aaron Blakely");
+  $bot->register("BotStats", "v1.3", "Aaron Blakely");
   $bot->add_handler('privcmd status', 'BotStats_dostatus');
   $help->add_help('status', 'Admin', '', 'Outputs current stats about the bot.', 1, sub {
     my ($nick, $host, $text) = @_;
@@ -80,26 +80,40 @@ sub memusage {
 sub BotStats_dostatus {
   my ($nick, $host, $text) = @_;
 
+  my $fmt = Shadow::Formatter->new();
+  $fmt->table_header("Stat", "Value");
+
   if ($bot->isbotadmin($nick, $host)) {
-    $bot->notice($nick, "\x02*** BOT STATUS ***\x02");
     my $mem = memusage();
     if ($mem) {
       $mem  = $mem / 1024;
       $mem  = $mem / 1024;
       $mem  = floor($mem);
 
-      $bot->notice($nick, "Current Memory Usage: $mem MB");
+      $fmt->table_row("Memory", "$mem MB");
     }
 
-    my $chancount = 0;
-    foreach my $m (keys %Shadow::Core::sc) {
-      $chancount++;
+    $fmt->table_row("Channel Cnt", scalar(keys(%Shadow::Core::sc)));
+
+    
+    my %modlist = $bot->module_stats();
+
+    my $c = 0;
+    foreach my $mod (keys %modlist) {
+        next if ($mod eq "loadedmodcount");
+
+        if ($mod =~ /Shadow\:\:Mods\:\:/) {
+            $c++;
+        }
     }
 
-    $bot->notice($nick, "Currently joined in $chancount channels.");
+    $fmt->table_row("Module Cnt", $c);
+    $fmt->table_row("Servers", join(", ", keys(%Shadow::Core::server)));
 
     my $uptime = Time::Seconds->new((time() - $^T));
-    $bot->notice($nick, "Bot Uptime: ".$uptime->pretty);
+    $fmt->table_row("Uptime", $uptime->pretty);
+
+    $bot->fastsay($nick, $fmt->table());
   } else {
     $bot->notice($nick, "Access denied.");
     $bot->log("BotStats: STATUS command denied for $nick.", "Modules");

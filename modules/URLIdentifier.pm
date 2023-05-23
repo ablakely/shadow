@@ -6,7 +6,7 @@ package URLIdentifier;
 # Supported sites for metadata parsing:
 #  youtube.com, youtu.be
 #  twitter.com, nitter.net
-#  browser.geekbench.com
+#  browser.geekbench.com/v6/cpu - CPU results only
 #  ebay.com
 #  reddit.com
 #  patriots.win
@@ -19,7 +19,7 @@ package URLIdentifier;
 #   4/11/23 - Strip <a> tags out of tweets
 #             Fix ebay scraping
 #   5/18/23 - Added rumble.com scraping
-
+#   5/23/23 - Fix geenbench scraping
 
 
 use utf8;
@@ -80,6 +80,33 @@ sub getSiteInfo {
       }
     }
 
+    # geekbench page scraping
+    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\// && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\n?\"\>/gmi) {
+      $meta{'description'} = $1;
+      chomp $meta{'description'};
+    }
+
+    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\n?\<div class\=\'note\'\>Single-Core Score\<\/div\>/gmi) {
+      $meta{'singleCoreScore'} = $1;
+      chomp $meta{'singleCoreScore'};
+    }
+
+    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\// && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\n?\<div class\=\'note\'\>Multi-Core Score\<\/div\>/gmi) {
+      $meta{'multiCoreScore'} = $1;
+      chomp $meta{'multiCoreScore'};
+    }
+
+    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<td class\=\'system-name\'\>Topology\<\/td\>\n?\<td class\=\'system-value\'\>(.*?)\<\/td\>/gmi) {
+      $meta{'topology'} = $1;
+      chomp $meta{'topology'};
+    }
+
+    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<td class\=\'system-name\'\>Size\<\/td\>\n?\<td class\=\'system-value\'\>(.*?)\<\/td\>/gmi) {
+      $meta{'mem'} = $1;
+      chomp $meta{'mem'};
+    }
+
+
     $htmlResp =~ s/\n//gs;
     $htmlResp =~ s/\r//gs;
     $htmlResp =~ s/\&nbsp\;//gs;
@@ -120,37 +147,12 @@ sub getSiteInfo {
       $meta{'comments'} = $1;
     }
 
-    # geekbench page scraping
-
-    if ($url =~ /browser\.geekbench\.com/ && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\"\>/gis) {
-      $meta{'description'} = $1;
-      chomp $meta{'description'};
-    }
 
     if ($url =~ /reddit\.com/ && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\"\/\>/gis) {
       $meta{'description'} = $1;
       chomp $meta{'description'};
     }
 
-    if ($url =~ /browser\.geekbench\.com/ && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\<div class\=\'note\'\>Single-Core Score\<\/div\>/gis) {
-      $meta{'singleCoreScore'} = $1;
-      chomp $meta{'singleCoreScore'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com/ && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\<div class\=\'note\'\>Multi-Core Score\<\/div\>/gis) {
-      $meta{'multiCoreScore'} = $1;
-      chomp $meta{'multiCoreScore'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com/ && $htmlResp =~ /\<td class\=\'system-name\'\>Topology\<\/td\>\<td class\=\'system-value\'\>(.*?)\<\/td\>/gis) {
-      $meta{'topology'} = $1;
-      chomp $meta{'topology'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com/ && $htmlResp =~ /\<td class\=\'system-name\'\>Memory\<\/td\>\<td class\=\'system-value\'\>(.*?)\<\/td\>/gis) {
-      $meta{'mem'} = $1;
-      chomp $meta{'mem'};
-    }
 
     if ($url =~ /nitter\.net/ && $htmlResp =~ /\<div class\=\"tweet-content media-body\" dir\=\"auto\"\>(.*?)\<\/div\>/si && !$meta{'tweet'}) {
       $meta{'tweet'} = $1;
@@ -201,7 +203,7 @@ sub getSiteInfo {
         $meta{$1} = $2;
       }
 
-      if ($url =~ /browser\.geekbench\.com/ && $line =~ /\<td class\=\'system-name\'\>/gis && $nl =~ /(.*?)\<\/td\>/gis) {
+      if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $line =~ /\<td class\=\'system-name\'\>/gis && $nl =~ /(.*?)\<\/td\>/gis) {
         my $param = $1;
 
         my ($lp2, $lp3) = ($html[$i+2].">", $html[$i+3].">");
@@ -401,7 +403,7 @@ sub url_id {
       }
     } elsif ($url =~ /odysee\.com/) {
       $bot->say($chan, "[\x037\x02Odysee\x02 \x{1F680}\x03] \x02Title:\x02 \x02\x037$meta{'name'}\x03\x02 \x02Description:\x02 $meta{'description'} [\x02\x036Channel:\x02 $meta{'channelName'} | \x02Date:\x02 $meta{'uploadDate'} | \x02Duration:\x02 $meta{'duration'}\x03]");
-    } elsif ($text =~ /browser\.geekbench\.com/) {
+    } elsif ($text =~ /browser\.geekbench\.com\/v6\/cpu\// ) {
       $bot->say($chan, "[\x0312Geekbench\x03] \x02\x0312$meta{'description'}\x03\x02 [\x02\x039Model:\x02 $meta{'Model'} | \x02Single Core:\x02 $meta{'singleCoreScore'} | \x02Multi Core:\x02 $meta{'multiCoreScore'} | \x02Topology:\x02 $meta{'topology'} | \x02RAM:\x02 $meta{'mem'} | \x02OS:\x02 $meta{'Operating System'}\x03]");
     } elsif ($url =~ /twitter\.com/) {
       if (!$meta{'comments'}) { $meta{'comments'} = 0; }
