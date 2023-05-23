@@ -1,5 +1,7 @@
 # Shadow Perl IRC Bot
 
+![screenshot](https://raw.githubusercontent.com/ablakely/shadow/master/doc/sc.png "screenshot")
+
 ## What is shadow?
 shadow is a modular IRC bot written in Perl by Aaron Blakely, it's goal is to be a stable IRC bot with cool features.
 
