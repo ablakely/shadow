@@ -295,7 +295,7 @@ sub ircadmin_cat {
       $lc++;
     }
 
-    if ($chan !~ /^\#/) {
+    if ($chan =~ /^\#/) {
       $bot->fastsay($chan, @out);
     } else {
       $bot->fastnotice($chan, @out);
