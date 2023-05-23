@@ -1,7 +1,14 @@
 package Shadow::Help;
+# Shadow::Help - Shadow Help System
+#
+# This provides a built in help command that modules may extend
+# as well as handle their own subtopics with.
+#
+# Written by Aaron Blakely <aaron@ephasic.org>
 
 use strict;
 use warnings;
+use Shadow::Core;
 
 our $bot;
 our $module;
@@ -21,6 +28,11 @@ sub new {
   my ($class, $shadow) = @_;
   my $self             = {};
   $bot                 = $shadow;
+
+  if (!$shadow) {
+      $bot = Shadow::Core->new();
+      return $class;
+  }
 
   $bot->add_handler("privcmd help", 'dohelp');
   return bless($self, $class);
@@ -152,7 +164,7 @@ sub dohelp {
   push(@out, "[F] means the command may be used in a channel.  Example: ".$Shadow::Core::options{irc}->{cmdprefix}."op user");
   push(@out, "Use \x02/msg $Shadow::Core::nick help <topic>\x02 for command specific information.");
 
-  if ($nick =~ =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
+  if ($nick =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/gm) {
     foreach my $line (@out) {
       $bot->notice($nick, $line);
     }

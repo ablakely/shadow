@@ -11,6 +11,9 @@ package BotStats;
 use POSIX;
 use Time::Seconds;
 
+use lib '../lib';
+use Shadow::Formatter;
+
 if ($^O eq "linux") {
   require Proc::ProcessTable;
 } elsif ($^O eq "msys" || $^O eq "MSWin32") {
@@ -106,6 +109,9 @@ sub BotStats_dostatus {
 sub BotStats_hookstats {
   my ($nick, $host, $text) = @_;
 
+  my @out;
+  my $fmt = Shadow::Formatter->new();
+
   my @evHandlers = (
     'event tick', 'event join_me', 'event join', 'event part_me', 'event part', 'event quit', 'event nick_me',
     'event nick', 'event mode', 'event voice_me', 'event halfop_me', 'event op_me', 'event protect_me',
@@ -135,11 +141,13 @@ sub BotStats_hookstats {
     }
   }
 
-  $bot->notice($nick, "\x02---[ Hooked Event Handlers ]---\x02");
+  $fmt->table_header("Class", "Hook", "Count");
+
   foreach my $hook (keys %hooked) {
-    $bot->notice($nick, "\x02$hook\x02 - Count: $hooked{$hook}");
+    $fmt->table_row((split(/ /, $hook))[0], (split(/ /, $hook))[1], "$hooked{$hook} handlers");
   }
-  $bot->notice($nick, "-------------------------------");
+
+  $bot->fastnotice($nick, $fmt->table());
 }
 
 sub unloader {

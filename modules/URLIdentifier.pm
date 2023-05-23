@@ -28,8 +28,11 @@ use Encode qw( encode_utf8 );
 use LWP::UserAgent;
 use open qw(:std :encoding(UTF-8));
 
-our $bot  = Shadow::Core;
-our $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+our $bot  = Shadow::Core->new();
+our $help = Shadow::Help->new();
 
 sub loader {
   $bot->register("URLIdentifier", "v1.5", "Aaron Blakely");

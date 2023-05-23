@@ -5,8 +5,11 @@ use JSON;
 use LWP::UserAgent;
 use open qw(:std :utf8);
 
-my $bot = Shadow::Core;
-my $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+my $bot = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 my $API_KEY = "3871e6ee92a6ffee1850e3e8175c107d";
 
