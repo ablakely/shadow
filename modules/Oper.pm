@@ -3,8 +3,11 @@ package Oper;
 # Oper.pm - IRC Operator Commands
 # Written by Aaron Blakely <aaron@ephasic.org>
 
-my $bot = Shadow::Core;
-my $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+my $bot = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 sub loader {
   $bot->register("Oper", "v0.5", "Aaron Blakely");

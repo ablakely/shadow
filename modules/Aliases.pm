@@ -6,9 +6,11 @@ package Aliases;
 # Date: 6/7/2022
 
 use JSON;
+use Shadow::Core;
+use Shadow::Help;
 
-my $bot = Shadow::Core;
-my $help = Shadow::Help;
+my $bot = Shadow::Core->new();
+my $help = Shadow::Help->new();
 my $dbfile = "./etc/aliases.db";
 
 sub loader {

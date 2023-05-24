@@ -1,7 +1,10 @@
 package Lolcat;
 
-my $bot = Shadow::Core;
-my $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+my $bot = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 sub loader {
     $bot->register("Lolcat", "v1.0", "Aaron Blakely");

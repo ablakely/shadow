@@ -3,8 +3,11 @@ package Fortune;
 # Fortune.pm - Wrapper package for the Unix fortune cookie program.
 # Written by Aaron Blakely <aaron@ephasic.org>
 
-my $bot  = Shadow::Core;
-my $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+my $bot  = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 sub whereisFortune {
 	my @paths = ('/usr/games/fortune', '/usr/bin/fortune', '/usr/local/Cellar/fortune/9708/bin/fortune');

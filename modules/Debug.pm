@@ -3,8 +3,11 @@ package Debug;
 # TODO: Make this a load in module that turns on CORE debugging
 #
 
-my $bot  = Shadow::Core;
-my $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+my $bot  = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 sub loader {
   $bot->register("Debug", "v0.5", "Aaron Blakely");

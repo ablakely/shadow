@@ -1,6 +1,13 @@
 package Welcome;
+# Welcome.pm - Basic channel greeting module
+#   This is meant to be more of an example of how to write a module
+#   for shadow.
+# Written by Aaron Blakely <aaron@ephasic.org>
+#
 
-my $bot = Shadow::Core;
+use Shadow::Core;
+
+my $bot = Shadow::Core->new();
 
 sub loader {
     $bot->add_handler('event join', 'welcomeJoinEvent');

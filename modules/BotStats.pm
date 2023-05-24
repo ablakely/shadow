@@ -11,6 +11,9 @@ package BotStats;
 use POSIX;
 use Time::Seconds;
 
+use Shadow::Core;
+use Shadow::Help;
+
 use lib '../lib';
 use Shadow::Formatter;
 
@@ -21,8 +24,8 @@ if ($^O eq "linux") {
 }
 
 my $LOADTIME = time();
-my $bot      = Shadow::Core;
-my $help     = Shadow::Help;
+my $bot      = Shadow::Core->new();
+my $help     = Shadow::Help->new();
 
 sub loader {
   if ($^O ne "linux" && $^O ne "msys" && $^O ne "MSWin32") {

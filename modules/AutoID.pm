@@ -5,9 +5,12 @@ package AutoID;
 # Compatibilty:
 #
 
+use Shadow::Core;
+use Shadow::Help;
+
 my $pwfile = "./etc/autoid.pd";
-my $bot    = Shadow::Core;
-my $help   = Shadow::Help;
+my $bot    = Shadow::Core->new();
+my $help   = Shadow::Help->new();
 
 sub loader {
   $bot->register("AutoID", "v1.0", "Aaron Blakely");

@@ -1,6 +1,8 @@
 package OperChan;
 
-my $bot = Shadow::Core;
+use Shadow::Core;
+
+my $bot = Shadow::Core->new();
 
 my @channels = ("#network", "#staff");
 

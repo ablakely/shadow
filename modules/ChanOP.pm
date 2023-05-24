@@ -11,8 +11,11 @@ package ChanOP;
 #
 # Written by Aaron Blakely <aaron@ephasic.org>
 
-my $bot = Shadow::Core;
-my $help = Shadow::Help;
+use Shadow::Core;
+use Shadow::Help;
+
+my $bot = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 sub loader {
   $bot->register("ChanOP", "v0.9", "Aaron Blakely");
@@ -28,7 +31,7 @@ sub loader {
   $help->add_help('op', 'Channel', '<user> <channel>', 'Give or removes operator mode to a user. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02OP\x02:");
@@ -40,7 +43,7 @@ sub loader {
   $help->add_help('voice', 'Channel', '<user> <channel>', 'Gives or removes voice from a user. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02VOICE\x02:");
@@ -52,7 +55,7 @@ sub loader {
   $help->add_help('kick', 'Channel', '<user> <channel> <reason>', 'Kicks a user from a channel. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02KICK\x02:");
@@ -64,7 +67,7 @@ sub loader {
   $help->add_help('ban', 'Channel', '<user> <channel> <reason>', 'Bans a user from a channel. [F]', 0, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
+    my $cmdprefix = "/msg $Shadow::Core::nick";
     $cmdprefix = "/" if ($bot->is_term_user($nick));
     
     $bot->say($nick, "Help for \x02BAN\x02:");

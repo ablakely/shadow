@@ -7,7 +7,9 @@ package Commands;
 # 5/23/18 - v1.0
 # 6/17/22 - v1.1 - Now lists commands from the Aliases module.
 
-my $bot = Shadow::Core;
+use Shadow::Core;
+
+my $bot = Shadow::Core->new();
 
 sub loader {
   $bot->register("Commands", "v1.1", "Aaron Blakely");

@@ -64,7 +64,7 @@ sub loader {
     if ($text =~ /rss set/i) {
         $bot->say($nick, "Help for \x02RSS SET\x02:");
         $bot->say($nick, " ");
-        $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix rss set <option> <chan> <feed name> <value>");
+        $bot->say($nick, "\x02SYNTAX\x02: ${cmdprefix}rss set <option> <chan> <feed name> <value>");
 
         $bot->say($nick, " ");
         $bot->say($nick, "  Options:");
@@ -90,7 +90,7 @@ sub loader {
     $bot->say($nick, "  \x02list\x02 #chan - Lists all of the feeds for a given channel.");
     $bot->say($nick, "  \x02sync\x02 - Forces the bot to sync all feeds.");
     $bot->say($nick, " ");
-    $bot->say($nick, "\x02SYNTAX\x02: $cmdprefix rss <add|del|list|set|sync> [#chan] [feed name] [url]");
+    $bot->say($nick, "\x02SYNTAX\x02: ${cmdprefix}rss <add|del|list|set|sync> [#chan] [feed name] [url]");
   });
 
   if (!-e $feedfile) {

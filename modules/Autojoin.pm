@@ -7,9 +7,11 @@ package Autojoin;
 # Written by Aaron Blakely <aaron@ephasic.org>
 
 use JSON;
+use Shadow::Core;
+use Shadow::Help;
 
-my $bot  = Shadow::Core;
-my $help = Shadow::Help;
+my $bot  = Shadow::Core->new();
+my $help = Shadow::Help->new();
 
 my $dbfile = "./etc/autojoin.db";
 
