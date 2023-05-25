@@ -17,7 +17,7 @@ my $dbi = Shadow::DB->new();
 # the loader subroutine is automatically called when the module is loaded.
 sub loader {
     # register our module
-    $bot->register("Welcome", "v0.6", "Aaron Blakely");
+    $bot->register("Welcome", "v0.6", "Aaron Blakely", "Auto greetings for channels.");
 
     # define handlers for events
     $bot->add_handler('event join', 'welcomeJoinEvent');

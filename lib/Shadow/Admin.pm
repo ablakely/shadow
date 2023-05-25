@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Data::Dumper;
 
+use Shadow::Core;
+
 our $bot;
 our %options;
 
@@ -238,7 +240,7 @@ sub ircadmin_modlist {
 
   my $fmt = Shadow::Formatter->new();
 
-  $fmt->table_header("Module", "Version", "Author");
+  $fmt->table_header("Module", "Version", "Author", "Description");
 
   my %modlist = $bot->module_stats();
   my %modreg  = %Shadow::Core::modreg;
@@ -252,7 +254,8 @@ sub ircadmin_modlist {
         $fmt->table_row(
           $1,
           exists($modreg{$1}->{version}) ? $modreg{$1}->{version} : "N/A",
-          exists($modreg{$1}->{author}) ? $modreg{$1}->{author} : "N/A"
+          exists($modreg{$1}->{author}) ? $modreg{$1}->{author} : "N/A",
+          exists($modreg{$1}->{description}) ? $modreg{$1}->{description} : "N/A"
         );
       }
     }

@@ -295,11 +295,16 @@ sub unload_module {
 }
 
 sub register {
-	my ($self, $name, $version, $author) = @_;
+	my ($self, $name, $version, $author, $desc) = @_;
+
+    return 0 if (!$name);
 
 	$modreg{$name} = {};
-	$modreg{$name}{version} = $version;
-	$modreg{$name}{author}  = $author;
+	$modreg{$name}{version}     = $version ? $version : "N/A";
+	$modreg{$name}{author}      = $author ? $author : "N/A";
+    $modreg{$name}{description} = $desc ? $desc : "N/A";
+
+    return 1;
 }
 
 sub unregister {
@@ -307,7 +312,17 @@ sub unregister {
 
 	if (exists($modreg{$name})) {
 		delete $modreg{$name};
+
+        return 1;
 	}
+
+    return 0;
+}
+
+sub getmodinfo {
+    my ($self, $mod) = @_;
+
+    return exists($modreg{$mod}) ? $modreg{$mod} : 0;
 }
 
 sub module_stats {
