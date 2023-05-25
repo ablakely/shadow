@@ -62,11 +62,11 @@ sub welcome_manage {
 
     # check user for channel op
     if ($bot->isin($chan, $Shadow::Core::nick) && $bot->isop($nick, $chan)) {
-        if ($cmd eq "set") {
+        if ($cmd =~ /set/i) {
             $db->{Welcome}->{$chan} = $text;
 
             $bot->say($nick, "Set greeting for $chan: $text");
-        } elsif ($cmd eq "del") {
+        } elsif ($cmd =~ /del/i) {
             delete $db->{Welcome}->{$chan};
 
             $bot->say($nick, "Removed greeting for $chan");
