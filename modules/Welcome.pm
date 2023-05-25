@@ -1,7 +1,8 @@
 package Welcome;
 # Welcome.pm - Basic channel greeting module
-#   This is meant to be more of an example of how to write a module
-#   for shadow.
+#
+# This module is a good example for how to write a shadow module.
+#
 # Written by Aaron Blakely <aaron@ephasic.org>
 #
 
@@ -60,6 +61,13 @@ sub welcome_manage {
     my $cmd  = shift(@tmp);
     $text = join(" ", @tmp);
 
+    # check arguments
+    if (!$chan || !$cmd) {
+        my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
+
+        return $bot->say($nick, "\x02SYNTAX\x02: ${cmdprefix}welcome <chan> <set|del> [greeting]");
+    }
+
     # check user for channel op
     if ($bot->isin($chan, $Shadow::Core::nick) && $bot->isop($nick, $chan)) {
         if ($cmd =~ /set/i) {
@@ -67,7 +75,11 @@ sub welcome_manage {
 
             $bot->say($nick, "Set greeting for $chan: $text");
         } elsif ($cmd =~ /del/i) {
-            delete $db->{Welcome}->{$chan};
+            if ($db->{Welcome}->{$chan}) {
+                delete $db->{Welcome}->{$chan};
+            } else {
+                return $bot->say($nick, "There is not a greeting set for $chan.");
+            }
 
             $bot->say($nick, "Removed greeting for $chan");
         } else {
