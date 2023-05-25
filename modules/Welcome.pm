@@ -29,23 +29,22 @@ sub loader {
         # detect if being called from IRC or web terminal
         my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
 
-        my @out;
-        push(@out, "Help for \x02Welcome\x02:");
-        push(@out, " ");
-        push(@out, "\x02welcome\x02 is used to set or remove automatic greetings for a channel.");
-        push(@out, "Subcommands:");
-        push(@out, "  \x02set\x02 - Set the greeting for a channel.");
-        push(@out, "  \x02del\x02 - Removes the greeting for a channel.");
-        push(@out, " ");
-        push(@out, "Formatting:");
-        push(@out, "  \x02\%NICK\%\x02 - Variable for the user's nick.");
-        push(@out, "  \x02\%CHAN\%\x02 - Variable for the channel.");
-        push(@out, " ");
-        push(@out, "\x02SYNTAX\x02: ${cmdprefix}welcome <chan> <set|del> [greeting]");
-
         # $bot->fastsay() is used instead of $bot->say() to reduce lag from filling the
         # message queue with help messages.
-        $bot->fastsay($nick, @out);
+        $bot->fastsay($nick, (
+            "Help for \x02Welcome\x02:",
+            " ",
+            "\x02welcome\x02 is used to set or remove automatic greetings for a channel.",
+            "Subcommands:",
+            "  \x02set\x02 - Set the greeting for a channel.",
+            "  \x02del\x02 - Removes the greeting for a channel.",
+            " ",
+            "Formatting:",
+            "  \x02\%NICK\%\x02 - Variable for the user's nick.",
+            "  \x02\%CHAN\%\x02 - Variable for the channel.",
+            " ",
+            "\x02SYNTAX\x02: ${cmdprefix}welcome <chan> <set|del> [greeting]"
+        ));
     });
 }
 
