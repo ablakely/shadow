@@ -25,8 +25,7 @@ sub loader {
   $help->add_help('autojoin', 'Admin', '<add|del|list> <chan> [key]', 'Shadow Autojoin Module', 0, sub {
     my ($nick, $host, $text) = @_;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
-    $cmdprefix = "/" if ($bot->is_term_user($nick));
+    my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
     
     $bot->fastsay($nick, (
         "Help for \x02AUTOJOIN\x02:",
@@ -67,6 +66,7 @@ sub autojoin {
       $bot->join($chan);
       $bot->notice($nick, "Added $chan to auto join list.");
     } elsif ($cmd eq "del") {
+      return $bot->notice($nick, "$chan is not in autojoin list") if (!$db->{Autojoin}->{$chan});
       delete $db->{Autojoin}->{$chan};
 
       $bot->part($chan, "Removed from autojoin.");
