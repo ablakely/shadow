@@ -88,7 +88,7 @@ sub welcomeJoinEvent {
     my $db = ${$dbi->read()};
 
     if ($db->{Welcome}->{$chan}) {
-        my $greet = $db->{Welcome}{$chan};
+        my $greet = $db->{Welcome}->{$chan};
 
         # interpolate variables in the greeting
         $greet =~ s/\%NICK\%/$nick/gsi;
