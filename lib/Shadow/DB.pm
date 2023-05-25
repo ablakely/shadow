@@ -54,9 +54,10 @@ sub read {
 }
 
 sub write {
-    my ($self) = @_;
+    my ($self, $pretty) = @_;
 
-    my $tmp = to_json($self->{buf}, { utf8 => 1, pretty => 0 });
+    $pretty = $pretty ? 1 : 0;
+    my $tmp = to_json($self->{buf}, { utf8 => 1, pretty => $pretty });
 
     open(my $fh, ">", $self->{filename}) or return 0;
     print $fh $tmp."\n";
