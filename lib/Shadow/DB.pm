@@ -33,7 +33,7 @@ sub read {
     if (-e $self->{filename}) { 
         open(my $fh, "<", $self->{filename}) or return 0;
         {
-            local $\;
+            local $/;
             $tmp = <$fh>;
 
         }
