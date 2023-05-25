@@ -6,7 +6,6 @@ package Autojoin;
 #
 # Written by Aaron Blakely <aaron@ephasic.org>
 
-use JSON;
 use Shadow::DB;
 use Shadow::Core;
 use Shadow::Help;
@@ -18,7 +17,7 @@ my $dbi  = Shadow::DB->new();
 
 
 sub loader {
-  $bot->register("Autojoin", "v1.0", "Aaron Blakely", "Autojoin channels");
+  $bot->register("Autojoin", "v2.0", "Aaron Blakely", "Autojoin channels");
   $bot->add_handler('event connected', 'Autojoin_connected');
   $bot->add_handler('privcmd autojoin', 'autojoin');
 
