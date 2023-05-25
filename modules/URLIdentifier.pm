@@ -35,7 +35,7 @@ our $bot  = Shadow::Core->new();
 our $help = Shadow::Help->new();
 
 sub loader {
-  $bot->register("URLIdentifier", "v1.5", "Aaron Blakely");
+  $bot->register("URLIdentifier", "v1.5", "Aaron Blakely", "Fetches title and other information about URLs");
 
   $bot->add_handler('message channel', 'url_id');
 }

@@ -12,7 +12,7 @@ use Shadow::Core;
 my $bot = Shadow::Core->new();
 
 sub loader {
-  $bot->register("Commands", "v1.1", "Aaron Blakely");
+  $bot->register("Commands", "v1.1", "Aaron Blakely", "List of commands available in the channel");
   $bot->add_handler('chancmd commands', 'commands_dolist');
 }
 

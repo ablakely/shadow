@@ -7,7 +7,7 @@ my $bot = Shadow::Core->new();
 my $help = Shadow::Help->new();
 
 sub loader {
-    $bot->register("Lolcat", "v1.0", "Aaron Blakely");
+    $bot->register("Lolcat", "v1.0", "Aaron Blakely", "lolcat for IRC");
     $bot->add_handler('chancmd lolcat', 'lolcat');
 }
 

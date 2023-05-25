@@ -17,7 +17,7 @@ sub loader {
     return;
   }
 
-  $bot->register("MacSysinfo", "v0.5", "Aaron Blakely");
+  $bot->register("MacSysinfo", "v0.5", "Aaron Blakely", "System information using macOS System Profiler");
   $bot->add_handler('chancmd sysinfo', 'sysinfo_cmd');
   $help->add_help('sysinfo', 'Channel', '', 'System Specifications brag script. [F]', 0, sub {
     my ($nick, $host, $text) = @_;

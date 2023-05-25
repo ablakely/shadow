@@ -16,7 +16,7 @@ my $help = Shadow::Help->new();
 my $dbfile = "./etc/ignore.db";
 
 sub loader {
-    $bot->register("Ignore", "v1.0", "Aaron Blakely");
+    $bot->register("Ignore", "v1.0", "Aaron Blakely", "Ignore users");
     $bot->add_handler('privcmd ignore', 'ignore_add');
     $bot->add_handler('privcmd unignore', 'ignore_del');
 

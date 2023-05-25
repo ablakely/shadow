@@ -10,7 +10,7 @@ my $bot  = Shadow::Core->new();
 my $help = Shadow::Help->new();
 
 sub loader {
-  $bot->register("Debug", "v0.5", "Aaron Blakely");
+  $bot->register("Debug", "v0.5", "Aaron Blakely", "Debugging module");
 
   $bot->add_handler('raw in', 'debug_rawInEvent');
   $bot->add_handler('raw out', 'debug_rawOutEvent');

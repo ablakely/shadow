@@ -27,7 +27,7 @@ sub loader {
 		return -1;
 	}
 
-	$bot->register("Fortune", "v1.0", "Aaron Blakely");
+	$bot->register("Fortune", "v1.0", "Aaron Blakely", "Fortune cookies!");
 	$bot->add_handler('chancmd fortune', 'doFortune');
 	$help->add_help("fortune", "Game", "", "Fortune cookie! [F]", 0, sub {
 		my ($nick, $host, $text) = @_;
@@ -46,6 +46,7 @@ sub doFortune {
 	my $bin = whereisFortune();
 	my @fortune = `$bin -s`;
 
+    my @out = ("Here's your fortune $nick:");
 	$bot->say($chan, "Here's your fortune $nick:");
 	foreach my $line (@fortune) {
 		chomp $line;
@@ -53,9 +54,11 @@ sub doFortune {
 		if (defined &Lolcat::lolcat) {
 			Lolcat::lolcat($nick, $host, $chan, $line);
 		} else {
-			$bot->say($chan, $line);
+            push(@out, $line);
 		}
 	}
+
+    $bot->fastsay($chan, @out);
 
 	return @fortune;
 }

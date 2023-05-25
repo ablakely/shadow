@@ -33,7 +33,7 @@ sub loader {
     print "       Some functions might not work as intended on other platforms.\n";
   }
 
-  $bot->register("BotStats", "v1.3", "Aaron Blakely");
+  $bot->register("BotStats", "v1.3", "Aaron Blakely", "Bot status information");
   $bot->add_handler('privcmd status', 'BotStats_dostatus');
   $help->add_help('status', 'Admin', '', 'Outputs current stats about the bot.', 1, sub {
     my ($nick, $host, $text) = @_;

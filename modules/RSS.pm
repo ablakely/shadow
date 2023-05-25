@@ -50,7 +50,7 @@ my $ua       = Mojo::UserAgent->new;
 my %feedcache;
 
 sub loader {
-  $bot->register("RSS", "v1.1", "Aaron Blakely");
+  $bot->register("RSS", "v1.1", "Aaron Blakely", "RSS aggregator");
 
   $bot->log("[RSS] Loading: RSS module v1.1", "Modules");
   $bot->add_handler('event connected', 'rss_connected');

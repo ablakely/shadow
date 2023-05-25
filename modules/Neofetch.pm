@@ -7,7 +7,7 @@ my $bot = Shadow::Core->new();
 my $help = Shadow::Help->new();
 
 sub loader {
-    $bot->register("Neofetch", "v2.0", "Aaron Blakely");
+    $bot->register("Neofetch", "v2.0", "Aaron Blakely", "System information using neofetch");
 
     $bot->add_handler('chancmd neofetch', 'doNeoFetch');
     $bot->add_handler('chancmd sysinfo', 'doNeoFetch');

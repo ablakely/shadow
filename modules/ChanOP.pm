@@ -18,7 +18,7 @@ my $bot = Shadow::Core->new();
 my $help = Shadow::Help->new();
 
 sub loader {
-  $bot->register("ChanOP", "v0.9", "Aaron Blakely");
+  $bot->register("ChanOP", "v0.9", "Aaron Blakely", "Channel operator commands");
   $bot->add_handler('chancmd op',    'chanop_op');
   $bot->add_handler('privcmd op',    'chanop_op');
   $bot->add_handler('chancmd voice', 'chanop_voice');

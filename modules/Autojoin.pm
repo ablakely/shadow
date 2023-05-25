@@ -16,7 +16,7 @@ my $help = Shadow::Help->new();
 my $dbfile = "./etc/autojoin.db";
 
 sub loader {
-  $bot->register("Autojoin", "v1.0", "Aaron Blakely");
+  $bot->register("Autojoin", "v1.0", "Aaron Blakely", "Autojoin channels");
   $bot->add_handler('event connected', 'Autojoin_connected');
   $bot->add_handler('privcmd autojoin', 'autojoin');
 

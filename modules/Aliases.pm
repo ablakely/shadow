@@ -14,7 +14,7 @@ my $help = Shadow::Help->new();
 my $dbfile = "./etc/aliases.db";
 
 sub loader {
-    $bot->register("Aliases", "v1.0", "Aaron Blakely");
+    $bot->register("Aliases", "v1.0", "Aaron Blakely", "Custom response triggers");
 
     $bot->add_handler('privcmd alias', 'aliasHandler');
     $bot->add_handler('message channel', 'chanMessageHandler');

@@ -2,8 +2,6 @@ package AutoID;
 
 # AutoID Module for Shadow.
 #
-# Compatibilty:
-#
 
 use Shadow::Core;
 use Shadow::Help;
@@ -13,7 +11,7 @@ my $bot    = Shadow::Core->new();
 my $help   = Shadow::Help->new();
 
 sub loader {
-  $bot->register("AutoID", "v1.0", "Aaron Blakely");
+  $bot->register("AutoID", "v1.0", "Aaron Blakely", "Network services account management");
 
   $bot->add_handler('event connected', 'autoid_connected');
   $bot->add_handler('privcmd nsregister', 'autoid_register');
