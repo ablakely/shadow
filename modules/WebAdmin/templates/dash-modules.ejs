@@ -281,10 +281,11 @@
       </form>
       <br />
 
-      <table class="table">
+      <table class="table table-xl">
         <thead>
             <tr>
                 <th>Module</th>
+                <th>Description</th>
                 <th>Version</th>
                 <th>Author</th>
                 <th>Actions</th>
@@ -294,6 +295,7 @@
             <% for (var i = 0; i < mods.length; i++) { %>
                 <tr>
                     <td><%= mods[i] %></td>
+                    <td><%= typeof modreg[mods[i]] !== "undefined" ? modreg[mods[i]].description : "N/A" %></td>
                     <td><%= typeof modreg[mods[i]] !== "undefined" ? modreg[mods[i]].version : "N/A" %></td>
                     <td><%= typeof modreg[mods[i]] !== "undefined" ? modreg[mods[i]].author : "N/A" %></td>
                     <td>
