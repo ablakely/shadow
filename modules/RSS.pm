@@ -4,6 +4,7 @@
 #
 # Changelog:
 # v1.1 - Performance and feed compatibility improvements, formatting support
+# v1.2 - Switch to Shadow::DB
 #
 # feed.db format:
 # [
@@ -30,7 +31,6 @@ package RSS;
 use warnings;
 use lib '../lib';
 use utf8;
-use JSON;
 use Time::Seconds;
 use Mojo::IOLoop;
 use Mojo::UserAgent;
@@ -38,6 +38,7 @@ use XML::Feed;
 use utf8;
 use Encode qw( encode_utf8 );
 
+use Shadow::DB;
 use Shadow::Core;
 use Shadow::Help;
 use Shadow::Formatter;
@@ -45,7 +46,7 @@ use Shadow::Formatter;
 
 my $bot      = Shadow::Core->new();
 my $help     = Shadow::Help->new();
-my $feedfile = "./etc/feeds.db";
+my $dbi      = Shadow::DB->new();
 my $ua       = Mojo::UserAgent->new;
 my %feedcache;
 
@@ -93,11 +94,9 @@ sub loader {
     $bot->say($nick, "\x02SYNTAX\x02: ${cmdprefix}rss <add|del|list|set|sync> [#chan] [feed name] [url]");
   });
 
-  if (!-e $feedfile) {
-    $bot->log("RSS: No feed database found, creating one.", "Modules");
-    open(my $db, ">", $feedfile) or $bot->error("RSS: Error: Couldn't open $feedfile: $!");
-    print $db "{}";
-    close($db);
+  my $db = ${$dbi->read("feeds.db")};
+  if (!scalar(keys(%{$db}))) {
+      $dbi->write();
   }
 
   $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
@@ -109,41 +108,19 @@ sub rss_connected {
   $bot->add_handler('event tick', 'rss_tick');
 }
 
-sub rss_dbread {
-  my @dbread;
-  my $jsonstr;
-
-  open(my $db, "<", $feedfile) or $bot->err("RSS: Error: Couldn't open $feedfile: $!");
-  while (my $line = <$db>) {
-    chomp $line;
-    $jsonstr .= $line;
-  }
-  close($db);
-
-  return from_json($jsonstr, { utf8 => 1 });
-}
-
-sub rss_dbwrite {
-  my ($data) = @_;
-  my $jsonstr = to_json($data, { utf8 => 1, pretty => 1 });
-
-  open(my $db, ">", $feedfile) or $bot->err("RSS: Error: Couldn't open $feedfile: $!");
-  print $db $jsonstr;
-  close($db);
-}
-
 sub rss_irc_interface {
   my ($nick, $host, $text) = @_;
   my ($command, $arg1, $arg2, $arg3, @args) = split(" ", $text);
   my $db;
+  my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
 
   if ($command eq "add" || $command eq "ADD") {
     if (!$arg1 || !$arg2 || !$arg3) {
-      return $bot->notice($nick, "Syntax: /msg ".$Shadow::Core::nick." rss add <chan> <title> <url>");
+      return $bot->notice($nick, "Syntax: ${cmdprefix}rss add <chan> <title> <url>");
     }
 
     if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
-      $db = rss_dbread();
+      $db = ${$dbi->read("feeds.db")};
       $db->{lc($arg1)}->{$arg2} = {
         url => $arg3,
         lastSync => 0,
@@ -152,7 +129,7 @@ sub rss_irc_interface {
         read => []
       };
 
-      rss_dbwrite($db);
+      $dbi->write();
       $bot->notice($nick, "Added feed $arg2 [$arg3] for $arg1.");
       $bot->log("RSS: New feed for $arg1 [$arg2 - $arg3] added by $nick.", "Modules");
       $bot->notice($nick, "Feed post should start appearing in $arg1 within 5 minutes.");
@@ -167,11 +144,11 @@ sub rss_irc_interface {
     }
 
     if ($bot->isin($arg1, $Shadow::Core::nick) && $bot->isop($nick, $arg1)) {
-      $db = rss_dbread();
+      $db = ${$dbi->read("feeds.db")};
       my $url = $db->{lc($arg1)}->{$arg2}->{url};
             
       delete($db->{lc($arg1)}->{$arg2});            
-      rss_dbwrite($db);
+      $dbi->write();
 
       $bot->notice($nick, "Deleted feed $arg2 [$url] for $arg1.");
       $bot->log("RSS: Feed $arg2 [$url] was removed from $arg1 by $nick.", "Modules");
@@ -200,7 +177,7 @@ sub rss_irc_interface {
     }
 
     if ($chanauth) {
-      $db = rss_dbread();
+      $db = ${$dbi->read("feeds.db")};
       my @out;
       my $fmt = Shadow::Formatter->new();
 
@@ -261,10 +238,10 @@ sub rss_irc_interface {
     if ($arg1 eq "SYNCTIME" || $arg1 eq "synctime") {
       return $bot->notice($nick, "\002SYNTAX\002: /msg $Shadow::Core::nick rss set SYNCTIME <chan> <feed> <interval in seconds>") if (!$arg2 || !$arg3 || !$args[0]);
       if ($bot->isin($arg2, $Shadow::Core::nick) && $bot->isop($nick, $arg2)) {
-        $db = rss_dbread();
+        $db = ${$dbi->read("feeds.db")};
         $arg2 = lc($arg2);
         $db->{$arg2}->{$arg3}->{syncInterval} = $args[0];
-        rss_dbwrite($db);
+        $dbi->write();
 
         $bot->notice($nick, "Updated sync interval to $args[0] for feed $arg3 in $arg2.");
         $bot->log("RSS: SET SYNCTIME was used by $nick for $arg3 in $arg2.", "Modules");
@@ -273,10 +250,10 @@ sub rss_irc_interface {
       return $bot->notice($nick, "\002SYNTAX\002: /msg $Shadow::Core::nick rss set FORMAT <chan> <feed> <format string>") if (!$arg2 || !$arg3 || !$args[0]);
 
       if ($bot->isin($arg2, $Shadow::Core::nick) && $bot->isop($nick, $arg2)) {
-        $db = rss_dbread();
+        $db = ${$dbi->read("feeds.db")};
         $arg2 = lc($arg2);
         $db->{$arg2}->{$arg3}->{format} = join(" ", @args);
-        rss_dbwrite($db);
+        $dbi->write();
 
         $bot->notice($nick, "Updated format to \002".join(" ", @args)."\002 for feed $arg3 in $arg2.");
         $bot->log("RSS: SET FORMAT was used by $nick for $arg3 in $arg2.", "Modules");
@@ -301,7 +278,7 @@ sub rss_irc_interface {
 
 sub rss_checkread {
   my ($chan, $title, $link) = @_;
-  my $db = rss_dbread();
+  my $db = ${$dbi->read("feeds.db")};
 
   foreach my $post (@{$db->{$chan}->{$title}->{read}}) {
     foreach my $r ($post) {
@@ -314,7 +291,7 @@ sub rss_checkread {
 
 sub rss_updateread {
   my ($chan, $title, $link) = @_;
-  my $db = rss_dbread();
+  my $db = ${$dbi->read("feeds.db")};
 
   for (my $i = 0; $i < scalar(@{$db->{$chan}->{$title}->{read}}); $i++) {
     if ($db->{$chan}->{$title}->{read}->[$i]->{url} eq $link) {
@@ -322,12 +299,12 @@ sub rss_updateread {
     }
   }
 
-  rss_dbwrite($db);
+  $dbi->write();
 }
 
 sub rss_agrigator {
   my ($rawxml, $title, $chan) = @_;
-  my $db = rss_dbread();
+  my $db = ${$dbi->read("feeds.db")};
 
   my $parsedfeed = XML::Feed->parse($rawxml) or return $bot->err("RSS: Parser error on feed $title: ".XML::Feed->errstr, 0);
   for my $entry ($parsedfeed->entries) {
@@ -349,14 +326,14 @@ sub rss_agrigator {
 
         if (defined &URLIdentifier::url_id) {
             URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-            rss_dbwrite($db);
+            $dbi->write();
             return;
         }
 
       } elsif ($tmplink =~ /patriots\.win/) {
         if (defined &URLIdentifier::url_id) {
             URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-            rss_dbwrite($db);
+            $dbi->write();
             return;
         }
     }
@@ -396,11 +373,11 @@ sub rss_agrigator {
     }
   }
 
-  rss_dbwrite($db);
+  $dbi->write();
 }
 
 sub rss_refresh {
-  my $db = rss_dbread();
+  my $db = ${$dbi->read("feeds.db")};
 
   foreach my $chan (keys %{$db}) {
     foreach my $title (keys %{$db->{$chan}}) {
@@ -409,7 +386,7 @@ sub rss_refresh {
       if (time() >= $synctime) {
         $bot->log("RSS: Refreshing feed $title for $chan", "Modules");
         $db->{$chan}->{$title}->{lastSync} = time();
-        rss_dbwrite($db);
+        $dbi->write();
 
         if (!$feedcache{$db->{$chan}->{$title}->{url}}) {
           $ua->get($db->{$chan}->{$title}->{url} => {Accpet => '*/*'} => sub {

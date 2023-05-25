@@ -6,54 +6,55 @@ package Ignore;
 # Written by Aaron Blakely <aaron@ephasic.org>
 # Date: 3/29/2023
 
-use JSON;
-
+use Shadow::DB;
 use Shadow::Core;
 use Shadow::Help;
 
 my $bot = Shadow::Core->new();
 my $help = Shadow::Help->new();
-my $dbfile = "./etc/ignore.db";
+my $dbi  = Shadow::DB->new();
 
 sub loader {
-    $bot->register("Ignore", "v1.0", "Aaron Blakely", "Ignore users");
+    $bot->register("Ignore", "v2.0", "Aaron Blakely", "Ignore users");
     $bot->add_handler('privcmd ignore', 'ignore_add');
     $bot->add_handler('privcmd unignore', 'ignore_del');
 
-    if (!-e $dbfile) {
-        $bot->log("Ignore: No ignore database found, creating one.", "Modules");
-        open(my $db, ">", $dbfile) or $bot->error("Ignore: Error: Couldn't open $dbfile: $!");
-        print $db "[]";
-        close($db);
-    } else {
-        my $db = _dbread();
+    $help->add_help('ignore', 'Admin', '<nick> [host]', 'Ignore a user', 1, sub {
+        my ($nick, $host, $text) = @_;
+        my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
 
-        foreach my $ignores (@{$db}) {
-            $bot->add_ignore($ignores, "");
+        $bot->fastsay($nick, (
+            "Help for \x02IGNORE\x02:",
+            " ",
+            "\x02ignore\x02 adds a user to list of users the bot doesn't respond to.",
+            " ",
+            "\x02SYNTAX\x02: ${cmdprefix}ignore <nick>"
+        ));
+    });
+
+    $help->add_help('unignore', 'Admin', '<nick>', 'Unignore a user', 1, sub {
+        my ($nick, $host, $text) = @_;
+        my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
+
+        $bot->fastsay($nick, (
+            "Help for \x02UNIGNORE\x02:",
+            " ",
+            "\x02unignore\x02 removes a user from list of users the bot doesn't respond to.",
+            " ",
+            "\x02SYNTAX\x02: ${cmdprefix}unignore <nick>"
+        ));
+    });
+
+    my $db = ${$dbi->read()};
+    if ($db->{Ignore}) {
+        foreach my $nick (@{$db->{Ignore}}) {
+            $bot->add_ignore($nick, "");
         }
+    } else {
+        $db->{Ignore} = ();
+
+        $dbi->write();
     }
-}
-
-sub _dbread {
-    my $jsonstr;
-
-    open(my $db, "<", $dbfile) or $bot->err("Ignore: Error: Couldn't open $dbfile: $!");
-    while (my $line = <$db>) {
-        chomp $line;
-        $jsonstr .= $line;
-    }
-    close($db);
-
-    return from_json($jsonstr, { utf8 => 1 });
-}
-
-sub _dbwrite {
-    my ($data) = @_;
-    my $jsonstr = to_json($data, { utf8 => 1, pretty => 1});
-
-    open(my $db, ">", $dbfile) or $bot->err("Ignore: Error: Couldn't open $dbfile: $!");
-    print $db $jsonstr;
-    close($db);
 }
 
 sub ignore_add {
@@ -62,15 +63,16 @@ sub ignore_add {
         return $bot->notice($nick, "Unauthorized.");
     }
 
-    my $db = _dbread();
+    my $cmdprefix = $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
+    my $db = ${$dbi->read()};
 
     if (!$text || $text eq "") {
-        return $bot->notice($nick, "\002SYNTAX\002: /msg $Shadow::Core::nick ignore <nick> [host]");
+        return $bot->notice($nick, "\002SYNTAX\002: ${cmdprefix}ignore <nick> [host]");
     }
 
     my ($rnick, $rhost) = split(/ /, $text);
 
-    foreach my $ignores (@{$db}) {
+    foreach my $ignores (@{$db->{Ignore}}) {
         if ($rnick eq $ignores || $rhost eq $ignores) {
             $bot->notice($nick, "Already ignoring $rnick [$rhost]");
             return;
@@ -81,12 +83,12 @@ sub ignore_add {
     $bot->notice($nick, "Ignoring $rnick [$rhost]");
     $bot->log("Ignoring $rnick ($rhost) [Issued by $nick]", "Modules");
 
-    push(@{$db}, $rnick);
+    push(@{$db->{Ignore}}, $rnick);
     if ($rhost ne "") {
-        push(@{$db}, $rhost);
+        push(@{$db->{Ignore}}, $rhost);
     }
 
-    _dbwrite($db);
+    $dbi->write();
 }
 
 sub ignore_del {
@@ -98,12 +100,12 @@ sub ignore_del {
 
     my ($rnick, $rhost) = split(/ /, $text);
 
-    my $db = _dbread();
+    my $db = ${$dbi->read()};
     my $found = 0;
 
-    for (my $i = 0; $i < scalar(@{$db}); $i++) {
-        if (@{$db}[$i] eq $rnick || @{$db}[$i] eq $rhost) {
-            splice(@{$db}, $i, $i+1);
+    for (my $i = 0; $i < scalar(@{$db->{Ignore}}); $i++) {
+        if (@{$db->{Ignore}}[$i] eq $rnick || @{$db->{Ignore}}[$i] eq $rhost) {
+            splice(@{$db->{Ignore}}, $i, $i+1);
             $found = 1;
         }
     }
@@ -117,13 +119,16 @@ sub ignore_del {
         return;
     }
 
-    _dbwrite($db);
+    $dbi->write();
 }
 
 sub unloader {
     $bot->unregister("Ignore");
     $bot->del_handler('privcmd ignore', 'ignore_add');
     $bot->del_handler('privcmd unignore', 'ignore_del');
+
+    $help->del_help('ignore', 'Admin');
+    $help->del_help('unignore', 'Admin');
 }
 
 1;
