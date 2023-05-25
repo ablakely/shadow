@@ -39,8 +39,7 @@ our $tmpclient;
 		'time'		=> 30,
 	},
 	config => {
-		version		=> 'Shadow v1.0 - By Aaron Blakely (Dark_Aaron)',
-		userdb		=> 'users',
+		version		=> 'Shadow v1.3 (https://github.com/ablakely/shadow)',
 	},
 	irc => {
 		q_prefix	=> '~',
@@ -53,17 +52,21 @@ our $tmpclient;
 
 );
 
-# Ignore "redined subroutine" warnings
+# Ignore warnings caused by misues of Perl
 $SIG{__WARN__} = sub {
     my $warning = shift;
 
-    if ($warning !~ /Subroutine .* redefined at/) {
+    if ($warning =~ /Subroutine .* redefined at/) {
+    	return; # caused by reloading modules
+    } elsif ($warning =~ /keys on reference is experimental/) {
     	return;
-    } elsif ($warning !~ /keys on reference is experimental/) {
-    	return;
+    } elsif ($warning =~ /Useless use of/ && $warning =~ /[Routes\.pm|Router\.pm]/) {
+        return; # lines 307 in Routes.pm and 14 in Router.pm
+    } elsif ($warning =~ /Illegal character in prototype for \? \: \$rss/ && $warning =~ /RSS\.pm/) {
+        return; # line 409 in RSS.pm
     }
 
-    warn $warning;
+    err(0, "[Interpreter Warning] $warning", 0, "Perl");
 };
 
 # Constructor
@@ -202,19 +205,21 @@ sub err {
 	    print("$err\n");
 	}
 
-	if ($err =~ /Error/i) {
-		push(@{$log{Error}}, $err);
+	if ($err =~ /Error/i || $queue eq "Perl") {
+        my $q = $queue eq "Perl" ? "Perl" : "Error";
+
+		push(@{$log{$q}}, $err);
     
         my $i = 1;
-        push(@{$log{Error}}, "Stack Trace:");
+        push(@{$log{$q}}, "Stack Trace:");
         while ( (my @call_details = (caller($i++))) ){
-            push(@{$log{Error}}, "    ".$call_details[1].":".$call_details[2]." in function ".$call_details[3]);
+            push(@{$log{$q}}, "    ".$call_details[1].":".$call_details[2]." in function ".$call_details[3]);
             print "    ".$call_details[1].":".$call_details[2]." in function ".$call_details[3]."\n";
         }
     }
 
 	push(@{$log{$queue}}, $err);
-	push(@{$log{All}}, $err);
+	push(@{$log{All}}, $err) unless ($queue eq "Perl");
 
 	my $cmdchan = $cfg->{Shadow}->{IRC}->{bot}->{cmdchan};
 
@@ -453,7 +458,7 @@ sub mainloop {
 		if ($ircping + 60 < $time && $checktime + 30 < $time) {
 			$checktime = $time;
 
-			irc_raw(3, "NOTICE $nick :anti-reconnect"); # ping fail back
+			irc_raw(3, "NOTICE $nick :anti-reconnect") if ($nick); # ping fail back
 		}
 
 		if ($ircping + $options{config}{reconnect} <= $time) {

@@ -407,6 +407,8 @@ sub rss_refresh {
           my $rss_feed = $ua->get_p($db->{$chan}->{$title}->{url});
 
           Mojo::Promise->all($rss_feed)->then(sub($rss) {
+            return if (!$rss);
+
             if (my $err = $rss->error) {
               return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
             }

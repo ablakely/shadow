@@ -120,8 +120,8 @@ sub weatherset {
         return $bot->notice($nick, "\x02Usage\x02: weatherset <zip code/City, State/City, State, Country>");
     }
 
-    if (!$acc->acc_exists($nick)) {
-        return $bot->notice($nick, "You don't seem to have an account, have you registered? See \x02/msg $Shadow::Core::nick help\x02 for more information.");
+    if (!$acc->is_authed($nick)) {
+        return $bot->notice($nick, "This command requires you to be logged in, have you identified? See \x02/msg $Shadow::Core::nick help id\x02 for more information.");
     }
 
     $acc->set_account_prop($nick, "weather.location", $text);

@@ -64,6 +64,19 @@ sub set_account_prop {
     return $dbi->write();
 }
 
+sub get_db {
+    my ($self, $nick) = @_;
+    my $db = ${$dbi->read("accounts.db")};
+
+    return $db->{$nick} ? $db->{$nick} : undef;
+}
+
+sub get_session {
+    my ($self, $nick) = @_;
+
+    return $session{$nick} ? $session{$nick} : undef;
+}
+
 # Private
 sub loader {
     $bot->register("Accounts", "v0.1", "Aaron Blakely", "User Accounts");
@@ -117,10 +130,7 @@ sub acc_register {
     $db->{$nick} = {};
     $db->{$nick}->{ctime}    = time();
     $db->{$nick}->{password} = sha256_hex($salt.$text.$salt);
-
-    if ($bot->isbotadmin($nick, $host)) {
-        $db->{$nick}->{admin} = 1;
-    }
+    $db->{$nick}->{admin} = $bot->isbotadmin($nick, $host) ? 1 : 0;
 
     $bot->notice($nick, "Account created for $nick");
     $dbi->write();
@@ -162,19 +172,6 @@ sub acc_id {
     }
 
     $dbi->write();
-}
-
-sub get_db {
-    my ($self, $nick) = @_;
-    my $db = ${$dbi->read("accounts.db")};
-
-    return $db->{$nick} ? $db->{$nick} : undef;
-}
-
-sub get_session {
-    my ($self, $nick) = @_;
-
-    return $session{$nick} ? $session{$nick} : undef;
 }
 
 sub acc_quit_ev {
@@ -235,7 +232,7 @@ sub acc_admin_interface {
         }
     } elsif ($cmd =~ /whois/i) {
         if (exists($db->{$arg1})) {
-            $fmt->table_header("Field", "Value");
+            $fmt->table_header("Property", "Value");
 
             foreach my $k (keys(%{$db->{$arg1}})) {
                 my ($rkey, $rval) = ($k, $db->{$arg1}->{$k});
@@ -247,6 +244,8 @@ sub acc_admin_interface {
                 
                 $fmt->table_row($rkey, $rval);
             }
+            
+            $fmt->table_row("login status", exists($sessions{$arg1}) ? "\x033Online\x03" : "\x034Offline\x03");
 
             $bot->fastsay($nick, $fmt->table());
         } else {

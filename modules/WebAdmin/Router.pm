@@ -82,7 +82,7 @@ sub headers {
         $WebAdmin::outbuf{$client} .= "$key: ".$args{$key}."\r\n";
     }
 
-    if (exists($args{'cookies'})) {
+    if (exists($args{'cookies'}) && $args{'cookies'}) {
         my @cookies = @{$args{'cookies'}};
 
         foreach my $cookie (@cookies) {
