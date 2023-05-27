@@ -182,36 +182,18 @@
     <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
       <div class="position-sticky pt-3 sidebar-sticky">
         <ul class="nav flex-column">
-          <li class="nav-item">
-            <a class="nav-link" href="/">
-              <span data-feather="home" class="align-text-bottom"></span>
-              Dashboard
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/terminal">
-              <span data-feather="codesandbox" class="align-text-bottom"></span>
-              Terminal
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="/modules">
-              <span data-feather="package" class="align-text-bottom"></span>
-              Modules
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/configuration">
-              <span data-feather="file-text" class="align-text-bottom"></span>
-              Configuration
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/maintance">
-              <span data-feather="tool" class="align-text-bottom"></span>
-              Maintance
-            </a>
-          </li>
+            <% for (var i = 0; i < navbar.length; i++) { %>
+            <li class="nav-item">
+                <% if (navbar[i].active) { %>
+                <a class="nav-link active" aria-current="page" href="<%= navbar[i].link %>">
+                <% } else { %>
+                <a class="nav-link" href="<%= navbar[i].link %>">
+                <% } %>
+                    <span data-feather="<%= navbar[i].icon %>" class="align-text-bottom"></span>
+                    <%= navbar[i].text %>
+                </a>
+            </li>
+            <% } %>
         </ul>
 
         <!--h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">

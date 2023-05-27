@@ -14,6 +14,12 @@ sub new {
         router => $router
     };
 
+    push(@{$self->{navbar}}, { link => "/", icon => "home", text => "Dashboard" });
+    push(@{$self->{navbar}}, { link => "/terminal", icon => "codesandbox", text => "Terminal" });
+    push(@{$self->{navbar}}, { link => "/modules", icon => "package", text => "Modules" });
+    push(@{$self->{navbar}}, { link => "/configuration", icon => "file-text", text => "Configuration" });
+    push(@{$self->{navbar}}, { link => "/maintance", icon => "tool", text => "Maintance" });
+
     $bot = $shadow;
 
     return bless($self, $class);
@@ -54,12 +60,15 @@ sub array_diff(\@\@) {
 }
 
 sub checkSession {
-    my ($headers) = @_;
+    #shift unless (exists($_[0]->{cookies}));
+    my ($self, $headers) = @_;
 
-    my $nick = $headers->{cookies}->{nick};
-    my $auth = $headers->{cookies}->{auth};
+    $headers = $self if (!$headers);
 
-    return 0 if ($nick eq "" || $auth eq "");
+    my $nick = exists($headers->{cookies}->{nick}) ? $headers->{cookies}->{nick} : "";
+    my $auth = exists($headers->{cookies}->{auth}) ? $headers->{cookies}->{auth} : "";
+
+    return 0 if ($nick eq "" || $auth eq "" || !exists($WebAdmin::auth{$nick}));
 
     if ($WebAdmin::auth{$nick} eq $auth) {
         return 1;
@@ -109,6 +118,49 @@ sub installUpdates {
     exit;
 }
 
+# --- public ---
+sub navbar {
+    my ($self, $active) = @_;
+    my @copy = @{$self->{navbar}};
+
+    for (my $i = 0; $i < scalar(@copy); $i++) {
+        $copy[$i]->{active} = $copy[$i]->{text} eq $active ? 1 : 0;
+    }
+
+    return @copy;
+}
+# { link => "", icon => "", text => "" },
+
+sub add_navbar_link {
+    my ($self, $link, $icon, $text)  = @_;
+
+    for (my $i = 0; $i < scalar(@{$self->{navbar}}); $i++) {
+        return 0 if ($self->{navbar}[$i]->{text} eq $text ||
+                     $self->{navbar}[$i]->{link} eq $link);
+    }
+
+    push(@{$self->{navbar}}, {
+        link => $link,
+        icon => $icon,
+        text => $text
+    });
+
+    return 1;
+}
+
+sub del_navbar_link {
+    my ($self, $text) = @_;
+
+    for (my $i = 0; $i < scalar(@{$self->{navbar}}); $i++) {
+        if ($self->{navbar}[$i]->{text} eq $text) {
+            splice(@{$self->{navbar}}, $i, 1);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 sub initRoutes {
     my ($self) = @_;
 
@@ -143,8 +195,11 @@ sub initRoutes {
                 }
             }
 
+            my @nav = $self->navbar("Dashboard");
+
             EJS::Template->process("$tdir/dash.ejs", {
-                favicon => $router->b64img("../favicon.ico"),
+                navbar    => \@nav,
+                favicon   => $router->b64img("../favicon.ico"),
                 botnick   => $Shadow::Core::nick,
                 memusage  => $mem,
                 uptime    => $uptime->pretty,
@@ -169,7 +224,7 @@ sub initRoutes {
 
             EJS::Template->process("$tdir/login.ejs", {
                 favicon => $router->b64img("../favicon.ico"),
-                msg => $params->{msg} ne "" ? $params->{msg} : undef
+                msg => exists($params->{msg}) ? $params->{msg} : undef
             }, \$buf);
 
             $WebAdmin::outbuf{$client} .= $buf;
@@ -273,12 +328,15 @@ sub initRoutes {
             my @diff = array_diff(@mods, @tmp);
             $router->headers($client);
 
+            my @nav = $self->navbar("Modules");
+
             EJS::Template->process("$tdir/dash-modules.ejs", {
+                navbar => \@nav,
                 favicon => $router->b64img("../favicon.ico"),
                 mods => \@tmp,
                 unloaded => \@diff,
                 modreg   => \%Shadow::Core::modreg,
-                msg      => $params->{msg} ne "" ? $params->{msg} : undef
+                msg      => exists($params->{msg}) ? $params->{msg} : undef
             }, \$buf);
 
             $WebAdmin::outbuf{$client} .= $buf;
@@ -357,7 +415,10 @@ sub initRoutes {
             }
             close($fh);
 
+            my @nav = $self->navbar("Configuration");
+
             EJS::Template->process("$tdir/dash-config.ejs", {
+                navbar  => \@nav,
                 favicon => $router->b64img("../favicon.ico"),
                 conf    => $conf
             }, \$buf);
@@ -399,7 +460,9 @@ sub initRoutes {
 
             my $checkTime = $WebAdmin::updateLastCheck ? localtime($WebAdmin::updateLastCheck) : "N/A";
 
+            my @nav = $self->navbar("Maintance");
             EJS::Template->process("$tdir/dash-maint.ejs", {
+                navbar  => \@nav,
                 favicon => $router->b64img("../favicon.ico"),
                 updateReady => $WebAdmin::updateReady,
                 updateLastCheck => $checkTime,
@@ -507,7 +570,10 @@ sub initRoutes {
         if (checkSession($headers)) {
             $router->headers($client);
 
+            my @nav = $self->navbar("Terminal");
+
             EJS::Template->process("$tdir/dash-term.ejs", {
+                navbar  => \@nav,
                 favicon => $router->b64img("../favicon.ico")
             }, \$buf);
 

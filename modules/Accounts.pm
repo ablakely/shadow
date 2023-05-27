@@ -15,6 +15,7 @@ my %sessions;
 my $dbi  = Shadow::DB->new();
 my $bot  = Shadow::Core->new();
 my $help = Shadow::Help->new();
+my $web;
 
 # Public methods
 sub new {
@@ -105,6 +106,24 @@ sub loader {
     my $db = ${$dbi->read("accounts.db")};
     if (!scalar(keys(%{$db}))) {
         $dbi->write();
+    }
+
+    if ($bot->isloaded("WebAdmin")) {
+        $web = WebAdmin->new();
+        my $router = $web->router();  
+
+        $web->add_navbar_link("/accounts", "users", "Accounts");
+        $router->get('/accounts', sub {
+            my ($client, $params, $headers, $buf) = @_;
+
+            #if ($web->checkSession($headers)) {
+                $router->headers($client);
+
+                $web->out($client, "<h2>it works</h2>");
+                #} else {
+                #$router->redirect($client, "/");
+                #}
+        });
     }
 }
 
@@ -269,7 +288,13 @@ sub unloader {
     $bot->del_handler("privcmd accounts", "acc_admin_interface");
 
     $help->del_help("accounts", "Admin");
-}
 
+    if ($bot->isloaded("WebAdmin")) {
+        my $router = $web->router();
+
+        $web->del_navbar_link("Accounts");
+        $router->del('get', '/accounts');
+    }
+}
 
 1;

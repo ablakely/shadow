@@ -54,7 +54,7 @@ sub getSiteInfo {
     my $gbNote;
 
     if ( $response->is_success ) {
-        my $htmlResp =  $response->decoded_content({charset => 'utf-8'});
+        my $htmlResp =  $response->decoded_content((charset => 'utf-8'));
         chomp $htmlResp;
         if ($url =~ /odysee\.com/ && $htmlResp =~ /\<script type\=\"application\/ld\+json\"\>(.*?)\<\/script\>/gsi) {
             my $jsonstr = $1;
@@ -446,6 +446,9 @@ sub url_id {
       $title =~ s/\s+- The Donald - America First \| Patriots Win//;
 
       my $flairColor = "\x030,1";
+
+      $meta{'flairtype'} = "" unless (exists($meta{'flairtype'}));
+      $meta{'flair'} = "" unless (exists($meta{'flair'}));
 
       if ($meta{'flairtype'} eq "chopper") {
         $flairColor = "\x030,3";

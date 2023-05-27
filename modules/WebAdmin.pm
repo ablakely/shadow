@@ -29,7 +29,23 @@ our $updateLastCheck;
 our $updateReady = 0;
 
 my $cfg;
+# public interface
+sub new {
+    return shift();  # return class
+}
 
+sub add_navbar_link { shift; return $routes->add_navbar_link(@_); }
+sub del_navbar_link { shift; return $routes->del_navbar_link(@_); }
+sub router { return $router; }
+sub routes { return $routes; }
+sub checkSession { shift; return $routes->checkSession(@_); }
+sub out {
+    my ($self, $client, $data) = @_;
+
+    $outbuf{$client} .= $data;
+}
+
+# private
 sub loader {
     $cfg = $Shadow::Core::cfg->{Modules}->{WebAdmin};
     $bot->register("WebAdmin", "v1.0", "Aaron Blakely", "Web Administration Panel and HTTP Server");
@@ -211,13 +227,13 @@ sub handleHTTPRequest {
         if (-e "./modules/WebAdmin/www".$headers->{url}) {
             my $size = -s "./modules/WebAdmin/www".$headers->{url};
 
-            $router->headers($client, ( 
+            $router->headers($client, { 
                 'Content-Type'   => mimetype("./modules/WebAdmin/www".$headers->{url}),
                 'Last-Modified'  => strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime((stat "./modules/WebAdmin/www".$headers->{url})[9])),
                 'Cache-Control'  => "max-age=604800"
                 #'Content-Length' => length($outbuf{$client}) + $size
             
-            ));
+            });
             flushOut($client);
             
             print $client "\r\n\r\n";
@@ -240,7 +256,7 @@ sub handleHTTPRequest {
 
             #outbuf{$client} .= "\r\n";
         } else {
-            $router->headers($client, ( 'status' => 404 ));
+            $router->headers($client, {'status' => 404 });
             $outbuf{$client} .= "<h2>404 not found!</h2>\r\n";
         }
     }
