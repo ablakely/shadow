@@ -34,7 +34,10 @@ bot.cmdprefix = "."
 
 [Bot]
 system.daemonize    = no
-system.modules      = [ChanOP,AutoID]
+system.modules      = [
+    ChanOP,
+    AutoID
+]
 
 [Admin]
 # Comma separated list of hostnames (wildcards are accepted)

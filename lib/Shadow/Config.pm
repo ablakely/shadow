@@ -28,9 +28,11 @@ sub parse {
 	my %c	  = ();
 	my $cur	  = "";
 	my $curr  = "";
-	my @tmp;
+	my (@lines, @tmp);
 	my $lc    = 0;
 	my $i     = 0;
+    my $slurp = 0;
+    my ($s1, $s2);
 
 	foreach my $f (@confFiles) {
 		open (FH, "<$f") or die $!;
@@ -41,7 +43,7 @@ sub parse {
 				$lc++;
 				next;
 			}
-			elsif (/^\s/ || /^\r/ || /^\n/ || /^\r\n/) {
+			elsif (/^\r/ || /^\n/ || /^\r\n/) {
 				$lc++;
 				next;
 			}
@@ -70,6 +72,24 @@ sub parse {
 
 				next;
 			}
+			elsif (/^(\w+)\.(\w+)\s*\=\s*\[$/) {
+                $slurp = 1;
+                $s1 = $1;
+                $s2 = $2;
+
+                $lc++;
+                next;
+            }
+            elsif (/^]$/) {
+                $slurp = 0;
+                $lc++;
+
+                for ($i = 0; $i < scalar(@lines); $i++) {
+                    $c{$cur}->{$curr}->{$s1}->{$s2}[$i] = $lines[$i];
+                }
+
+                next;
+            }
 			elsif (/^(\w+)\.(\w+)\s*\=\s*yes$/) {
 				$lc++;
 				$c{$cur}->{$curr}->{$1}->{$2} = 1;
@@ -81,7 +101,17 @@ sub parse {
 			}
 			else {
 				chomp;
-				print "[".$self->{confFile}.":$lc] Invalid statement:".$_."\n";
+                if ($slurp) {
+                    $_ =~ s/\s+(.*)[\,?]/$1/g;
+                    $_ =~ s/\s+(.*)/$1/g;
+                    
+                    push(@lines, $_);
+
+                    $lc++;
+                    next;
+                } else {
+				    print "[".$self->{confFile}.":$lc] Invalid statement:".$_."\n";
+                }
 			}
 			$lc++;
 		}
