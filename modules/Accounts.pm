@@ -111,18 +111,29 @@ sub loader {
     if ($bot->isloaded("WebAdmin")) {
         $web = WebAdmin->new();
         my $router = $web->router();  
+        my $db     = ${$dbi->read("accounts.db")};
+        
+        foreach my $k (keys(%{$db})) {
+            $db->{$k}->{ctime} = "".gmtime($db->{$k}->{ctime})." GMT";
+        }
+
+        my @dbk    = keys(%{$db});
 
         $web->add_navbar_link("/accounts", "users", "Accounts");
         $router->get('/accounts', sub {
             my ($client, $params, $headers, $buf) = @_;
 
-            #if ($web->checkSession($headers)) {
+            if ($web->checkSession($headers)) {
                 $router->headers($client);
 
-                $web->out($client, "<h2>it works</h2>");
-                #} else {
-                #$router->redirect($client, "/");
-                #}
+                $web->out($client, $web->render("mod-accounts.ejs", {
+                    nav_active => "Accounts",
+                    db => $db,
+                    dbkeys => \@dbk
+                }));
+            } else {
+                $router->redirect($client, "/");
+            }
         });
     }
 }

@@ -150,13 +150,11 @@ sub b64img {
     my $ret = "data:".mimetype("./modules/WebAdmin/www/$img").";base64,";
 
     open(my $fh, "<:raw", "./modules/WebAdmin/www/img/$img") or return;
-    #{
-        my $buf;
+    my $buf;
 
-        while (read($fh, $buf, 60*57)) {
-            $ret .= encode_base64($buf);
-        }
-    #}
+    while (read($fh, $buf, 60*57)) {
+        $ret .= encode_base64($buf);
+    }
 
     close($fh);
 

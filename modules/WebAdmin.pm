@@ -34,6 +34,7 @@ sub new {
     return shift();  # return class
 }
 
+sub navbar { shift; return $routes->navbar(@_); }
 sub add_navbar_link { shift; return $routes->add_navbar_link(@_); }
 sub del_navbar_link { shift; return $routes->del_navbar_link(@_); }
 sub router { return $router; }
@@ -43,6 +44,23 @@ sub out {
     my ($self, $client, $data) = @_;
 
     $outbuf{$client} .= $data;
+}
+
+sub render {
+    my ($self, $template, $args) = @_;
+    my $wa = WebAdmin->new();
+    my $buf;
+
+    $args->{favicon} = $router->b64img("../favicon.ico");
+    
+    if (exists($args->{nav_active})) {
+        my @tmp = $wa->navbar($args->{nav_active});
+        $args->{navbar}  = \@tmp;
+    }
+
+    EJS::Template->process("./modules/WebAdmin/templates/$template", $args, \$buf);
+
+    return $buf;
 }
 
 # private
