@@ -12,75 +12,75 @@ our $VERSION = "0.6";
 our @confFiles;
 
 sub new {
-	my $class = shift;
-	my ($confFile) = @_;
+    my $class = shift;
+    my ($confFile) = @_;
 
-	my $self = { };
-	$self->{confFile} = $confFile;
+    my $self = { };
+    $self->{confFile} = $confFile;
 
-	push @confFiles, $confFile;
+    push @confFiles, $confFile;
 
-	return bless($self, $class);
+    return bless($self, $class);
 }
 
 sub parse {
-	my $self = shift;
-	my %c	  = ();
-	my $cur	  = "";
-	my $curr  = "";
-	my (@lines, @tmp);
-	my $lc    = 0;
-	my $i     = 0;
+    my $self = shift;
+    my %c	  = ();
+    my $cur	  = "";
+    my $curr  = "";
+    my (@lines, @tmp);
+    my $lc    = 0;
+    my $i     = 0;
     my $slurp = 0;
     my ($s1, $s2);
 
-	foreach my $f (@confFiles) {
-		open (FH, "<$f") or die $!;
-		while(<FH>) {
-			s/\r\n/\n/gs;
-			
-			if (/^\#(.*)/) {
-				$lc++;
-				next;
-			}
-			elsif (/^\r/ || /^\n/ || /^\r\n/) {
-				$lc++;
-				next;
-			}
-			elsif (/^\@(.*)$/) {
-				$lc++;
-				$cur = $1;
-				next;
-			}
-			elsif (/^\[(\w+)\]$/) {
-				$lc++;
-				$curr = $1;
-				next;
-			}
-			elsif (/^(\w+)\.(\w+)\s*\=\s*\"(.*)\"$/ || /^(\w+)\.(\w+)\s*\=\s*\'(.*)\'$/) {
-				$lc++;
-				$c{$cur}->{$curr}->{$1}->{$2} = $3;
-				next;
-			}
-			elsif (/^(\w+)\.(\w+)\s*\=\s*\[(.*)\]$/) {
-				$lc++;
-				@tmp = split(/\,[\s]?/, $3);
+    foreach my $f (@confFiles) {
+        open (FH, "<$f") or die $!;
+        while(<FH>) {
+            s/\r\n/\n/gs;
 
-				for ($i = 0; $i < scalar(@tmp); $i++) {
-					$c{$cur}->{$curr}->{$1}->{$2}[$i] = $tmp[$i];
-				}
-
-				next;
-			}
-			elsif (/^(\w+)\.(\w+)\s*\=\s*\[$/) {
-                $slurp = 1;
-                $s1 = $1;
-                $s2 = $2;
-
+            if (/^\#(.*)/) {
                 $lc++;
                 next;
             }
-            elsif (/^]$/) {
+            elsif (/^\r/ || /^\n/ || /^\r\n/) {
+                $lc++;
+                next;
+            }
+            elsif (/^\@(.*)$/) {
+                $lc++;
+                $cur = $1;
+                next;
+            }
+            elsif (/^\[(\w+)\]$/) {
+                $lc++;
+                $curr = $1;
+                next;
+            }
+            elsif (/^(\w+)\.(\w+)\s*\=\s*\"(.*)\"$/ || /^(\w+)\.(\w+)\s*\=\s*\'(.*)\'$/) {
+                $lc++;
+                $c{$cur}->{$curr}->{$1}->{$2} = $3;
+                next;
+            }
+            elsif (/^(\w+)\.(\w+)\s*\=\s*\[(.*)\]$/) {
+                $lc++;
+                @tmp = split(/\,[\s]?/, $3);
+
+                for ($i = 0; $i < scalar(@tmp); $i++) {
+                    $c{$cur}->{$curr}->{$1}->{$2}[$i] = $tmp[$i];
+                }
+
+                next;
+            }
+            elsif (/^(\w+)\.(\w+)\s*\=\s*\[$/) {
+                    $slurp = 1;
+                    $s1 = $1;
+                    $s2 = $2;
+
+                    $lc++;
+                    next;
+                }
+                elsif (/^]$/) {
                 $slurp = 0;
                 $lc++;
 
@@ -90,36 +90,36 @@ sub parse {
 
                 next;
             }
-			elsif (/^(\w+)\.(\w+)\s*\=\s*yes$/) {
-				$lc++;
-				$c{$cur}->{$curr}->{$1}->{$2} = 1;
-				next;
-			}
-			elsif (/^(\w+)\.(\w+)\s*\=\s*no$/) {
-				$lc++;
-				$c{$cur}->{$curr}->{$1}->{$2} = 0;
-			}
-			else {
-				chomp;
+            elsif (/^(\w+)\.(\w+)\s*\=\s*yes$/) {
+                $lc++;
+                $c{$cur}->{$curr}->{$1}->{$2} = 1;
+                next;
+            }
+            elsif (/^(\w+)\.(\w+)\s*\=\s*no$/) {
+                $lc++;
+                $c{$cur}->{$curr}->{$1}->{$2} = 0;
+            }
+            else {
+                chomp;
                 if ($slurp) {
                     $_ =~ s/\s+(.*)[\,?]/$1/g;
                     $_ =~ s/\s+(.*)/$1/g;
-                    
+
                     push(@lines, $_);
 
                     $lc++;
                     next;
                 } else {
-				    print "[".$self->{confFile}.":$lc] Invalid statement:".$_."\n";
+                    print "[".$self->{confFile}.":$lc] Invalid statement:".$_."\n";
                 }
-			}
-			$lc++;
-		}
+            }
+            $lc++;
+        }
 
-		close FH or die $!;
-	}
+        close FH or die $!;
+    }
 
-	return \%c;
+    return \%c;
 }
 
 sub add { my $class = shift; push @confFiles, shift; return 1; };
