@@ -1,20 +1,18 @@
-    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
-      <div class="position-sticky pt-3 sidebar-sticky">
-        <ul class="nav flex-column">
-          <li class="nav-item">
-
-            <% for (var i = 0; i < navbar.length; i++) { %>
-            <li class="nav-item">
-                <% if (navbar[i].active === 1) { %>
-                <a class="nav-link active" aria-current="page" href="<%= navbar[i].link %>">
-                <% } else { %>
-                <a class="nav-link" href="<%= navbar[i].link %>">
-                <% } %>
-                    <span data-feather="<%= navbar[i].icon %>" class="align-text-bottom"></span>
-                    <%= navbar[i].text %>
-                </a>
-            </li>
-            <% } %>
-
-      </div>
-    </nav>
+                <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
+                    <div class="position-sticky pt-3 sidebar-sticky">
+                        <ul class="nav flex-column">
+                                <% for (var i = 0; i < navbar.length; i++) { %>
+                                <li class="nav-item">
+                                    <% if (navbar[i].active) { %>
+                                    <a class="nav-link active" aria-current="page" href="<%= navbar[i].link %>">
+                                        <% } else { %>
+                                        <a class="nav-link" href="<%= navbar[i].link %>">
+                                            <% } %>
+                                            <span data-feather="<%= navbar[i].icon %>" class="align-text-bottom"></span>
+                                            <%= navbar[i].text %>
+                                        </a>
+                                </li>
+                                <% } %>
+                        </ul>
+                    </div>
+                </nav>

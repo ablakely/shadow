@@ -58,6 +58,21 @@ sub render {
         $args->{navbar}  = \@tmp;
     }
 
+    $args->{include} = sub {
+        my ($file, $incargs, $filebuf, $buf) = @_;
+
+        # merge args hashes, overwrite with args called using include(file, { args })
+        if ($incargs) {
+            foreach my $k (keys %{$incargs}) {
+                $args->{$k} = $incargs->{$k};
+            }
+        }
+
+        EJS::Template->process("./modules/WebAdmin/templates/$file", $args, \$buf);
+
+        return $buf;
+    };
+
     EJS::Template->process("./modules/WebAdmin/templates/$template", $args, \$buf);
 
     return $buf;
@@ -184,7 +199,6 @@ sub wa_tick {
         } else {
             my $count = $client->recv(my $data, POSIX::BUFSIZ, 0);
             unless(defined($count) && length $data) {
-                #closeClient($client);
                 next;
             }
             
@@ -194,20 +208,17 @@ sub wa_tick {
 
     foreach my $client ($select->can_write(1)) {
         next unless exists $outbuf{$client};
+        
+        closeClient($client) if (!$client->peeraddr());
 
         $outbuf{$client} = encode('UTF-8', $outbuf{$client});
         my $count = $client->send($outbuf{$client}, 0) or return closeClient($client);
-        if ($!) {
-            closeClient($client) if ($! =~ /Cannot determine peer address/);
-        }
 
         $outbuf{$client} = substr($outbuf{$client}, $count, length($outbuf{$client}));
 
         if ($count == length $outbuf{$client} || $! == POSIX::EWOULDBLOCK) {
 
             if (length $outbuf{$client} >= $count) {
-                #substr($outbuf{$client}, 0, $count);
-                #delete $outbuf{$client};
                 closeClient($client);
             }
         }
@@ -243,13 +254,13 @@ sub handleHTTPRequest {
 
     unless ($router->handle($client, $headers->{method}, $headers->{url}, $params, $headers)) {
         if (-e "./modules/WebAdmin/www".$headers->{url}) {
-            my $size = -s "./modules/WebAdmin/www".$headers->{url};
+            my $size = -s "./modules/WebAdmin/www".$headers->{url}; 
+
 
             $router->headers($client, { 
                 'Content-Type'   => mimetype("./modules/WebAdmin/www".$headers->{url}),
                 'Last-Modified'  => strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime((stat "./modules/WebAdmin/www".$headers->{url})[9])),
                 'Cache-Control'  => "max-age=604800"
-                #'Content-Length' => length($outbuf{$client}) + $size
             
             });
             flushOut($client);
@@ -266,13 +277,10 @@ sub handleHTTPRequest {
                 read($fh, $data, $size);
                 $outbuf{$client} .= $data;
 
-                #print $client $data;
             }
             close($fh);
 
-            #delete $skip{$client};
 
-            #outbuf{$client} .= "\r\n";
         } else {
             $router->headers($client, {'status' => 404 });
             $outbuf{$client} .= "<h2>404 not found!</h2>\r\n";

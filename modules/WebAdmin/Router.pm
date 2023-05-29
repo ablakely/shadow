@@ -5,6 +5,7 @@ use POSIX;
 use MIME::Base64;
 use File::MimeInfo;
 
+use Data::Dumper;
 my $bot = Shadow::Core->new();
 
 sub new {
@@ -87,7 +88,7 @@ sub handle {
 
 sub headers {
     my ($self, $client, $args) = @_;
-    
+
     $args->{'status'}         = exists($args->{'status'}) ? $args->{'status'} : 200;
     $args->{'status_txt'}     = exists($args->{'status_txt'}) ? $args->{'status_txt'} : "OK";
     $args->{'Date'}           = strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime(time));
@@ -135,7 +136,11 @@ sub cookie {
 }
 
 sub redirect {
-    my ($self, $client, $url, @cookies) = @_;
+    my ($self, $client, $url, $headers, @cookies) = @_;
+
+    if ($url eq "..") {
+        $url = exists($headers->{Referer}) ? $headers->{Referer} : "/";
+    }
 
     return headers($self, $client, {
         status => 302,

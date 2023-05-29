@@ -87,6 +87,8 @@ sub parse {
                 for ($i = 0; $i < scalar(@lines); $i++) {
                     $c{$cur}->{$curr}->{$s1}->{$s2}[$i] = $lines[$i];
                 }
+                
+                @lines = ();
 
                 next;
             }

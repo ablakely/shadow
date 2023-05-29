@@ -73,15 +73,17 @@ sub doWeather {
         return $bot->notice($nick, "Command usage: weather <city | postal code> (example: .w Memphis, TN)");
     }
 
-    my @inputSplit = split(/\, /, $text);
-    my $len = @inputSplit;
+    if ($text =~ /\, /) {
+        my @inputSplit = split(/\, /, $text);
+        my $len = @inputSplit;
 
-    if ($len == 2) {
-        if (exists($usp{$inputSplit[1]})) {
-            $text .= ", US";
-            $useF = 1;
-        } elsif (exists($cap{$inputSplit[1]})) {
-            $text .= ", CA";
+        if ($len == 2) {
+            if (exists($usp{$inputSplit[1]})) {
+                $text .= ", US";
+                $useF = 1;
+            } elsif (exists($cap{$inputSplit[1]})) {
+                $text .= ", CA";
+            }
         }
     }
 

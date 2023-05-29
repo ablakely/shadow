@@ -82,10 +82,15 @@ sub get_session {
 sub loader {
     $bot->register("Accounts", "v0.1", "Aaron Blakely", "User Accounts");
 
+    if ($bot->storage_exists("accounts.sessions")) {
+        %sessions = %{$bot->retrieve("accounts.sessions")};
+    }
+
     $bot->add_handler("privcmd register", "acc_register");
     $bot->add_handler("privcmd id", "acc_id");
     $bot->add_handler("event quit", "acc_quit_ev");
     $bot->add_handler("privcmd accounts", "acc_admin_interface");
+    $bot->add_handler("privcmd passwd", "acc_passwd");
 
     $help->add_help("accounts", "Admin", "<subcommand> [<args>]", "User Accounts management", 1, sub {
         my ($nick, $host, $text) = @_;
@@ -107,35 +112,115 @@ sub loader {
     if (!scalar(keys(%{$db}))) {
         $dbi->write();
     }
-
+    
+    # WebAdmin.pm Dashboard extension
     if ($bot->isloaded("WebAdmin")) {
         $web = WebAdmin->new();
         my $router = $web->router();  
-        my $db     = ${$dbi->read("accounts.db")};
         
-        foreach my $k (keys(%{$db})) {
-            $db->{$k}->{ctime} = "".gmtime($db->{$k}->{ctime})." GMT";
-        }
-
-        my @dbk    = keys(%{$db});
-
         $web->add_navbar_link("/accounts", "users", "Accounts");
         $router->get('/accounts', sub {
             my ($client, $params, $headers, $buf) = @_;
-
+            my $db     = ${$dbi->read("accounts.db")};
+            my @dbk    = keys(%{$db});
+            
             if ($web->checkSession($headers)) {
-                $router->headers($client);
+                if (exists($params->{view})) {
+                    if (exists($db->{$params->{view}})) {
+                        my $modinfo = {};
 
-                $web->out($client, $web->render("mod-accounts.ejs", {
-                    nav_active => "Accounts",
-                    db => $db,
-                    dbkeys => \@dbk
-                }));
+                        foreach my $k (keys(%{$db})) {
+                            if ($k eq $params->{view}) {
+                                foreach my $key (keys(%{$db->{$k}})) {
+                                    if ($key =~ /(.*?)\.(.*)/) {
+                                        $modinfo->{$key} = $db->{$k}->{$key};
+                                    }
+                                }
+                            }
+
+                            $db->{$k}->{ctime} = "".gmtime($db->{$k}->{ctime})." GMT";
+                            
+                            if (exists($db->{$k}->{ltime})) {
+                                $db->{$k}->{ltime} = "".gmtime($db->{$k}->{ltime})." GMT";
+                            }
+
+                            # online status
+                            $db->{$k}->{status} = exists($sessions{$k}) ? "Online" : "Offline";
+                        }
+                        @dbk = keys(%{$db->{$params->{view}}});
+                        my @modk = keys(%{$modinfo});
+
+                        $router->headers($client);
+                        return $web->out($client, $web->render("mod-accounts/view.ejs", {
+                            nav_active => "Accounts",
+                            acc => $params->{view},
+                            db => $db->{$params->{view}},
+                            dbk => \@dbk,
+                            modinfo => $modinfo,
+                            modk => \@modk
+                        }));
+                    } else {
+                        return $router->redirect($client, "/accounts");
+                    }
+                } elsif (exists($params->{delete})) {
+                    if (exists($db->{$params->{delete}})) {
+                        delete $db->{$params->{delete}};
+
+                        $dbi->write();
+                        return $router->redirect($client, "..", $headers);
+                    } else {
+                        return $router->redirect($client, "/accounts");
+                    }
+                } elsif (exists($params->{toggleadmin})) {
+                    if (exists($db->{$params->{toggleadmin}})) {
+                        $db->{$params->{toggleadmin}}->{admin} = $db->{$params->{toggleadmin}}->{admin} == 1 ? 0 : 1;
+
+                        $dbi->write();
+                    }
+                    return $router->redirect($client, "..", $headers);
+                } else {
+                    $router->headers($client);
+                    foreach my $k (keys(%{$db})) {
+                        $db->{$k}->{ctime} = "".gmtime($db->{$k}->{ctime})." GMT";
+                        $db->{$k}->{status} = exists($sessions{$k}) ? "Online" : "Offline";
+                    }
+                    
+                    return $web->out($client, $web->render("mod-accounts/index.ejs", {
+                        nav_active => "Accounts",
+                        db => $db,
+                        dbk => \@dbk
+                    }));
+                }
             } else {
                 $router->redirect($client, "/");
             }
         });
+
+        $router->post('/accounts/resetpw', sub {
+            my ($client, $params, $headers, $buf) = @_;
+            my $db     = ${$dbi->read("accounts.db")};
+
+            if ($web->checkSession($headers)) {
+                if (exists($params->{nick}) && exists($params->{password})&& exists($db->{$params->{nick}})) {
+                    my $nick  = $params->{nick};
+                    my $ctime = $db->{$nick}->{ctime};
+                    $db->{$nick}->{password} = hashpw("$nick:$ctime", $params->{password});
+                    $dbi->write();
+                }
+                
+                return $router->redirect($client, "/accounts");
+            } else {
+                return $router->redirect($client, "/");
+            }
+        });
     }
+}
+
+sub hashpw {
+    my ($salt, $pass) = @_;
+
+    $salt = sha256_hex($salt);
+    return sha256_hex($salt.$pass.$salt);
 }
 
 sub acc_register {
@@ -155,12 +240,18 @@ sub acc_register {
     }
 
     my $ctime = time();
-    my $salt  = sha256_hex("$nick:$ctime");
 
     $db->{$nick} = {};
     $db->{$nick}->{ctime}    = time();
-    $db->{$nick}->{password} = sha256_hex($salt.$text.$salt);
+    $db->{$nick}->{password} = hashpw("$nick:$ctime", $text); # sha256_hex($salt.$text.$salt);
     $db->{$nick}->{admin} = $bot->isbotadmin($nick, $host) ? 1 : 0;
+    $db->{$nick}->{ltime} = time();
+    $db->{$nick}->{lhost} = $host;
+
+    $sessions{$nick} = {
+        host => $host,
+        account => $nick
+    };
 
     $bot->notice($nick, "Account created for $nick");
     $dbi->write();
@@ -171,9 +262,12 @@ sub acc_id {
     my $db = ${$dbi->read("accounts.db")};
 
     my ($inputNick, $inputPassword) = split(/ /, $text, 2);
-    $inputPassword = $inputNick if (!$inputPassword);
+    if (!$inputPassword) {
+        $inputPassword = $inputNick;
+        $inputNick = $nick;
+    }
 
-    if ($bot->is_term_user($nick) || $sessions{$nick}) {
+    if ($bot->is_term_user($inputNick) || $sessions{$inputNick}) {
         return $bot->say($nick, "You are already identified.");
     }
 
@@ -181,27 +275,44 @@ sub acc_id {
         return $bot->notice($nick, "\x02SYNTAX\x02: /msg $Shadow::Core::nick id [nick] <password>");
     }
 
-    if (!$db->{$nick}) {
-        return $bot->notice($nick, "An account doesn't exist for $nick, did you register?");
+    if (!$db->{$inputNick}) {
+        return $bot->notice($nick, "An account doesn't exist for $inputNick, did you register?");
     }
 
-    my $salt = sha256_hex($nick.":".$db->{$nick}->{ctime});
-    my $hash = sha256_hex($salt.$text.$salt);
+    my $hash = hashpw("$inputNick:".$db->{$inputNick}->{ctime}, $text);
 
-    if ($hash eq $db->{$nick}->{password}) {
+    if ($hash eq $db->{$inputNick}->{password}) {
         $db->{$nick}->{ltime} = time();
         $db->{$nick}->{lhost}  = $host;
 
-        $sessions{$nick} = {};
-        $sessions{$nick}->{host} = $host;
+        $sessions{$nick} = {
+            host => $host,
+            account => $inputNick
+        };
 
         $bot->say($nick, "You are now identifed.");
-        $bot->log("Accounts: $nick identified", "Accounts");
+        $bot->log("Accounts: $nick identified as $inputNick", "Accounts");
     } else {
         return $bot->say($nick, "Invalid password.");
     }
 
     $dbi->write();
+}
+
+sub acc_passwd {
+    my ($nick, $host, $text) = @_;
+
+    my $db = ${$dbi->read("accounts.db")};
+    
+    if (!$sessions{$nick} || !exists($db->{$nick})) { 
+        return $bot->notice($nick, "You are not identified or don't have an account.");
+    }
+
+    my $ctime = $db->{$nick}->{ctime};
+    $db->{$nick}->{password} = hashpw("$nick:$ctime", $text);
+    $dbi->write();
+
+    $bot->notice($nick, "Password updated.");
 }
 
 sub acc_quit_ev {
@@ -238,7 +349,6 @@ sub acc_admin_interface {
     # accounts remove <nick>
     # accounts whois <nick>
     # accounts passwd <nick> <pass>
-    # accounts session <nick>
 
     if ($cmd =~ /list/i) {
         $fmt->table_header("Nick", "Created", "Host");
@@ -282,7 +392,12 @@ sub acc_admin_interface {
             return $bot->say($nick, "No account exists for $arg1");
         }
     } elsif ($cmd =~ /passwd/i) {
-
+        if (exists($db->{$arg1})) {
+            my $ctime = $db->{$arg1}->{ctime};
+            $db->{$arg1}->{password} = hashpw("$nick:$ctime", $arg2);
+        } else {
+            return $bot->say($nick, "No account exists for $arg1");
+        }
     } else {
         return $bot->say($nick, "Invalid subcommand.  See \x02".$help->cmdprefix($nick)."help accounts\x02 for more information.");
     }
@@ -295,6 +410,7 @@ sub unloader {
 
     $bot->del_handler("privcmd register", "acc_register");
     $bot->del_handler("privcmd id", "acc_id");
+    $bot->del_handler("privcmd passwd", "acc_passwd");
     $bot->del_handler("event quit", "acc_quit_ev");
     $bot->del_handler("privcmd accounts", "acc_admin_interface");
 
@@ -305,7 +421,10 @@ sub unloader {
 
         $web->del_navbar_link("Accounts");
         $router->del('get', '/accounts');
+        $router->del('post', '/accounts/resetpw');
     }
+
+    $bot->store("accounts.sessions", \%sessions);
 }
 
 1;

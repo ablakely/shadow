@@ -20,7 +20,7 @@ use Shadow::Help;
 # Global Variables, Arrays, and Hashes
 our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug, $connected);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
-our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg, %log);
+our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg, %log, %storage);
 
 my $omode = 0;
 our $tmpclient;
@@ -345,6 +345,29 @@ sub module_stats {
 	$modinfo{loadedmodcount} = $modcount;
 
 	return %modinfo;
+}
+
+# persistant module storage
+sub store {
+    my ($self, $key, $val) = @_;
+
+    $storage{$key} = $val;
+}
+
+sub retrieve {
+    my ($self, $key) = @_;
+
+    if (exists($storage{$key})) {
+        return $storage{$key};
+    }
+
+    return undef;
+}
+
+sub storage_exists {
+    my ($self, $key) = @_;
+
+    return exists($storage{$key});
 }
 
 # IRC connection stuff
