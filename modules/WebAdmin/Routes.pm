@@ -123,12 +123,29 @@ sub installUpdates {
 sub navbar {
     my ($self, $active) = @_;
     my @copy = @{$self->{navbar}};
+    my @tmp;
+    my @ret;
 
     for (my $i = 0; $i < scalar(@copy); $i++) {
         $copy[$i]->{active} = $copy[$i]->{text} eq $active ? 1 : 0;
+        push(@tmp, $copy[$i]->{text});
     }
 
-    return @copy;
+    @tmp  = sort(@tmp);
+    my $i = 0;
+
+    while ($i < scalar(@tmp)) {
+        for (my $x = 0; $x < scalar(@copy); $x++) {
+            if (exists($copy[$x]->{text}) && exists($tmp[$i])) {
+                if ($copy[$x]->{text} eq $tmp[$i]) {
+                    push(@ret, $copy[$x]);
+                    $i++;
+                }
+            }
+        }
+    }
+
+    return @ret;
 }
 # { link => "", icon => "", text => "" },
 
@@ -457,7 +474,7 @@ sub initRoutes {
             my $checkTime = $WebAdmin::updateLastCheck ? localtime($WebAdmin::updateLastCheck) : "N/A";
 
             my @nav = $self->navbar("Maintance");
-            $web->out($client, $web->render("$dash-maint.ejs", {
+            $web->out($client, $web->render("dash-maint.ejs", {
                 navbar  => \@nav,
                 favicon => $router->b64img("../favicon.ico"),
                 updateReady => $WebAdmin::updateReady,
