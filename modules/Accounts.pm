@@ -216,6 +216,9 @@ sub loader {
                     foreach my $k (keys(%{$db})) {
                         $db->{$k}->{ctime} = "".gmtime($db->{$k}->{ctime})." GMT";
                         $db->{$k}->{status} = exists($sessions{$k}) ? "Online" : "Offline";
+                        if (exists($db->{$k}->{ltime})) {
+                            $db->{$k}->{ltime} = "".gmtime($db->{$k}->{ltime})." GMT";
+                        }  
                     }
                     
                     return $web->out($client, $web->render("mod-accounts/index.ejs", {

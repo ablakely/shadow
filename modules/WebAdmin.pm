@@ -183,7 +183,7 @@ sub closeClient {
     delete $inbuf{$client};
     delete $outbuf{$client};
     delete $ready{$client};
-    delete $sockmap{$client->peerhost()};
+    delete $sockmap{$client->peerhost()} if (exists($sockmap{$client->peerhost()}));
 
     $select->remove($client);
     close $client;

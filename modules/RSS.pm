@@ -49,59 +49,90 @@ my $help     = Shadow::Help->new();
 my $dbi      = Shadow::DB->new();
 my $ua       = Mojo::UserAgent->new;
 my %feedcache;
+my $web;
 
 sub loader {
-  $bot->register("RSS", "v1.1", "Aaron Blakely", "RSS aggregator");
+    $bot->register("RSS", "v1.1", "Aaron Blakely", "RSS aggregator");
 
-  $bot->log("[RSS] Loading: RSS module v1.1", "Modules");
-  $bot->add_handler('event connected', 'rss_connected');
-  $bot->add_handler('privcmd rss', 'rss_irc_interface');
-  $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
-    my ($nick, $host, $text) = @_;
+    $bot->log("[RSS] Loading: RSS module v1.1", "Modules");
+    $bot->add_handler('event connected', 'rss_connected');
+    $bot->add_handler('privcmd rss', 'rss_irc_interface');
+    $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        my @out;
 
-    my $cmdprefix = "/msg $Shadow::Core::nick ";
-    $cmdprefix    = "/" if ($bot->is_term_user($nick));
+        my $cmdprefix = "/msg $Shadow::Core::nick ";
+        $cmdprefix    = "/" if ($bot->is_term_user($nick));
 
-    if ($text =~ /rss set/i) {
-        $bot->say($nick, "Help for \x02RSS SET\x02:");
-        $bot->say($nick, " ");
-        $bot->say($nick, "\x02SYNTAX\x02: ${cmdprefix}rss set <option> <chan> <feed name> <value>");
+        if ($text =~ /rss set/i) {
+            push(@out, "Help for \x02RSS SET\x02:");
+            push(@out, " ");
+            push(@out, "\x02SYNTAX\x02: ${cmdprefix}rss set <option> <chan> <feed name> <value>");
 
-        $bot->say($nick, " ");
-        $bot->say($nick, "  Options:");
-        $bot->say($nick, "    SYNCTIME - Refresh rate for a feed in seconds.");
-        $bot->say($nick, "    FORMAT   - Change the output format for a feed:");
-        $bot->say($nick, "      Example: \%FEED\%: \%TITLE\% [\%URL\%]");
-        $bot->say($nick, "      ");
-        $bot->say($nick, "      \%FEED\%: Feed name");
-        $bot->say($nick, "      \%TITLE\%: RSS entry title");
-        $bot->say($nick, "      \%URL\%: RSS entry link");
-        $bot->say($nick, "      \%C\%: mIRC color escape character (ctrl + k)");
-        $bot->say($nick, "      \%B\%: mIRC bold character (ctrl + b)");
-        return;
+            push(@out, " ");
+            push(@out, "  Options:");
+            push(@out, "    SYNCTIME - Refresh rate for a feed in seconds.");
+            push(@out, "    FORMAT   - Change the output format for a feed:");
+            push(@out, "      Example: \%FEED\%: \%TITLE\% [\%URL\%]");
+            push(@out, "      ");
+            push(@out, "      \%FEED\%: Feed name");
+            push(@out, "      \%TITLE\%: RSS entry title");
+            push(@out, "      \%URL\%: RSS entry link");
+            push(@out, "      \%C\%: mIRC color escape character (ctrl + k)");
+            push(@out, "      \%B\%: mIRC bold character (ctrl + b)");
+
+            $bot->fastsay($nick, @out);
+
+            return;
+        }
+
+        push(@out, "Help for \x02RSS\x02:");
+        push(@out, " ");
+        push(@out, "\x02rss\x02 is a command used for managing rss feeds for each channel.");
+        push(@out, "this command uses subcommands to perform different actions:");
+        push(@out, "  \x02add\x02 #chan <feed name> <url> - adds a feed for a channel.");
+        push(@out, "  \x02del\x02 #chan <feed name> - removes a feed from a channel.");
+        push(@out, "  \x02set\x02 #chan <feed name> <setting> <value> - not yet implemented.");
+        push(@out, "  \x02list\x02 #chan - lists all of the feeds for a given channel.");
+        push(@out, "  \x02sync\x02 - forces the bot to sync all feeds.");
+        push(@out, " ");
+        push(@out, "\x02syntax\x02: ${cmdprefix}rss <add|del|list|set|sync> [#chan] [feed name] [url]");
+
+
+        $bot->fastsay($nick, @out);
+    });
+
+    my $db = ${$dbi->read("feeds.db")};
+    if (!scalar(keys(%{$db}))) {
+        $dbi->write();
     }
 
-    $bot->say($nick, "Help for \x02RSS\x02:");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02rss\x02 is a command used for managing RSS feeds for each channel.");
-    $bot->say($nick, "This command uses subcommands to perform different actions:");
-    $bot->say($nick, "  \x02add\x02 #chan <feed name> <url> - Adds a feed for a channel.");
-    $bot->say($nick, "  \x02del\x02 #chan <feed name> - Removes a feed from a channel.");
-    $bot->say($nick, "  \x02set\x02 #chan <feed name> <setting> <value> - Not yet implemented.");
-    $bot->say($nick, "  \x02list\x02 #chan - Lists all of the feeds for a given channel.");
-    $bot->say($nick, "  \x02sync\x02 - Forces the bot to sync all feeds.");
-    $bot->say($nick, " ");
-    $bot->say($nick, "\x02SYNTAX\x02: ${cmdprefix}rss <add|del|list|set|sync> [#chan] [feed name] [url]");
-  });
+    $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
 
-  my $db = ${$dbi->read("feeds.db")};
-  if (!scalar(keys(%{$db}))) {
-      $dbi->write();
-  }
+    rss_connected() if ($bot->connected());
 
-  $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
+    # WebAdmin extension
+    if ($bot->isloaded("WebAdmin")) {
+        $web = WebAdmin->new();
+        my $router = $web->router();
 
-  rss_connected() if ($bot->connected());
+        $web->add_navbar_link("/rss", "rss", "RSS");
+        $router->get('/rss', sub {
+            my ($client, $params, $headers) = @_;
+
+            if ($web->checkSession($headers)) {
+                $router->headers($client);
+
+                return $web->out($client, $web->render("mod-rss/index.ejs", {
+                        nav_active => "RSS"
+                }));
+
+            } else {
+                return $router->redirect($client, "/");
+            }
+        });
+    }
+
 }
 
 sub rss_connected {
@@ -342,8 +373,8 @@ sub update_synctime {
     my ($chan, $title, @times) = @_;
     my $freq = calc_interval(@times);
 
-    if ($freq < 300) {
-        $freq = 300;
+    if ($freq < 600) {
+        $freq = 600;
     } elsif ($freq > 10800) {
         $freq = 10800;
     }
@@ -512,6 +543,12 @@ sub unloader {
   $bot->del_handler('privcmd rss', 'rss_irc_interface');
 
   $help->del_help("rss", "Channel");
+  
+  if ($bot->isloaded("WebAdmin")) {
+    my $router= $web->router();
+    $web->del_navbar_link("RSS");
+    $router->del('get', '/rss');
+  }
 }
 
 1;

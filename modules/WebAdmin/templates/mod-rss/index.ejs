@@ -105,89 +105,9 @@
                 <%= include('inc/navbar.ejs') %>
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Accounts</h1>
+                        <h1 class="h2">RSS</h1>
                     </div>
-                    <table class="table table-xl">
-                        <thead>
-                            <tr>
-                                <th>Nick</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Host</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% for (var i = 0; i < dbk.length; i++) { %>
-                            <% if (typeof db[dbk[i]] !== "undefined") { %>
-                            <tr>
-                                <td><%= dbk[i] %></td>
-                                <% if (db[dbk[i]].status === "Online") { %>
-                                <td><span class="text-info"><%= db[dbk[i]].status %></span></td>
-                                <% } else { %>
-                                <td><span><%= db[dbk[i]].status %></span></td>
-                                <% } %>
-                                <td><%= db[dbk[i]].ctime %></td>
-                                <td><%= db[dbk[i]].lhost %></td>
-                                <td><%= db[dbk[i]].ltime %></td>
-                                <td>
-                                    <div class="padbtns"> 
-                                        <a href="/accounts?view=<%= dbk[i] %>" class="btn btn-primary btn-sm"><span class="align-text-bottom" data-feather="eye"></span> View</a>
-                                        <button type="button" data-bs-toggle="modal" data-bs-target="#resetPassword" data-bs-user="<%= dbk[i] %>" class="btn btn-info btn-sm"><span class="align-text-bottom" data-feather="edit"></span> Reset Password</button>
-                                        <button type="button" data-bs-toggle="modal" data-bs-target="#confirmDelete" data-bs-user="<%= dbk[i] %>" class="btn btn-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span> Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <% } %>
-                            <% } %>
-                        </tbody>
-                    </table>
-
                 </main>
-            </div>
-        </div>
-
-
-        <div class="modal fade" id="resetPassword" tabindex="-1" aria-labelledby="rpwdModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <form method="post" action="/accounts/resetpw">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="rpwdModalLabel">Reset password</h1>
-                        </div>
-                        <div class="modal-body">
-                            <input type="hidden" name="nick" />
-                            <div class="mb-3">
-                                <label for="password" class="col-form-label">Password</label>
-                                <input type="text" name="password" class="form-control" id="password">
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Reset</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="modal fade" id="confirmDelete" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="confirmModalLabel">Delete</h1>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            This action cannot be undone.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <a id="confirmDeleteButton" href="#" type="button" class="btn btn-danger">Delete</a>
-                    </div>
-                </div>
             </div>
         </div>
 

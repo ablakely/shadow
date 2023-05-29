@@ -31,6 +31,8 @@
         } else {
           $(".sidebar .nav-link").css("color", "#333")
         }
+
+        $("#navbar").css("content-visibility", "visible")
       })
     }
   }
