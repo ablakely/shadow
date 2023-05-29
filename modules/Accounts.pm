@@ -92,6 +92,39 @@ sub loader {
     $bot->add_handler("privcmd accounts", "acc_admin_interface");
     $bot->add_handler("privcmd passwd", "acc_passwd");
 
+    $help->add_help("register", "General", "<password>", "Register an account.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02REGISTER\x02:",
+            " ",
+            "\x02register\x02 is used to create a new account.",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."register <password>"
+        ));
+    });
+    
+    $help->add_help("id", "General", "[<nick>] <password>", "Log in to an account.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02ID\x02:",
+            " ",
+            "\x02id\x02 is used to login to an account, if \x02<nick>\x02 is omitted the IRC nickname is used in it's place.",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."id [<nick>] <password>"
+        ));
+    });
+
+    $help->add_help("passwd", "General", "<password>", "Change password for an account.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02PASSWD\x02:",
+            " ",
+            "\x02passwd\x02 is used to update a password for an account.",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."passwd <password>"
+        ));
+    });
+    
     $help->add_help("accounts", "Admin", "<subcommand> [<args>]", "User Accounts management", 1, sub {
         my ($nick, $host, $text) = @_;
         $bot->fastsay($nick, (
@@ -415,6 +448,9 @@ sub unloader {
     $bot->del_handler("privcmd accounts", "acc_admin_interface");
 
     $help->del_help("accounts", "Admin");
+    $help->del_help("register", "General");
+    $help->del_help("id", "General");
+    $help->del_help("passwd", "General");
 
     if ($bot->isloaded("WebAdmin")) {
         my $router = $web->router();
