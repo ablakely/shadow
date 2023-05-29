@@ -174,5 +174,10 @@ sub dohelp {
   }
 }
 
+sub cmdprefix {
+    my ($self, $nick) = @_;
+
+    return $bot->is_term_user($nick) ? "/" : "/msg $Shadow::Core::nick ";
+}
 
 1;

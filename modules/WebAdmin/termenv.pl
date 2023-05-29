@@ -101,7 +101,7 @@ sub viewlog {
         }
     } else {
         for (my $i = $n * -1; $i < 0; $i++) {
-            my $tmp = $Shadow::Core::log{$queue}[$i];
+            my $tmp = exists($Shadow::Core::log{$queue}[$i]) ? $Shadow::Core::log{$queue}[$i] : "";
             $tmp =~ s/\]/\x07/gs;
             $tmp =~ s/\[/\x08/gs;
 

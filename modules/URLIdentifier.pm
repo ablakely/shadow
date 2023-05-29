@@ -41,281 +41,279 @@ sub loader {
 }
 
 sub getSiteInfo {
-	my ($url) = @_;
+    my ($url) = @_;
 
-	my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
-  $ua->agent("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
+    my $ua = LWP::UserAgent->new( ssl_opts => { verify_hostname => 0 } );
+    $ua->agent("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
 
-  $url =~ s/twitter\.com/nitter\.net/; # nitter ftw
+    $url =~ s/twitter\.com/nitter\.net/; # nitter ftw
 
-	my $response = $ua->get($url);
+    my $response = $ua->get($url);
 
-  my ($title, %meta);
-  my $gbNote;
+    my ($title, %meta);
+    my $gbNote;
 
-	if ( $response->is_success ) {
-    my $htmlResp =  $response->decoded_content({charset => 'utf-8'});
-    chomp $htmlResp;
-    if ($url =~ /odysee\.com/ && $htmlResp =~ /\<script type\=\"application\/ld\+json\"\>(.*?)\<\/script\>/gsi) {
-      my $jsonstr = $1;
-      $jsonstr =~ s/\x{fffd}//gs;
-      $jsonstr =~ s/\n//gs;
-      $jsonstr =~ s/\r//gs;
-      $jsonstr =~ s/\t//gs;
-      $jsonstr =~ s/\\n/ /gs;
-      $jsonstr =~ s/\x{00a0}//gs;
-      chomp $jsonstr;
+    if ( $response->is_success ) {
+        my $htmlResp =  $response->decoded_content((charset => 'utf-8'));
+        chomp $htmlResp;
+        if ($url =~ /odysee\.com/ && $htmlResp =~ /\<script type\=\"application\/ld\+json\"\>(.*?)\<\/script\>/gsi) {
+            my $jsonstr = $1;
+            $jsonstr =~ s/\x{fffd}//gs;
+            $jsonstr =~ s/\n//gs;
+            $jsonstr =~ s/\r//gs;
+            $jsonstr =~ s/\t//gs;
+            $jsonstr =~ s/\\n/ /gs;
+            $jsonstr =~ s/\x{00a0}//gs;
+            chomp $jsonstr;
 
-      $jsonstr = encode_utf8($jsonstr);
-      my $metaSchema = from_json($jsonstr, { utf8 => 1 });
+            $jsonstr = encode_utf8($jsonstr);
+            my $metaSchema = from_json($jsonstr, { utf8 => 1 });
 
-      $meta{'name'} = $metaSchema->{name};
-      $meta{'description'} = $metaSchema->{description};
-      $meta{'uploadDate'} = $metaSchema->{uploadDate};
-      $meta{'duration'} = $metaSchema->{duration};
-      $meta{'channelName'} = $metaSchema->{author}->{name};
+            $meta{'name'} = $metaSchema->{name};
+            $meta{'description'} = $metaSchema->{description};
+            $meta{'uploadDate'} = $metaSchema->{uploadDate};
+            $meta{'duration'} = $metaSchema->{duration};
+            $meta{'channelName'} = $metaSchema->{author}->{name};
 
-      if ($meta{'uploadDate'} =~ /(\d+)\-(\d+)\-(\d+)T(\d+)\:(\d+)\:(\d+).(\d+)Z/) {
-        $meta{'uploadDate'} = "$1-$2-$3";
-      }
-    }
-
-    # geekbench page scraping
-    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\// && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\n?\"\>/gmi) {
-      $meta{'description'} = $1;
-      chomp $meta{'description'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\n?\<div class\=\'note\'\>Single-Core Score\<\/div\>/gmi) {
-      $meta{'singleCoreScore'} = $1;
-      chomp $meta{'singleCoreScore'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\// && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\n?\<div class\=\'note\'\>Multi-Core Score\<\/div\>/gmi) {
-      $meta{'multiCoreScore'} = $1;
-      chomp $meta{'multiCoreScore'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<td class\=\'system-name\'\>Topology\<\/td\>\n?\<td class\=\'system-value\'\>(.*?)\<\/td\>/gmi) {
-      $meta{'topology'} = $1;
-      chomp $meta{'topology'};
-    }
-
-    if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<td class\=\'system-name\'\>Size\<\/td\>\n?\<td class\=\'system-value\'\>(.*?)\<\/td\>/gmi) {
-      $meta{'mem'} = $1;
-      chomp $meta{'mem'};
-    }
-
-
-    $htmlResp =~ s/\n//gs;
-    $htmlResp =~ s/\r//gs;
-    $htmlResp =~ s/\&nbsp\;//gs;
-
-    # pdw
-
-    if ($url =~ /patriots\.win\/p/ && $htmlResp =~ /\<span class="positive"\>\+\<span\>(.*?)<\/span\>\<\/span\> \/ \<span class="negative"\>\-\<span\>(.*?)<\/span><\/span\>/) {
-      $meta{'upvotes'} = $1;
-      $meta{'downvotes'} = $2;
-    }
-
-    if ($url =~ /patriots\.win\/p/ && $htmlResp =~ /\<span class="post-flair" data-flair=\"(.*?)\"\>(.*?)<\/span\>/) {
-      $meta{'flairtype'} = $1;
-      $meta{'flair'} = $2;
-
-      $meta{'flair'} =~ s/\&nbsp\;|\s{3,}//gis; 
-    }
-
-    # rumble
-    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<h1.*?\>(.*?)\<\/h1\>/) {
-      print "dbug title: $1\n";
-      $meta{'title'} = $1;
-    }
-
-    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<span class="rumbles-up-votes"\>(.*?)\<\/span\>/) {
-      $meta{'upvotes'} = $1;
-    }
-
-    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<span class="rumbles-down-votes"\>(.*?)\<\/span\>/) {
-      $meta{'downvotes'} = $1;
-    }
-
-    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<div class="video-counters--item video-item--views"\>[[:space:]]?[\s]*?\<svg.*?\<\/svg\>(.*?)[\s]*?\<\/div\>/) {
-      $meta{'views'} = $1;
-    }
-
-    if ($url =~ /rumble\.com/ && $htmlResp =~ /\<div class="video-counters--item video-item--comments"\>[[:space:]]?[\s]*?\<svg.*?\<\/svg\>(.*?)[\s]*?\<\/div\>/) {
-      $meta{'comments'} = $1;
-    }
-
-
-    if ($url =~ /reddit\.com/ && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\"\/\>/gis) {
-      $meta{'description'} = $1;
-      chomp $meta{'description'};
-    }
-
-
-    if ($url =~ /nitter\.net/ && $htmlResp =~ /\<div class\=\"tweet-content media-body\" dir\=\"auto\"\>(.*?)\<\/div\>/si && !$meta{'tweet'}) {
-      $meta{'tweet'} = $1;
-
-      if ($meta{'tweet'} =~ /\<a(.*?)\>(.*?)\<\/a\>/gi) {
-        my $atag = $1;
-        my $visible = $2;
-        $meta{'tweet'} =~ s/\<a$atag\>$visible\<\/a\>/$visible/gs;
-      }
-    }
-
-    if ($htmlResp =~ /\<title\>(.*)\<\/title\>/) {
-      $title = $1;
-    }
-
-    my @html = split(/\>/, $htmlResp);
-
-		for (my $i = 0; $i < $#html; $i++) {
-      chomp $line;
-      chomp $nl;
-
-      my $line = $html[$i].">";
-      my $nl = $html[$i+1].">";
-      my $nl2 = $html[$i+2].">";
-      my $nl3 = $html[$i+3].">";
-      my $nl4 = $html[$i+4].">";
-      my $nl5 = $html[$i+5].">";
-      my $nl6 = $html[$i+6].">";
-    
-      $nl =~ s/\n/ /gs;
-      $nl =~ s/\r//gs;
-
-
-      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /https\:\/\/www.ebay.com\/usr\/(.*?)\?/gsi) {
-        $meta{'seller'} = $1;
-      }
-
-      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\<span itemprop\=price content\=(.*?)\>/gsi) {
-        $meta{'price'} = $nl6;
-        $meta{'price'} =~ s/\<\!--F\/--\>//gs;
-      }
-
-      if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\"accessibilityText\"\:\"(\d+)\(feedback score\)\"/gsi) {
-        $meta{'feedbackScore'} = $1;
-      }
-
-      if ($line =~ /\<meta itemprop\=\"(\w+)\" content=\"(.*)\"\>/gis) {
-        $meta{$1} = $2;
-      }
-
-      if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $line =~ /\<td class\=\'system-name\'\>/gis && $nl =~ /(.*?)\<\/td\>/gis) {
-        my $param = $1;
-
-        my ($lp2, $lp3) = ($html[$i+2].">", $html[$i+3].">");
-
-        if ($lp2 =~ /\<td class\=\'system-value\'\>/gis && $lp3 =~ /(.*?)\<\/td\>/gis) {
-          print "$param = $1 $2\n";
-
-          $meta{$param} = $1;
-          chomp $meta{$param};
-        }
-      }
-      
-      # nitter page scraping
-
-      if ($url =~ /nitter\.net/ && $line =~ /\<p class\=\"tweet-published\"\>/gsi && $nl =~ /(.*?)\<\/p\>/gsi && !$meta{'published'}) {
-        $meta{'published'} = $1;
-      }
-
-      if ($url =~ /nitter\.net/ && $line =~ /\<a class\=\"fullname\" href\=\"(.*?)\" title\=\"(.*?)\"\>/gsi && !$meta{'username'} && !$meta{'fullname'}) {
-        $meta{'username'} = $1;
-        $meta{'fullname'} = $2;
-
-        $meta{'username'} =~ s/\//\@/;
-      }
-
-      if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-comment\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'comments'}) {
-        $meta{'comments'} = $nl2;
-        $meta{'comments'} =~ s/^\s//;
-        $meta{'comments'} =~ s/\<\/div\>$//;
-      }
-      if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-retweet\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'retweets'}) {
-        $meta{'retweets'} = $nl2;
-        $meta{'retweets'} =~ s/^\s//;
-        $meta{'retweets'} =~ s/\<\/div\>$//;
-      }
-      if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-quote\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'quotetweets'}) {
-        $meta{'quotetweets'} = $nl2;
-        $meta{'quotetweets'} =~ s/^\s//;
-        $meta{'quotetweets'} =~ s/\<\/div\>$//;
-      }
-      if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-heart\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'likes'}) {
-        $meta{'likes'} = $nl2;
-        $meta{'likes'} =~ s/^\s//;
-        $meta{'likes'} =~ s/\<\/div\>$//;
-      }
-		}
-
-
-
-    $title =~ s/\&quot;/\"/g;
-    $title =~ s/\&\#39\;/\'/g;
-    $title =~ s/\&amp;/\&/g;
-    $title =~ s/\&lt;/\</g;
-    $title =~ s/\&gt;/\>/g;
-    $title =~ s/\&\#039\;/\'/g;
-    $title =~ s/\&\#x27;/\'/g;
-
-    if ($meta{'name'}) {
-      $meta{'name'} =~ s/\&quot;/\"/g;
-      $meta{'name'} =~ s/\&\#39\;/\'/g;
-      $meta{'name'} =~ s/\&amp;/\&/g;
-      $meta{'name'} =~ s/\&lt;/\</g;
-      $meta{'name'} =~ s/\&gt;/\>/g;
-      $meta{'name'} =~ s/\&\#039\;/\'/g;
-    }
-
-    if ($meta{'description'}) {
-      $meta{'description'} =~ s/\&quot;/\"/g;
-      $meta{'description'} =~ s/\&\#39\;/\'/g;
-      $meta{'description'} =~ s/\&amp;/\&/g;
-      $meta{'description'} =~ s/\&lt;/\</g;
-      $meta{'description'} =~ s/\&gt;/\>/g;
-      $meta{'description'} =~ s/\&\#039\;/\'/g;
-    }
-
-    if ($title && !$meta{'description'}) {
-      $meta{'description'} = $title;
-    }
-
-    if ($meta{'duration'}) {
-      my $duration = "0:00";
-
-      if ($meta{'duration'} =~ /PT(\d+)M(\d+)S/) {
-        my $sec = int $2;
-
-        if (int $sec < 10) {
-          $sec = "0$sec";
+            if ($meta{'uploadDate'} =~ /(\d+)\-(\d+)\-(\d+)T(\d+)\:(\d+)\:(\d+).(\d+)Z/) {
+                $meta{'uploadDate'} = "$1-$2-$3";
+            }
         }
 
-        if ($1 > 60) {
-          my $hr = int $1 / 60;
-          my $min = $1 % 60;
-          $duration = "$hr:$min:$sec";
-        } else {
-          $duration = "$1:$sec";
+        # geekbench page scraping
+        if ($url =~ /browser\.geekbench\.com\/v6\/cpu\// && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\n?\"\>/gmi) {
+            $meta{'description'} = $1;
+            chomp $meta{'description'};
         }
-      }
-      if ($meta{'duration'} =~ /PT(\d+)H(\d+)M(\d+)S/) {
-        $duration = "$1:$2:$3";
-      }
 
-      if ($duration eq "0:00") {
-        $duration = "\x0304LIVE\x03";
-      }
+        if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\n?\<div class\=\'note\'\>Single-Core Score\<\/div\>/gmi) {
+            $meta{'singleCoreScore'} = $1;
+            chomp $meta{'singleCoreScore'};
+        }
 
-      $meta{'duration'} = $duration;
+        if ($url =~ /browser\.geekbench\.com\/v6\/cpu\// && $htmlResp =~ /\<div class\=\'score\'\>(\d+)\<\/div\>\n?\<div class\=\'note\'\>Multi-Core Score\<\/div\>/gmi) {
+            $meta{'multiCoreScore'} = $1;
+            chomp $meta{'multiCoreScore'};
+        }
+
+        if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<td class\=\'system-name\'\>Topology\<\/td\>\n?\<td class\=\'system-value\'\>(.*?)\<\/td\>/gmi) {
+            $meta{'topology'} = $1;
+            chomp $meta{'topology'};
+        }
+
+        if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $htmlResp =~ /\<td class\=\'system-name\'\>Size\<\/td\>\n?\<td class\=\'system-value\'\>(.*?)\<\/td\>/gmi) {
+            $meta{'mem'} = $1;
+            chomp $meta{'mem'};
+        }
+
+
+        $htmlResp =~ s/\n//gs;
+        $htmlResp =~ s/\r//gs;
+        $htmlResp =~ s/\&nbsp\;//gs;
+
+        # pdw
+
+        if ($url =~ /patriots\.win\/p/ && $htmlResp =~ /\<span class="positive"\>\+\<span\>(.*?)<\/span\>\<\/span\> \/ \<span class="negative"\>\-\<span\>(.*?)<\/span><\/span\>/) {
+            $meta{'upvotes'} = $1;
+            $meta{'downvotes'} = $2;
+        }
+
+        if ($url =~ /patriots\.win\/p/ && $htmlResp =~ /\<span class="post-flair" data-flair=\"(.*?)\"\>(.*?)<\/span\>/) {
+            $meta{'flairtype'} = $1;
+            $meta{'flair'} = $2;
+
+            $meta{'flair'} =~ s/\&nbsp\;|\s{3,}//gis; 
+        }
+
+        # rumble
+        if ($url =~ /rumble\.com/ && $htmlResp =~ /\<h1.*?\>(.*?)\<\/h1\>/) {
+            print "dbug title: $1\n";
+            $meta{'title'} = $1;
+        }
+
+        if ($url =~ /rumble\.com/ && $htmlResp =~ /\<span class="rumbles-up-votes"\>(.*?)\<\/span\>/) {
+            $meta{'upvotes'} = $1;
+        }
+
+        if ($url =~ /rumble\.com/ && $htmlResp =~ /\<span class="rumbles-down-votes"\>(.*?)\<\/span\>/) {
+            $meta{'downvotes'} = $1;
+        }
+
+        if ($url =~ /rumble\.com/ && $htmlResp =~ /\<div class="video-counters--item video-item--views"\>[[:space:]]?[\s]*?\<svg.*?\<\/svg\>(.*?)[\s]*?\<\/div\>/) {
+            $meta{'views'} = $1;
+        }
+
+        if ($url =~ /rumble\.com/ && $htmlResp =~ /\<div class="video-counters--item video-item--comments"\>[[:space:]]?[\s]*?\<svg.*?\<\/svg\>(.*?)[\s]*?\<\/div\>/) {
+            $meta{'comments'} = $1;
+        }
+
+
+        if ($url =~ /reddit\.com/ && $htmlResp =~ /\<meta name\=\"description\" content=\"(.*?)\"\/\>/gis) {
+            $meta{'description'} = $1;
+            chomp $meta{'description'};
+        }
+
+
+        if ($url =~ /nitter\.net/ && $htmlResp =~ /\<div class\=\"tweet-content media-body\" dir\=\"auto\"\>(.*?)\<\/div\>/si && !$meta{'tweet'}) {
+            $meta{'tweet'} = $1;
+
+            if ($meta{'tweet'} =~ /\<a(.*?)\>(.*?)\<\/a\>/gi) {
+                my $atag = $1;
+                my $visible = $2;
+                $meta{'tweet'} =~ s/\<a$atag\>$visible\<\/a\>/$visible/gs;
+            }
+        }
+
+        if ($htmlResp =~ /\<title\>(.*)\<\/title\>/) {
+            $title = $1;
+        }
+
+        my @html = split(/\>/, $htmlResp);
+
+        for (my $i = 0; $i < $#html; $i++) {
+
+            my $line = $html[$i].">";
+            my $nl =  $i+1 < scalar(@html) ? $html[$i+1].">" : "";
+            my $nl2 = $i+2 < scalar(@html) ? $html[$i+2].">" : "";
+            my $nl3 = $i+3 < scalar(@html) ? $html[$i+3].">" : "";
+            my $nl4 = $i+4 < scalar(@html) ? $html[$i+4].">" : "";
+            my $nl5 = $i+5 < scalar(@html) ? $html[$i+5].">" : "";
+            my $nl6 = $i+6 < scalar(@html) ? $html[$i+6].">" : "";
+
+            $nl =~ s/\n/ /gs;
+            $nl =~ s/\r//gs;
+
+
+            if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /https\:\/\/www.ebay.com\/usr\/(.*?)\?/gsi) {
+                $meta{'seller'} = $1;
+            }
+
+            if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\<span itemprop\=price content\=(.*?)\>/gsi) {
+                $meta{'price'} = $nl6;
+                $meta{'price'} =~ s/\<\!--F\/--\>//gs;
+            }
+
+            if ($url =~ /ebay\.[[:alpha:]]/ && $line =~ /\"accessibilityText\"\:\"(\d+)\(feedback score\)\"/gsi) {
+                $meta{'feedbackScore'} = $1;
+            }
+
+            if ($line =~ /\<meta itemprop\=\"(\w+)\" content=\"(.*)\"\>/gis) {
+                $meta{$1} = $2;
+            }
+
+            if ($url =~ /browser\.geekbench\.com\/v6\/cpu\//  && $line =~ /\<td class\=\'system-name\'\>/gis && $nl =~ /(.*?)\<\/td\>/gis) {
+                my $param = $1;
+
+                my ($lp2, $lp3) = ($html[$i+2].">", $html[$i+3].">");
+
+                if ($lp2 =~ /\<td class\=\'system-value\'\>/gis && $lp3 =~ /(.*?)\<\/td\>/gis) {
+                    print "$param = $1 $2\n";
+
+                    $meta{$param} = $1;
+                    chomp $meta{$param};
+                }
+            }
+
+            # nitter page scraping
+
+            if ($url =~ /nitter\.net/ && $line =~ /\<p class\=\"tweet-published\"\>/gsi && $nl =~ /(.*?)\<\/p\>/gsi && !$meta{'published'}) {
+                $meta{'published'} = $1;
+            }
+
+            if ($url =~ /nitter\.net/ && $line =~ /\<a class\=\"fullname\" href\=\"(.*?)\" title\=\"(.*?)\"\>/gsi && !$meta{'username'} && !$meta{'fullname'}) {
+                $meta{'username'} = $1;
+                $meta{'fullname'} = $2;
+
+                $meta{'username'} =~ s/\//\@/;
+            }
+
+            if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-comment\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'comments'}) {
+                $meta{'comments'} = $nl2;
+                $meta{'comments'} =~ s/^\s//;
+                $meta{'comments'} =~ s/\<\/div\>$//;
+            }
+            if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-retweet\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'retweets'}) {
+                $meta{'retweets'} = $nl2;
+                $meta{'retweets'} =~ s/^\s//;
+                $meta{'retweets'} =~ s/\<\/div\>$//;
+            }
+            if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-quote\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'quotetweets'}) {
+                $meta{'quotetweets'} = $nl2;
+                $meta{'quotetweets'} =~ s/^\s//;
+                $meta{'quotetweets'} =~ s/\<\/div\>$//;
+            }
+            if ($url =~ /nitter\.net/ && $line =~ /\<span class\=\"icon-heart\" title\=\"\"\>/gsi && $nl =~ /\<\/span\>/gsi && !$meta{'likes'}) {
+                $meta{'likes'} = $nl2;
+                $meta{'likes'} =~ s/^\s//;
+                $meta{'likes'} =~ s/\<\/div\>$//;
+            }
+        }
+
+
+
+        $title =~ s/\&quot;/\"/g;
+        $title =~ s/\&\#39\;/\'/g;
+        $title =~ s/\&amp;/\&/g;
+        $title =~ s/\&lt;/\</g;
+        $title =~ s/\&gt;/\>/g;
+        $title =~ s/\&\#039\;/\'/g;
+        $title =~ s/\&\#x27;/\'/g;
+
+        if ($meta{'name'}) {
+            $meta{'name'} =~ s/\&quot;/\"/g;
+            $meta{'name'} =~ s/\&\#39\;/\'/g;
+            $meta{'name'} =~ s/\&amp;/\&/g;
+            $meta{'name'} =~ s/\&lt;/\</g;
+            $meta{'name'} =~ s/\&gt;/\>/g;
+            $meta{'name'} =~ s/\&\#039\;/\'/g;
+        }
+
+        if ($meta{'description'}) {
+            $meta{'description'} =~ s/\&quot;/\"/g;
+            $meta{'description'} =~ s/\&\#39\;/\'/g;
+            $meta{'description'} =~ s/\&amp;/\&/g;
+            $meta{'description'} =~ s/\&lt;/\</g;
+            $meta{'description'} =~ s/\&gt;/\>/g;
+            $meta{'description'} =~ s/\&\#039\;/\'/g;
+        }
+
+        if ($title && !$meta{'description'}) {
+            $meta{'description'} = $title;
+        }
+
+        if ($meta{'duration'}) {
+            my $duration = "0:00";
+
+            if ($meta{'duration'} =~ /PT(\d+)M(\d+)S/) {
+                my $sec = int $2;
+
+                if (int $sec < 10) {
+                    $sec = "0$sec";
+                }
+
+                if ($1 > 60) {
+                    my $hr = int $1 / 60;
+                    my $min = $1 % 60;
+                    $duration = "$hr:$min:$sec";
+                } else {
+                    $duration = "$1:$sec";
+                }
+            }
+            if ($meta{'duration'} =~ /PT(\d+)H(\d+)M(\d+)S/) {
+                $duration = "$1:$2:$3";
+            }
+
+            if ($duration eq "0:00") {
+                $duration = "\x0304LIVE\x03";
+            }
+
+            $meta{'duration'} = $duration;
+        }
+
+        return ($title, %meta);
+    } else {
+        $bot->err("URLIdentifier: Error fetching title for $url: ".$response->status_line, 0);
     }
-
-    return ($title, %meta);
-	} else {
-    $bot->err("URLIdentifier: Error fetching title for $url: ".$response->status_line, 0);
-	}
 }
 
 
@@ -419,7 +417,7 @@ sub url_id {
       }
 
       # add spaces after punctuation
-      $meta{'tweet'} =~ s/(.*?)([[:punct:]])([A-Z\#])/\1\2 \3/gs;
+      $meta{'tweet'} =~ s/(.*?)([[:punct:]])([A-Z\#])/$1$2 $3/gs;
 
       if ($nick eq "RSS.pm" && $host eq "0.0.0.0") {
         $text = shortenURL($text);
@@ -448,6 +446,9 @@ sub url_id {
       $title =~ s/\s+- The Donald - America First \| Patriots Win//;
 
       my $flairColor = "\x030,1";
+
+      $meta{'flairtype'} = "" unless (exists($meta{'flairtype'}));
+      $meta{'flair'} = "" unless (exists($meta{'flair'}));
 
       if ($meta{'flairtype'} eq "chopper") {
         $flairColor = "\x030,3";

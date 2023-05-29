@@ -180,70 +180,7 @@
 
 <div class="container-fluid">
   <div class="row">
-    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
-      <div class="position-sticky pt-3 sidebar-sticky">
-        <ul class="nav flex-column">
-          <li class="nav-item">
-            <a class="nav-link" href="/">
-              <span data-feather="home" class="align-text-bottom"></span>
-              Dashboard
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/terminal">
-              <span data-feather="codesandbox" class="align-text-bottom"></span>
-              Terminal
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/modules">
-              <span data-feather="package" class="align-text-bottom"></span>
-              Modules
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/configuration">
-              <span data-feather="file-text" class="align-text-bottom"></span>
-              Configuration
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="/maintance">
-              <span data-feather="tool" class="align-text-bottom"></span>
-              Maintance
-            </a>
-          </li>
-        </ul>
-
-
-        <!-- ul class="nav flex-column mb-2">
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <span data-feather="file-text" class="align-text-bottom"></span>
-              Current month
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <span data-feather="file-text" class="align-text-bottom"></span>
-              Last quarter
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <span data-feather="file-text" class="align-text-bottom"></span>
-              Social engagement
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <span data-feather="file-text" class="align-text-bottom"></span>
-              Year-end sale
-            </a>
-          </li>
-        </ul -->
-      </div>
-    </nav>
+    <%= include('inc/navbar.ejs') %>
 
     <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">

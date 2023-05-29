@@ -192,7 +192,7 @@ sub rss_irc_interface {
                   $fmt->table_row(
                       $feed,
                       $db->{$chan}->{$feed}->{url},
-                      $db->{$chan}->{$feed}->{syncInterval}." seconds",
+                      fmt_time($db->{$chan}->{$feed}->{syncInterval}),
                       $db->{$chan}->{$feed}->{format}
                   )
               }
@@ -216,7 +216,7 @@ sub rss_irc_interface {
               $fmt->table_row(
                   $feed,
                   $db->{$arg1}->{$feed}->{url},
-                  $db->{$arg1}->{$feed}->{syncInterval}." seconds",
+                  fmt_time($db->{$arg1}->{$feed}->{syncInterval}),
                   $db->{$arg1}->{$feed}->{format}
               )
           }
@@ -276,17 +276,53 @@ sub rss_irc_interface {
   }
 }
 
-sub rss_checkread {
-  my ($chan, $title, $link) = @_;
-  my $db = ${$dbi->read("feeds.db")};
+sub calc_interval {
+    my (@times) = @_;
+    @times = reverse(@times);
+    my $ltime = shift @times;
 
-  foreach my $post (@{$db->{$chan}->{$title}->{read}}) {
-    foreach my $r ($post) {
-      if ($r->{url} eq $link) {
-        return 1;
-      }
+    my $total = 0;
+    foreach my $time (@times) {
+        my $interval = $time - $ltime;
+        $ltime = $time;
+        $total += $interval;
     }
-  }
+
+    return $total;
+}
+
+sub fmt_time {
+    my $seconds = shift;
+    my $ret = "";
+    
+    my $days = int($seconds / (24 * 3600));
+    $ret .= $days > 1 ? "$days days, " : "$days day, " if ($days);
+    $seconds -= $days * 24 * 3600;
+
+    my $hours = int($seconds / 3600);
+    $ret .= $hours > 1 ? "$hours hours, " : "$hours hour, " if ($hours);
+    $seconds -= $hours * 3600;
+
+    my $minutes = int($seconds / 60);
+    $ret .= $minutes > 1 ? "$minutes minutes, " : "$minutes minute, " if ($minutes);
+    $seconds -= $minutes * 60;
+
+    $ret .= $seconds > 1 ? "$seconds seconds" : "$seconds second" if ($seconds);    
+
+    $ret =~ s/\, $/\ /s;
+
+    return $ret;
+}
+
+sub rss_checkread {
+    my ($chan, $title, $link) = @_;
+    my $db = ${$dbi->read("feeds.db")};
+
+    foreach my $post (@{$db->{$chan}->{$title}->{read}}) {
+        if ($post->{url} eq $link) {
+            return 1;
+        }
+    }
 }
 
 sub rss_updateread {
@@ -302,41 +338,71 @@ sub rss_updateread {
   $dbi->write();
 }
 
+sub update_synctime {
+    my ($chan, $title, @times) = @_;
+    my $freq = calc_interval(@times);
+
+    if ($freq < 300) {
+        $freq = 300;
+    } elsif ($freq > 10800) {
+        $freq = 10800;
+    }
+
+    my $db = ${$dbi->read("feeds.db")};
+    if (exists($db->{$chan}->{$title})) {
+        $bot->log("RSS: Updating SYNCTIME for feed [$title:$chan] to $freq", "Modules");
+        $db->{$chan}->{$title}->{syncInterval} = "$freq";
+        return $dbi->write();
+    }
+}
+
 sub rss_agrigator {
   my ($rawxml, $title, $chan) = @_;
   my $db = ${$dbi->read("feeds.db")};
 
+  my @times;
   my $parsedfeed = XML::Feed->parse($rawxml) or return $bot->err("RSS: Parser error on feed $title: ".XML::Feed->errstr, 0);
   for my $entry ($parsedfeed->entries) {
     my $fmtstring = $db->{$chan}->{$title}->{format};
     my $tmplink = $entry->link();
     my $read = rss_checkread($chan, $title, $tmplink);
 
+    my $issued = $entry->issued();
+    push(@times, $issued->epoch()) if ($issued);
+
     my $tmptitle;
     my @tokens;
 
     if (!$read) {
-      push(@{$db->{$chan}->{$title}->{read}}, {
-        url => $tmplink,
-        lastRecieved => time()
-      });
-      
-      if ($tmplink =~ /nitter\.net/) {
-        $tmplink =~ s/nitter\.net/twitter\.com/;
+        $db = ${$dbi->read("feeds.db")};
 
-        if (defined &URLIdentifier::url_id) {
-            URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-            $dbi->write();
-            return;
-        }
+        push(@{$db->{$chan}->{$title}->{read}}, {
+            url => $tmplink,
+            lastRecieved => time()
+        });
 
-      } elsif ($tmplink =~ /patriots\.win/) {
-        if (defined &URLIdentifier::url_id) {
-            URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-            $dbi->write();
-            return;
+        $dbi->write();
+
+        if ($tmplink =~ /nitter\.net/) {
+            $tmplink =~ s/nitter\.net/twitter\.com/;
+
+            if (defined &URLIdentifier::url_id) {
+                URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
+                $dbi->write();
+
+                update_synctime($chan, $title, @times);
+                return;
+            }
+
+        } elsif ($tmplink =~ /patriots\.win/) {
+            if (defined &URLIdentifier::url_id) {
+                URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
+                $dbi->write();
+
+                update_synctime($chan, $title, @times);
+                return;
+            }
         }
-    }
 
       @tokens = split(/ /, encode_utf8($fmtstring));
 
@@ -373,6 +439,8 @@ sub rss_agrigator {
     }
   }
 
+  # calculate SYNCTIME
+  update_synctime($chan, $title, @times);
   $dbi->write();
 }
 
@@ -407,6 +475,8 @@ sub rss_refresh {
           my $rss_feed = $ua->get_p($db->{$chan}->{$title}->{url});
 
           Mojo::Promise->all($rss_feed)->then(sub($rss) {
+            return if (!$rss);
+
             if (my $err = $rss->error) {
               return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
             }

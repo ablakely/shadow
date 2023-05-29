@@ -11,6 +11,9 @@ use Shadow::Help;
 my $bot = Shadow::Core->new();
 my $help = Shadow::Help->new();
 
+my $useaccounts = 0;
+my $acc;
+
 my $API_KEY = "3871e6ee92a6ffee1850e3e8175c107d";
 
 my @usStates = ( 'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP', 'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA', 'WV', 'WI', 'WY' );
@@ -24,6 +27,14 @@ sub loader {
 
     $bot->add_handler('chancmd weather', 'doWeather');
     $bot->add_handler('chancmd w', 'doWeather');
+
+    # Check to see if Accounts.pm is loaded
+    if ($bot->isloaded("Accounts")) {
+        $acc = Accounts->new();
+        $useaccounts = 1;
+
+        $bot->add_handler("chancmd weatherset", "weatherset");
+    }
 }
 
 sub fetchWeatherJSON {
@@ -54,19 +65,25 @@ sub doWeather {
     my $WOUT;
     my $useF = 0;
 
-    if (!$text) {
+    my $acclocation = $acc->get_account_prop($nick, "weather.location");
+
+    if (!$text && $acclocation) {
+        $text = $acclocation;
+    } else {
         return $bot->notice($nick, "Command usage: weather <city | postal code> (example: .w Memphis, TN)");
     }
 
-    my @inputSplit = split(/\, /, $text);
-    my $len = @inputSplit;
+    if ($text =~ /\, /) {
+        my @inputSplit = split(/\, /, $text);
+        my $len = @inputSplit;
 
-    if ($len == 2) {
-        if (exists($usp{$inputSplit[1]})) {
-            $text .= ", US";
-            $useF = 1;
-        } elsif (exists($cap{$inputSplit[1]})) {
-            $text .= ", CA";
+        if ($len == 2) {
+            if (exists($usp{$inputSplit[1]})) {
+                $text .= ", US";
+                $useF = 1;
+            } elsif (exists($cap{$inputSplit[1]})) {
+                $text .= ", CA";
+            }
         }
     }
 
@@ -98,11 +115,30 @@ EOFC
     $bot->say($chan, $WOUT);
 }
 
+sub weatherset {
+    my ($nick, $host, $chan, $text) = @_;
+    
+    if (!$text) {
+        return $bot->notice($nick, "\x02Usage\x02: weatherset <zip code/City, State/City, State, Country>");
+    }
+
+    if (!$acc->is_authed($nick)) {
+        return $bot->notice($nick, "This command requires you to be logged in, have you identified? See \x02/msg $Shadow::Core::nick help id\x02 for more information.");
+    }
+
+    $acc->set_account_prop($nick, "weather.location", $text);
+    $bot->notice($nick, "Weather location set to: $text");
+}
+
 sub unloader {
     $bot->unregister("Weather");
 
     $bot->del_handler('chancmd weather', 'doWeather');
     $bot->del_handler('chancmd w', 'doWeather');
+
+    if ($useaccounts) {
+        $bot->del_handler("chancmd weatherset", "weatherset");
+    }
 }
 
 1;
