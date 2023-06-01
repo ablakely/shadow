@@ -159,7 +159,7 @@ sub loader {
                     my @labels;
                     my $label;
 
-                    foreach $label (sort(keys(%reqstats))) {
+                    foreach $label (sortTimeStampArray(keys(%reqstats))) {
                         next if ($label =~ /^\_/);
                         push(@labels, $label);
                     }
@@ -374,6 +374,29 @@ sub rss_irc_interface {
   } else {
     $bot->notice($nick, "Invalid command.  For help: /msg $Shadow::Core::nick help rss");
   }
+}
+
+sub sortTimeStampArray {
+    my (@arr) = @_;
+    my (@ret, @AM, @PM);
+
+    foreach my $v (@arr) {
+        if ($v =~ /AM/) {
+            push(@AM, $v);
+        } elsif ($v =~ /PM/) {
+            push(@PM, $v);
+        }
+    }
+
+    foreach my $v (sort(@AM)) {
+        push(@ret, $v);
+    }
+    
+    foreach my $v (sort(@PM)) {
+        push(@ret, $v);
+    }
+
+    return @ret;
 }
 
 sub calc_interval {
