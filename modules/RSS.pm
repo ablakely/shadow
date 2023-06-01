@@ -444,8 +444,8 @@ sub update_synctime {
 
     if ($freq < 400) {
         $freq = 400;
-    } elsif ($freq > 10800) {
-        $freq = 10800;
+    } elsif ($freq > 1320) {
+        $freq = 1320;
     }
 
     my $db = ${$dbi->read("feeds.db")};
