@@ -36,6 +36,8 @@ use Mojo::IOLoop;
 use Mojo::UserAgent;
 use XML::Feed;
 use utf8;
+use POSIX;
+use JSON;
 use Encode qw( encode_utf8 );
 
 use Shadow::DB;
@@ -51,8 +53,18 @@ my $ua       = Mojo::UserAgent->new;
 my %feedcache;
 my $web;
 
+my %reqstats;
+my %failedreqstats;
+$reqstats{_stathour} = strftime("%I %p", gmtime(time));
+$reqstats{_statday}  = (gmtime(time))[3];
+
 sub loader {
     $bot->register("RSS", "v1.1", "Aaron Blakely", "RSS aggregator");
+
+    if ($bot->storage_exists("RSS.reqstats")) {
+        %reqstats = %{ $bot->retrieve("RSS.reqstats") };
+        %failedreqstats = %{ $bot->retrieve("RSS.failedreqstats") };
+    }
 
     $bot->log("[RSS] Loading: RSS module v1.1", "Modules");
     $bot->add_handler('event connected', 'rss_connected');
@@ -119,13 +131,70 @@ sub loader {
         $web->add_navbar_link("/rss", "rss", "RSS");
         $router->get('/rss', sub {
             my ($client, $params, $headers) = @_;
+            my $db = ${$dbi->read("feeds.db")};
+
+            my @chanlinks;
+
+            foreach my $chan (keys(%{$db})) {
+                $chan =~ s/\#//;
+                push(@chanlinks, {
+                    text => $chan,
+                    link => "/rss?chan=$chan",
+                    icon => "hash"
+                });
+            }
 
             if ($web->checkSession($headers)) {
                 $router->headers($client);
 
-                return $web->out($client, $web->render("mod-rss/index.ejs", {
-                        nav_active => "RSS"
-                }));
+                if (exists($params->{chan})) {
+                    return $web->out($client, $web->render("mod-rss/view.ejs", {
+                        nav_active => "RSS",
+                        show_quicklinks => 1,
+                        quicklinks_header => "Channels",
+                        quicklinks => \@chanlinks,
+                        db => $db->{$params->{chan}}
+                    }));
+                } else {
+                    my @labels;
+                    my $label;
+
+                    foreach $label (sort(keys(%reqstats))) {
+                        next if ($label =~ /^\_/);
+                        push(@labels, $label);
+                    }
+                    
+                    my @data;
+                    my @failed;
+
+
+                    foreach my $label (@labels) {
+                        next if ($label =~ /^\_/);
+                        push(@data, $reqstats{$label});
+                        push(@failed, exists($failedreqstats{$label}) ? $failedreqstats{$label} : 0); 
+                    }
+                    
+                    my $labelstr = to_json(\@labels);
+                    my $datastr  = to_json(\@data);
+                    my $failedstr= to_json(\@failed);
+                    my $totalfeeds = 0;
+
+                    foreach my $chan (keys(%{$db})) {
+                        $totalfeeds += scalar(keys(%{$db->{$chan}}));
+                    }
+
+                    return $web->out($client, $web->render("mod-rss/index.ejs", {
+                        nav_active => "RSS",
+                        show_quicklinks => 1,
+                        quicklinks_header => "Channels",
+                        quicklinks => \@chanlinks,
+                        labels => $labelstr,
+                        data   => $datastr,
+                        failed => $failedstr,
+                        totalfeeds => $totalfeeds,
+                        chancount  => scalar(keys(%{$db}))
+                    }));
+                }
 
             } else {
                 return $router->redirect($client, "/");
@@ -373,8 +442,8 @@ sub update_synctime {
     my ($chan, $title, @times) = @_;
     my $freq = calc_interval(@times);
 
-    if ($freq < 600) {
-        $freq = 600;
+    if ($freq < 400) {
+        $freq = 400;
     } elsif ($freq > 10800) {
         $freq = 10800;
     }
@@ -418,6 +487,8 @@ sub rss_agrigator {
             $tmplink =~ s/nitter\.net/twitter\.com/;
 
             if (defined &URLIdentifier::url_id) {
+                $reqstats{$reqstats{_stathour}}++;
+                
                 URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
                 $dbi->write();
 
@@ -427,6 +498,8 @@ sub rss_agrigator {
 
         } elsif ($tmplink =~ /patriots\.win/) {
             if (defined &URLIdentifier::url_id) {
+                $reqstats{$reqstats{_stathour}}++;
+                
                 URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
                 $dbi->write();
 
@@ -488,10 +561,13 @@ sub rss_refresh {
         $dbi->write();
 
         if (!$feedcache{$db->{$chan}->{$title}->{url}}) {
+          $reqstats{$reqstats{_stathour}}++;
           $ua->get($db->{$chan}->{$title}->{url} => {Accpet => '*/*'} => sub {
             my ($ua, $tx) = @_;
 
             if (my $err = $tx->error) {
+              $failedreqstats{$reqstats{_stathour}}++;
+              $reqstats{$reqstats{_stathour}}--;
               return $bot->err("RSS: Error fetching RSS feed $title [$db->{$chan}->{$title}->{url}] for $chan: ".$err->{message}, 0);
             }
 
@@ -509,6 +585,8 @@ sub rss_refresh {
             return if (!$rss);
 
             if (my $err = $rss->error) {
+              $failedreqstats{$reqstats{_stathour}}++;
+              $reqstats{$reqstats{_stathour}}--;
               return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".$err->{message}, 0);
             }
 
@@ -518,6 +596,10 @@ sub rss_refresh {
 
             $feedcache->{$db->{$chan}->{$title}->{url}} = $body;
             rss_agrigator($body, $title, $chan);
+          })->catch(sub {
+              $failedreqstats{$reqstats{_stathour}}++;
+              $reqstats{$reqstats{_stathour}}--;
+              return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".shift(), 0);
           })->wait;
 
         } else {
@@ -532,6 +614,17 @@ sub rss_refresh {
 sub rss_tick {
   Mojo::IOLoop->one_tick();
   rss_refresh();
+
+  if (strftime("%I %p", gmtime(time)) ne $reqstats{_stathour}) {
+      $reqstats{_stathour} = strftime("%I %p", gmtime(time));
+  }
+
+  if ((gmtime(time))[3] != $reqstats{_statday}) {
+      %reqstats = ();
+      %failedreqstats = ();
+      $reqstats{_statday} = (gmtime(time))[3];
+      $reqstats{_stathour} = strftime("%I %p", gmtime(time));
+  }
 }
 
 sub unloader {
@@ -544,6 +637,9 @@ sub unloader {
 
   $help->del_help("rss", "Channel");
   
+  $bot->store("RSS.reqstats", \%reqstats);
+  $bot->store("RSS.failedreqstats", \%failedreqstats);
+
   if ($bot->isloaded("WebAdmin")) {
     my $router= $web->router();
     $web->del_navbar_link("RSS");

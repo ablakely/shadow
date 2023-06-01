@@ -1,6 +1,6 @@
                 <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-body-tertiary sidebar collapse">
-                    <div class="position-sticky pt-3 sidebar-sticky">
-                        <ul id="navbar" class="nav flex-column">
+                    <div id="navbar" class="position-sticky pt-3 sidebar-sticky">
+                        <ul class="nav flex-column">
                                 <% for (var i = 0; i < navbar.length; i++) { %>
                                 <li class="nav-item">
                                     <% if (navbar[i].active) { %>
@@ -14,5 +14,21 @@
                                 </li>
                                 <% } %>
                         </ul>
+                    <% if (show_quicklinks) { %>
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                        <span><%= quicklinks_header %></span>
+                    </h6>
+                    <ul class="nav flex-column mb-auto">
+                        <% for (var i = 0; i < quicklinks.length; i++) { %> 
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2" href="<%= quicklinks[i].link %>">
+                                <span data-feather="<%= quicklinks[i].icon %>"></span>
+                                <%= quicklinks[i].text %>
+                            </a>
+                        </li>
+                        <% } %>
+                    </ul>
+                    <% } %>
                     </div>
+
                 </nav>

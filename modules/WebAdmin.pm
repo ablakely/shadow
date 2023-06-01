@@ -58,6 +58,10 @@ sub render {
         $args->{navbar}  = \@tmp;
     }
 
+    if (!exists($args->{show_quicklinks})) {
+        $args->{show_quicklinks} = 0;
+    }
+
     $args->{include} = sub {
         my ($file, $incargs, $filebuf, $buf) = @_;
 
