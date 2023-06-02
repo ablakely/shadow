@@ -105,8 +105,40 @@
                 <%= include('inc/navbar.ejs') %>
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">RSS</h1>
+                        <h1 class="h2">RSS: <%= chan %></h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="btn-group me-2">
+                                <a href="/rss?deleteChan=<%= chan.replace('#', '') %>" type="button" class="btn btn-sm btn-outline-danger"><span data-feather="trash"></span> Delete</a>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <table class="table">
+                        <thead>
+                            <th>Feed</th>
+                            <th>Sync Interval</th>
+                            <th>Last Sync</th>
+                            <th>Format</th>
+                            <th>Actions</th>
+                        </thead>
+                        <tbody>
+                            <% for (var i = 0; i < dbk.length; i++) { %>
+                            <tr>
+                                <td><a href="<%= db[dbk[i]].url %>"><%= dbk[i] %></a></td>
+                                <td><%= db[dbk[i]].syncInterval %></td>
+                                <td><%= gmtime(db[dbk[i]].lastSync) %></td>
+                                <td><%= db[dbk[i]].format %></td>
+                                <td>
+                                    <div class="padbtns">
+                                        <button type="button" data-bs-toggle="modal" data-bs-target="#editFeed" data-bs-feed="<%= dbk[i] %>" class="btn btn-secondary btn-sm"><span class="align-text-bottom" data-feather="edit"></span></button>
+                                        <a href="/rss?deleteFeed=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span></a>
+                                        <a href="/rss?toggleAutoSync=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-info btn-sm"><span class="align-text-bottom" data-feather="zap-off"></span></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
                 </main>
             </div>
         </div>

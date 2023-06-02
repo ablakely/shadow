@@ -65,7 +65,7 @@ sub doWeather {
     my $WOUT;
     my $useF = 0;
 
-    my $acclocation = $acc->get_account_prop($nick, "weather.location");
+    my $acclocation = $acc->get_account_prop($nick, "weather.location") if ($useaccounts);
 
     if (!$text && $acclocation) {
         $text = $acclocation;
@@ -73,8 +73,8 @@ sub doWeather {
         return $bot->notice($nick, "Command usage: weather <city | postal code> (example: .w Memphis, TN)");
     }
 
+    my @inputSplit = split(/\, /, $text);
     if ($text =~ /\, /) {
-        my @inputSplit = split(/\, /, $text);
         my $len = @inputSplit;
 
         if ($len == 2) {
@@ -97,7 +97,7 @@ sub doWeather {
             $weather->{main}->{feels_like} = ($weather->{main}->{feels_like} * 9/5) + 32;
         }
 
-        if ($inputSplit[1] ne "") {
+        if (exists($inputSplit[1])) {
             $weather->{name} .= ", $inputSplit[1]";
         }
 

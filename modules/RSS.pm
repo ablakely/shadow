@@ -148,12 +148,19 @@ sub loader {
                 $router->headers($client);
 
                 if (exists($params->{chan})) {
+                    $params->{chan} = "#".$params->{chan};
+
+                    my @dbk = sort(keys(%{$db->{$params->{chan}}}));
+
                     return $web->out($client, $web->render("mod-rss/view.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
                         quicklinks_header => "Channels",
                         quicklinks => \@chanlinks,
-                        db => $db->{$params->{chan}}
+                        chan => $params->{chan},
+                        db => $db->{$params->{chan}},
+                        dbk => \@dbk,
+                        gmtime => sub { return "".gmtime(shift())." GMT"; }
                     }));
                 } else {
                     my @labels;
@@ -166,7 +173,6 @@ sub loader {
                     
                     my @data;
                     my @failed;
-
 
                     foreach my $label (@labels) {
                         next if ($label =~ /^\_/);
@@ -407,7 +413,9 @@ sub sortTimeStampArray {
         }
     }
 
-    return (@AMR, @PMR);
+    my @ret = (@AMR, @PMR);
+
+    return @ret;
 }
 
 sub calc_interval {
