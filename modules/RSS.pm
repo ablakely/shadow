@@ -378,7 +378,7 @@ sub rss_irc_interface {
 
 sub sortTimeStampArray {
     my (@arr) = @_;
-    my (@ret, @AM, @PM);
+    my (@AM, @PM, @AMR, @PMR);
 
     foreach my $v (@arr) {
         if ($v =~ /AM/) {
@@ -388,15 +388,26 @@ sub sortTimeStampArray {
         }
     }
 
-    foreach my $v (sort(@AM)) {
-        push(@ret, $v);
+    @AM = sort(@AM);
+    @PM = sort(@PM);
+
+    foreach my $v (@AM) {
+        if ($v =~ /12/) {
+            unshift(@AMR, $v);
+        } else {
+            push(@AMR, $v);
+        }
     }
     
-    foreach my $v (sort(@PM)) {
-        push(@ret, $v);
+    foreach my $v (@PM) {
+        if ($v =~ /12/) {
+            unshift(@PMR, $v);
+        } else {
+            push(@PMR, $v);
+        }
     }
 
-    return @ret;
+    return (@AMR, @PMR);
 }
 
 sub calc_interval {
