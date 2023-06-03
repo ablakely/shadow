@@ -14,6 +14,8 @@
 #       "format": "%FEED%: %TITLE% [%URL%]",
 #       lastSync: epoch,
 #       syncInterval: seconds,
+#       autoSync: 1,
+#       fetchMeta: 1,
 #       read: [{
 #         url: "",
 #         lastRecieved: epoch
@@ -139,28 +141,58 @@ sub loader {
                 $chan =~ s/\#//;
                 push(@chanlinks, {
                     text => $chan,
-                    link => "/rss?chan=$chan",
+                    link => "/rss?view=$chan",
                     icon => "hash"
                 });
             }
 
             if ($web->checkSession($headers)) {
-                $router->headers($client);
 
-                if (exists($params->{chan})) {
-                    $params->{chan} = "#".$params->{chan};
+                if (exists($params->{deleteChan})) {
+                    $params->{deleteChan} = "#".$params->{deleteChan}; 
 
-                    my @dbk = sort(keys(%{$db->{$params->{chan}}}));
+                    if (exists($db->{$params->{deleteChan}})) {
+                        delete $db->{$params->{deleteChan}};
+                        $dbi->write();
+                    }
+                    
+                    return $router->redirect($client, '..');
+                } elsif (exists($params->{chan}) && exists($params->{deleteFeed})) {
+                    $params->{chan} = "#".$params->{chan}; 
 
+                    if (exists($db->{$params->{chan}}->{$params->{deleteFeed}})) {
+                        delete $db->{$params->{chan}}->{$params->{deleteFeed}};
+                        $dbi->write();
+                    }
+                    
+                    return $router->redirect($client, '..');
+                } elsif (exists($params->{chan}) && exists($params->{toggleAutoSync})) {
+                    $params->{chan} = "#".$params->{chan}; 
+
+                    if (exists($db->{$params->{chan}}->{$params->{toggleAutoSync}}->{autoSync})) {
+                        $db->{$params->{chan}}->{$params->{toggleAutoSync}}->{autoSync} = $db->{$params->{chan}}->{$params->{toggleAutoSync}}->{autoSync} ? 0 : 1;
+                        $dbi->write();
+                    }
+
+                    $params->{chan} = substr($params->{chan}, 1, length($params->{chan}));
+
+                    return $router->redirect($client, '/rss?view='.$params->{chan});
+                } elsif (exists($params->{view})) {
+                    $params->{view} = "#".$params->{view};
+
+                    my @dbk = sort(keys(%{$db->{$params->{view}}}));
+
+                    $router->headers($client);
                     return $web->out($client, $web->render("mod-rss/view.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
                         quicklinks_header => "Channels",
                         quicklinks => \@chanlinks,
-                        chan => $params->{chan},
-                        db => $db->{$params->{chan}},
+                        chan => $params->{view},
+                        db => $db->{$params->{view}},
                         dbk => \@dbk,
-                        gmtime => sub { return "".gmtime(shift())." GMT"; }
+                        gmtime => sub { return "".gmtime(shift())." GMT"; },
+                        supportedURL => sub { return 0 if (!$bot->isloaded("URLIdentifier")); return URLIdentifier::is_supported(shift()); }
                     }));
                 } else {
                     my @labels;
@@ -189,6 +221,8 @@ sub loader {
                         $totalfeeds += scalar(keys(%{$db->{$chan}}));
                     }
 
+
+                    $router->headers($client);
                     return $web->out($client, $web->render("mod-rss/index.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
@@ -482,20 +516,28 @@ sub rss_updateread {
 
 sub update_synctime {
     my ($chan, $title, @times) = @_;
-    my $freq = calc_interval(@times);
-
-    if ($freq < 400) {
-        $freq = 400;
-    } elsif ($freq > 1320) {
-        $freq = 1320;
-    }
-
     my $db = ${$dbi->read("feeds.db")};
-    if (exists($db->{$chan}->{$title})) {
-        $bot->log("RSS: Updating SYNCTIME for feed [$title:$chan] to $freq", "Modules");
-        $db->{$chan}->{$title}->{syncInterval} = "$freq";
-        return $dbi->write();
+
+    if (!exists($db->{$chan}->{$title}->{autoSync})) {
+        $db->{$chan}->{$title}->{autoSync} = 1;
+    } elsif ($db->{$chan}->{$title}->{autoSync} == 1) {
+        my $freq = calc_interval(@times);
+
+        if ($freq < 400) {
+            $freq = 400;
+        } elsif ($freq > 1320) {
+            $freq = 1320;
+        }
+
+        my $db = ${$dbi->read("feeds.db")};
+        if (exists($db->{$chan}->{$title})) {
+            $bot->log("RSS: Updating SYNCTIME for feed [$title:$chan] to $freq", "Modules");
+            $db->{$chan}->{$title}->{syncInterval} = "$freq";
+            return $dbi->write();
+        }
     }
+
+    return 0;
 }
 
 sub rss_agrigator {
@@ -525,28 +567,23 @@ sub rss_agrigator {
 
         $dbi->write();
 
-        if ($tmplink =~ /nitter\.net/) {
+        if ($bot->isloaded("URLIdentifier")) {
             $tmplink =~ s/nitter\.net/twitter\.com/;
+            if (URLIdentifier::is_supported($tmplink)) {
+                if (!exists($db->{$chan}->{$title}->{fetchMeta})) {
+                    $db->{$chan}->{$title}->{fetchMeta} = 1;
+                    $dbi->write();
+                }
 
-            if (defined &URLIdentifier::url_id) {
-                $reqstats{$reqstats{_stathour}}++;
-                
-                URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-                $dbi->write();
+                if ($db->{$chan}->{$title}->{fetchMeta}) {
+                    $reqstats{$reqstats{_stathour}}++;
+                    
+                    URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
+                    $dbi->write();
 
-                update_synctime($chan, $title, @times);
-                return;
-            }
-
-        } elsif ($tmplink =~ /patriots\.win/) {
-            if (defined &URLIdentifier::url_id) {
-                $reqstats{$reqstats{_stathour}}++;
-                
-                URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-                $dbi->write();
-
-                update_synctime($chan, $title, @times);
-                return;
+                    update_synctime($chan, $title, @times);
+                    return;
+                }
             }
         }
 

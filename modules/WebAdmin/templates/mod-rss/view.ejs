@@ -107,8 +107,10 @@
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">RSS: <%= chan %></h1>
                         <div class="btn-toolbar mb-2 mb-md-0">
-                            <div class="btn-group me-2">
-                                <a href="/rss?deleteChan=<%= chan.replace('#', '') %>" type="button" class="btn btn-sm btn-outline-danger"><span data-feather="trash"></span> Delete</a>
+                            <div class="me-2">
+                                <button title="Add a new feed" type="button" data-bs-toggle="modal" data-bs-target="#addFeed" class="btn btn-sm btn-primary"><span class="align-text-bottom" data-feather="file-plus"></span></button>
+                                <button title="Delete the channel and all of it's feeds" type="button" data-bs-toggle="modal" data-bs-target="#confirmDelete" class="btn btn-sm btn-danger"><span class="align-text-bottom" data-feather="trash"></span></button>
+                                <button title="Channel settings" type="button" data-bs-toggle="modal" data-bs-target="#chanSettings" class="btn btn-sm btn-secondary"><span class="align-text-bottom" data-feather="settings"></span></button>
                             </div>
                         </div>
                     </div>
@@ -127,12 +129,29 @@
                                 <td><a href="<%= db[dbk[i]].url %>"><%= dbk[i] %></a></td>
                                 <td><%= db[dbk[i]].syncInterval %></td>
                                 <td><%= gmtime(db[dbk[i]].lastSync) %></td>
+                                <% if (db[dbk[i]].fetchMeta) { %>
+                                <td>This feed is displayed using URLIdentifier</td>
+                                <% } else { %>
                                 <td><%= db[dbk[i]].format %></td>
+                                <% } %>
                                 <td>
-                                    <div class="padbtns">
-                                        <button type="button" data-bs-toggle="modal" data-bs-target="#editFeed" data-bs-feed="<%= dbk[i] %>" class="btn btn-secondary btn-sm"><span class="align-text-bottom" data-feather="edit"></span></button>
-                                        <a href="/rss?deleteFeed=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span></a>
-                                        <a href="/rss?toggleAutoSync=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-info btn-sm"><span class="align-text-bottom" data-feather="zap-off"></span></a>
+                                    <div class="btn-toolbar">
+                                        <div class="me-2">
+                                            <button type="button" data-bs-toggle="modal" data-bs-target="#editFeed" data-bs-urlid="<%= db[dbk[i]].fetchMeta %>" data-bs-urlid-supported="<%= supportedURL(db[dbk[i]].url) %>" data-bs-autosync="<%= db[dbk[i]].autoSync %>" data-bs-feed="<%= db[dbk[i]].url %>" data-bs-name="<%= dbk[i] %>" data-bs-syncinterval="<%= db[dbk[i]].syncInterval %>" data-bs-format="<%= db[dbk[i]].format %>" class="btn btn-outline-secondary btn-sm"><span class="align-text-bottom" data-feather="edit"></span></button>
+                                            <a href="/rss?deleteFeed=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span></a>
+                                            <% if (db[dbk[i]].autoSync) { %>
+                                            <a href="/rss?toggleAutoSync=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-info btn-sm" title="Turn off auto sync time"><span class="align-text-bottom" data-feather="zap"></span></a>
+                                            <% } else { %>
+                                            <a href="/rss?toggleAutoSync=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-info btn-sm" title="Turn on auto sync time"><span class="align-text-bottom" data-feather="zap-off"></span></a>
+                                            <% } %>
+                                            <% if (supportedURL(db[dbk[i]].url)) { %>
+                                            <% if (db[dbk[i]].fetchMeta) { %>
+                                            <a href="/rss?toggleURLPreview=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-warning btn-sm" title="Turn off URL previews using URLIdentifier module."><span class="align-text-bottom" data-feather="cloud"></span></a>
+                                            <% } else { %>
+                                            <a href="/rss?toggleURLPreview=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-warning btn-sm" title="Turn on URL previews using URLIdentifier module."><span class="align-text-bottom" data-feather="cloud-off"></span></a>
+                                            <% } %>
+                                            <% } %>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -143,40 +162,159 @@
             </div>
         </div>
 
+        <div class="modal fade" id="addFeed" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="post" action="/rss-add">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="addModalLabel">New Feed</h1>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="addInputName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="addInputName" aria-describedby="addNameHelp">
+                                <div id="addNameHelp" class="form-text">Name for the RSS feed.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addInputURL" class="form-label">URL</label>
+                                <input type="url" class="form-control" id="addInputURL" aria-describedby="addURLHelp">
+                                <div id="addURLHelp" class="form-text">URL for the RSS feed.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addInputFormat" class="form-label">Format</label>
+                                <input type="text" class="form-control" id="addInputFormat" aria-describedby="addFormatHelp" value="%FEED%: %TITLE% [%URL%]">
+                                <div id="addFormatHelp" class="form-text">
+                                    Format used to display the RSS feed in the channel.
+                                </div>
+                                <table class="table table-sm table-borderless form-text">
+                                    <thead>
+                                        <tr>
+                                            <th>Variable</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>%FEED%</td>
+                                            <td>Name of the feed</td>
+                                        </tr>
+                                        <tr>
+                                            <td>%TITLE%</td>
+                                            <td>Title of the RSS post</td>
+                                        </tr>
+                                        <tr>
+                                            <td>%URL%</td>
+                                            <td>URL linked in the RSS post</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addInputSync" class="form-label">Refresh Interval</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="addInputSync" aria-describedby="syncHelp" value="400" disabled>
+                                    <div class="input-group-text">
+                                        <input class="form-check-input mt-0" id="autoSyncCheck" type="checkbox" value="" aria-label="Auto update refresh interval" checked>
+                                        <label style="margin-left: 5px" class="form-check-label" for="autoSyncCheck">Auto Update</label>
+                                    </div>
+                                </div>
+                                <div id="nameHelp" class="form-text">Refresh interval for the RSS feed in seconds.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" id="addSubmitButton" class="btn btn-success">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editFeed" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="post" action="/rss-edit">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="editModalLabel">Edit</h1>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="feed" />
+                            <div class="mb-3">
+                                <label for="editInputURL" class="form-label">URL</label>
+                                <input type="url" class="form-control" id="editInputURL" aria-describedby="URLHelp">
+                                <div id="URLHelp" class="form-text">URL for the RSS feed.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editInputSync" class="form-label">Sync Interval</label>
+                                <input type="number" class="form-control" id="editInputSync" aria-describedby="SyncHelp">
+                                <div id="SyncHelp" class="form-text">Feed refresh interval in seconds.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editInputFormat" class="form-label">Format</label>
+                                <input type="text" class="form-control" id="editInputFormat" aria-describedby="FormatHelp">
+                                <div id="FormatHelp" class="form-text">Output format used for the channel.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" id="editSubmitButton" class="btn btn-success">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
         <script src="/js/feather.min.js"  crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js" integrity="sha384-gdQErvCNWvHQZj6XZM0dNsAoY4v+j5P1XDpNkcM3HJG1Yx04ecqIHk7+4VBOCHOG" crossorigin="anonymous"></script>
         <script src="/js/dashboard.js"></script>
 
-        <script>
-            const resetModal = document.getElementById('resetPassword')
-            if (resetModal) {
-                resetModal.addEventListener('show.bs.modal', event => {
+        <script> 
+            $("#autoSyncCheck").change(function() {
+                $("#addInputSync").prop('disabled', this.checked ? true : false)
+            });
+
+            const editModal = document.getElementById('editFeed')
+            if (editModal) {
+                editModal.addEventListener('show.bs.modal', event => {
                     const button = event.relatedTarget
-                    const nick = button.getAttribute('data-bs-user')
+                    const feed = button.getAttribute('data-bs-feed')
+                    const feedURL = button.getAttribute('data-bs-feed')
+                    const syncInt = button.getAttribute('data-bs-syncinterval')
+                    const format  = button.getAttribute('data-bs-format')
+                    const autosync  = button.getAttribute('data-bs-autosync')
+                    const name = button.getAttribute('data-bs-name')
+                    const urlSupported = button.getAttribute('data-bs-urlid-supported')
+                    const urlEnabled = button.getAttribute('data-bs-urlid')
 
-                    const modalTitle = resetModal.querySelector('.modal-title')
-                    const modalBodyInput = resetModal.querySelector('.modal-body input')
+                    const modalTitle = editModal.querySelector('.modal-title')
+                    const modalBodyInput = editModal.querySelector('.modal-body input')
 
-                    modalTitle.textContent = `Reset password for ${nick}`
-                    modalBodyInput.value = nick
-                })
-            }
+                    modalTitle.textContent = `Edit ${name}`
+                    modalBodyInput.value = feed
+                    
+                    const formatInp = document.getElementById('editInputFormat')
+                    const syncInp = document.getElementById('editInputSync')
+                    const urlInp = document.getElementById('editInputURL')
+                    const formatHelp = document.getElementById('formatHelp')
 
-            const confirmModal = document.getElementById('confirmDelete')
-            const confirmBtn   = document.getElementById('confirmDeleteButton')
+                    if (parseInt(autosync)) {
+                        syncInp.disabled = true
+                    } else {
+                        syncInp.disabled = false
+                    }
+                
+                    formatInp.value = format 
+                    syncInp.value = syncInt
+                    urlInp.value = feedURL
 
-            if (confirmModal) {
-                confirmModal.addEventListener('show.bs.modal', event => {
-                    const button = event.relatedTarget
-                    const nick = button.getAttribute('data-bs-user')
-
-                    const modalTitle = confirmModal.querySelector('.modal-title')
-
-                    modalTitle.textContent = `Delete ${nick}`
-                    confirmBtn.innerHTML = `Delete ${nick}`
-                    confirmBtn.href = `/accounts?delete=${nick}`
+                    if (parseInt(urlEnabled)) {
+                        formatInp.disabled = true
+                        formatInp.value = "This feed is displayed using URLIdentifier"
+                    } else {
+                        formatInp.disabled = false
+                    }
                 })
             }
         </script>
