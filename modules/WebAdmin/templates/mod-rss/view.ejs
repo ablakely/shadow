@@ -109,7 +109,7 @@
                         <div class="btn-toolbar mb-2 mb-md-0">
                             <div class="me-2">
                                 <button title="Add a new feed" type="button" data-bs-toggle="modal" data-bs-target="#addFeed" class="btn btn-sm btn-primary"><span class="align-text-bottom" data-feather="file-plus"></span></button>
-                                <button title="Delete the channel and all of it's feeds" type="button" data-bs-toggle="modal" data-bs-target="#confirmDelete" class="btn btn-sm btn-danger"><span class="align-text-bottom" data-feather="trash"></span></button>
+                                <button title="Delete the channel and all of it's feeds" type="button" data-bs-toggle="modal" data-bs-target="#confirmDelete" data-bs-what="<%= chan %>" class="btn btn-sm btn-danger"><span class="align-text-bottom" data-feather="trash"></span></button>
                                 <button title="Channel settings" type="button" data-bs-toggle="modal" data-bs-target="#chanSettings" class="btn btn-sm btn-secondary"><span class="align-text-bottom" data-feather="settings"></span></button>
                             </div>
                         </div>
@@ -138,7 +138,7 @@
                                     <div class="btn-toolbar">
                                         <div class="me-2">
                                             <button type="button" data-bs-toggle="modal" data-bs-target="#editFeed" data-bs-urlid="<%= db[dbk[i]].fetchMeta %>" data-bs-urlid-supported="<%= supportedURL(db[dbk[i]].url) %>" data-bs-autosync="<%= db[dbk[i]].autoSync %>" data-bs-feed="<%= db[dbk[i]].url %>" data-bs-name="<%= dbk[i] %>" data-bs-syncinterval="<%= db[dbk[i]].syncInterval %>" data-bs-format="<%= db[dbk[i]].format %>" class="btn btn-outline-secondary btn-sm"><span class="align-text-bottom" data-feather="edit"></span></button>
-                                            <a href="/rss?deleteFeed=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span></a>
+                                            <button type="button" data-bs-toggle="modal" data-bs-target="#confirmDelete" data-bs-what="<%= dbk[i] %>" class="btn btn-outline-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span></button>
                                             <% if (db[dbk[i]].autoSync) { %>
                                             <a href="/rss?toggleAutoSync=<%= dbk[i] %>&chan=<%= chan.replace('#', '') %>" class="btn btn-outline-info btn-sm" title="Turn off auto sync time"><span class="align-text-bottom" data-feather="zap"></span></a>
                                             <% } else { %>
@@ -264,6 +264,24 @@
             </div>
         </div>
 
+        <div class="modal fade" id="confirmDelete" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="confirmModalLabel">Delete</h1>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            This action cannot be undone.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <a id="confirmDeleteButton" href="#" type="button" class="btn btn-danger">Delete</a>
+                    </div>
+                </div>
+            </div>
+        </div>
         <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
         <script src="/js/feather.min.js"  crossorigin="anonymous"></script>
@@ -274,6 +292,26 @@
             $("#autoSyncCheck").change(function() {
                 $("#addInputSync").prop('disabled', this.checked ? true : false)
             });
+
+            const confirmModal = document.getElementById('confirmDelete')
+            const confirmBtn   = document.getElementById('confirmDeleteButton')
+
+            if (confirmModal) {
+                confirmModal.addEventListener('show.bs.modal', event => {
+                    const button = event.relatedTarget
+                    const what = button.getAttribute('data-bs-what')
+
+                    const modalTitle = confirmModal.querySelector('.modal-title')
+
+                    modalTitle.textContent = `Delete ${what}`
+                    confirmBtn.innerHTML = `Delete ${what}`
+                    if (what.includes('#')) {
+                        confirmBtn.href = `/rss?deleteChan=${what}`
+                    } else {
+                        confirmBtn.href = `/rss?deleteFeed=${what}`
+                    }
+                })
+            }
 
             const editModal = document.getElementById('editFeed')
             if (editModal) {
