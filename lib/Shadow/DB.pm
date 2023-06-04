@@ -54,16 +54,34 @@ sub read {
 }
 
 sub write {
-    my ($self, $pretty) = @_;
+    my ($self, $free, $pretty) = @_;
 
-    $pretty = $pretty ? 1 : 0;
+    if (!exists($self->{buf})) {
+        if (&Shadow::Core::log) {
+            Shadow::Core::log(1, "Error: [DB] Write called on freed instance.", "System");
+            return 0;
+        } else {
+            confess("Error: [DB] Write called on freed instance.");
+        }
+    }
+
+    $pretty = 0 if (!$pretty);
+    $free   = 1 if (!$free);
+
     my $tmp = to_json($self->{buf}, { utf8 => 1, pretty => $pretty });
 
     open(my $fh, ">", $self->{filename}) or return 0;
     print $fh $tmp."\n";
     close($fh) or return 0;
 
+    delete $self->{buf} if ($free);;
     return 1;
+}
+
+sub free {
+    my ($self) = @_;
+
+    delete $self->{buf} if (exists($self->{buf}));
 }
 
 1;

@@ -38,8 +38,12 @@ sub acc_exists {
     my $db = ${$dbi->read("accounts.db")};
 
     if (exists($db->{$nick})) {
+        $dbi->free();
+
         return 1;
     }
+
+    $dbi->free();
 
     return 0;
 }
@@ -50,8 +54,13 @@ sub get_account_prop {
     my $db = ${$dbi->read("accounts.db")};
 
     if (exists($db->{$nick}->{$prop})) {
-        return $db->{$nick}->{$prop};
+        my $prop = $db->{$nick}->{$prop};
+        $dbi->free();
+
+        return $prop;
     }
+
+    $dbi->free();
 
     return undef;
 }
@@ -184,6 +193,7 @@ sub loader {
                         my @modk = keys(%{$modinfo});
 
                         $router->headers($client);
+                        $dbi->free();
                         return $web->out($client, $web->render("mod-accounts/view.ejs", {
                             nav_active => "Accounts",
                             acc => $params->{view},
@@ -193,6 +203,7 @@ sub loader {
                             modk => \@modk
                         }));
                     } else {
+                        $dbi->free();
                         return $router->redirect($client, "/accounts");
                     }
                 } elsif (exists($params->{delete})) {
@@ -202,6 +213,7 @@ sub loader {
                         $dbi->write();
                         return $router->redirect($client, "..", $headers);
                     } else {
+                        $dbi->free();
                         return $router->redirect($client, "/accounts");
                     }
                 } elsif (exists($params->{toggleadmin})) {
@@ -221,6 +233,7 @@ sub loader {
                         }  
                     }
                     
+                    $dbi->free();
                     return $web->out($client, $web->render("mod-accounts/index.ejs", {
                         nav_active => "Accounts",
                         db => $db,
@@ -228,8 +241,11 @@ sub loader {
                     }));
                 }
             } else {
+                $dbi->free();
                 $router->redirect($client, "/");
             }
+
+            $dbi->free();
         });
 
         $router->post('/accounts/resetpw', sub {
@@ -244,10 +260,14 @@ sub loader {
                     $dbi->write();
                 }
                 
+                $dbi->free();
                 return $router->redirect($client, "/accounts");
             } else {
+                $dbi->free();
                 return $router->redirect($client, "/");
             }
+
+            $dbi->free();
         });
     }
 }
@@ -261,7 +281,6 @@ sub hashpw {
 
 sub acc_register {
     my ($nick, $host, $text) = @_;
-    my $db = ${$dbi->read("accounts.db")};
     
     if ($bot->is_term_user($nick)) {
         return $bot->say($nick, "Account registration is only available over IRC.");
@@ -275,6 +294,7 @@ sub acc_register {
         return $bot->say($nick, "Account already exists for $nick.");
     }
 
+    my $db = ${$dbi->read("accounts.db")};
     my $ctime = time();
 
     $db->{$nick} = {};
@@ -295,7 +315,6 @@ sub acc_register {
 
 sub acc_id {
     my ($nick, $host, $text) = @_;
-    my $db = ${$dbi->read("accounts.db")};
 
     my ($inputNick, $inputPassword) = split(/ /, $text, 2);
     if (!$inputPassword) {
@@ -315,6 +334,7 @@ sub acc_id {
         return $bot->notice($nick, "An account doesn't exist for $inputNick, did you register?");
     }
 
+    my $db = ${$dbi->read("accounts.db")};
     my $hash = hashpw("$inputNick:".$db->{$inputNick}->{ctime}, $text);
 
     if ($hash eq $db->{$inputNick}->{password}) {
@@ -329,6 +349,7 @@ sub acc_id {
         $bot->say($nick, "You are now identifed.");
         $bot->log("Accounts: $nick identified as $inputNick", "Accounts");
     } else {
+        $dbi->free();
         return $bot->say($nick, "Invalid password.");
     }
 
@@ -337,10 +358,10 @@ sub acc_id {
 
 sub acc_passwd {
     my ($nick, $host, $text) = @_;
-
-    my $db = ${$dbi->read("accounts.db")};
     
+    my $db = ${$dbi->read("accounts.db")};
     if (!$sessions{$nick} || !exists($db->{$nick})) { 
+        $dbi->free();
         return $bot->notice($nick, "You are not identified or don't have an account.");
     }
 
@@ -354,7 +375,6 @@ sub acc_passwd {
 sub acc_quit_ev {
     my ($nick, $host) = @_;
 
-    my $db = ${$dbi->read()};
     if ($sessions{$nick}) {
         delete $sessions{$nick};
     }
@@ -367,7 +387,6 @@ sub acc_admin_interface {
         return $bot->say($nick, "Unauthorized");
     }
 
-    my $db  = ${$dbi->read("accounts.db")};
     my $fmt = Shadow::Formatter->new();
 
     # process commands
@@ -381,6 +400,7 @@ sub acc_admin_interface {
         return $bot->say($nick, "Missing subcommand.  See \x02".$help->cmdprefix($nick)."help accounts\x02 for more information.");
     }
 
+    my $db  = ${$dbi->read("accounts.db")};
     # accounts list
     # accounts remove <nick>
     # accounts whois <nick>
@@ -404,6 +424,7 @@ sub acc_admin_interface {
             $bot->say($nick, "Removed account $arg1");
             $bot->log($nick, "Accounts: Removed account $arg1 [Issued by $nick]", "Accounts");
         } else {
+            $dbi->free();
             return $bot->say($nick, "No account exists for $arg1");
         }
     } elsif ($cmd =~ /whois/i) {
@@ -425,6 +446,7 @@ sub acc_admin_interface {
 
             $bot->fastsay($nick, $fmt->table());
         } else {
+            $dbi->free();
             return $bot->say($nick, "No account exists for $arg1");
         }
     } elsif ($cmd =~ /passwd/i) {
@@ -432,9 +454,11 @@ sub acc_admin_interface {
             my $ctime = $db->{$arg1}->{ctime};
             $db->{$arg1}->{password} = hashpw("$nick:$ctime", $arg2);
         } else {
+            $dbi->free();
             return $bot->say($nick, "No account exists for $arg1");
         }
     } else {
+        $dbi->free();
         return $bot->say($nick, "Invalid subcommand.  See \x02".$help->cmdprefix($nick)."help accounts\x02 for more information.");
     }
 
@@ -464,6 +488,7 @@ sub unloader {
     }
 
     $bot->store("accounts.sessions", \%sessions);
+    $dbi->free();
 }
 
 1;

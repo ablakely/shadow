@@ -16,7 +16,9 @@
 #       syncInterval: seconds,
 #       autoSync: 1,
 #       fetchMeta: 1,
-#
+#       minRefreshInterval: 400,
+#       maxRefreshInterval: 1320,
+
 #       read: [{
 #         url: "",
 #         lastRecieved: epoch
@@ -62,14 +64,14 @@ $reqstats{_stathour} = strftime("%I %p", gmtime(time));
 $reqstats{_statday}  = (gmtime(time))[3];
 
 sub loader {
-    $bot->register("RSS", "v1.1", "Aaron Blakely", "RSS aggregator");
+    $bot->register("RSS", "v1.4", "Aaron Blakely", "RSS aggregator");
 
     if ($bot->storage_exists("RSS.reqstats")) {
         %reqstats = %{ $bot->retrieve("RSS.reqstats") };
         %failedreqstats = %{ $bot->retrieve("RSS.failedreqstats") };
     }
 
-    $bot->log("[RSS] Loading: RSS module v1.1", "Modules");
+    $bot->log("[RSS] Loading: RSS module v1.4", "Modules");
     $bot->add_handler('event connected', 'rss_connected');
     $bot->add_handler('privcmd rss', 'rss_irc_interface');
     $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
@@ -156,7 +158,8 @@ sub loader {
                         delete $db->{$params->{deleteChan}};
                         $dbi->write();
                     }
-                    
+                   
+                    $dbi->free();
                     return $router->redirect($client, '/rss');
                 } elsif (exists($params->{chan}) && exists($params->{deleteFeed})) {
                     $params->{chan} = "#".$params->{chan}; 
@@ -166,6 +169,7 @@ sub loader {
                         $dbi->write();
                     }
                     
+                    $dbi->free();
                     return $router->redirect($client, '/rss?view='.$params->{chan});
                 } elsif (exists($params->{chan}) && exists($params->{toggleAutoSync})) {
                     $params->{chan} = "#".$params->{chan}; 
@@ -177,6 +181,7 @@ sub loader {
 
                     $params->{chan} = substr($params->{chan}, 1, length($params->{chan}));
 
+                    $dbi->free();
                     return $router->redirect($client, '/rss?view='.$params->{chan});
                 } elsif (exists($params->{view})) {
                     $params->{view} = "#".$params->{view};
@@ -184,7 +189,7 @@ sub loader {
                     my @dbk = sort(keys(%{$db->{$params->{view}}}));
 
                     $router->headers($client);
-                    return $web->out($client, $web->render("mod-rss/view.ejs", {
+                    $web->out($client, $web->render("mod-rss/view.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
                         quicklinks_header => "Channels",
@@ -195,6 +200,8 @@ sub loader {
                         gmtime => sub { return "".gmtime(shift())." GMT"; },
                         supportedURL => sub { return 0 if (!$bot->isloaded("URLIdentifier")); return URLIdentifier::is_supported(shift()); }
                     }));
+
+                    return $dbi->free();
                 } else {
                     my @labels;
                     my $label;
@@ -224,7 +231,7 @@ sub loader {
 
 
                     $router->headers($client);
-                    return $web->out($client, $web->render("mod-rss/index.ejs", {
+                    $web->out($client, $web->render("mod-rss/index.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
                         quicklinks_header => "Channels",
@@ -235,16 +242,18 @@ sub loader {
                         totalfeeds => $totalfeeds,
                         chancount  => scalar(keys(%{$db}))
                     }));
+
+                    return $dbi->free();
                 } 
 
             } else {
+                $dbi->free();
                 return $router->redirect($client, "/");
             }
         });
 
         $router->post('/rss-edit', sub {
             my ($client, $params, $headers) = @_;
-            my $db = ${$dbi->read("feeds.db")};
 
             if ($web->checkSession($headers)) {
                 return $router->redirect($client, "/rss") unless (
@@ -258,6 +267,7 @@ sub loader {
                 my $feed = $params->{editInputFeed};
                 my $chan = $params->{editInputChan};
                 
+                my $db = ${$dbi->read("feeds.db")};
                 $db->{$chan}->{$feed}->{url} = $params->{editInputURL} ? $params->{editInputURL} : $db->{$chan}->{$feed}->{url};
                 $db->{$chan}->{$feed}->{syncInterval} = $params->{editInputSync} ? $params->{editInputSync} : $db->{$chan}->{$feed}->{syncInterval};
                 $db->{$chan}->{$feed}->{format} = $params->{editInputFormat} ? $params->{editInputFormat} : $db->{$chan}->{$feed}->{format};
@@ -272,7 +282,6 @@ sub loader {
 
         $router->post('/rss-chansettings', sub {
             my ($client, $params, $headers) = @_;
-            my $db = ${$dbi->read("feeds.db")};
 
             if ($web->checkSession($headers)) {
                 return $router->redirect($client, "/rss") unless (
@@ -282,13 +291,19 @@ sub loader {
                 );
 
                 my $chan = $params->{chanSettingsInputChan};
+                my $db = ${$dbi->read("feeds.db")};
 
+                $db->{$chan}->{minRefreshInterval} = $params->{chanSettingsInputMinSI} ? $params->{chanSettingsInputMinSI} : $db->{$chan}->{minRefreshInterval};
+                $db->{$chan}->{maxRefreshInterval} = $params->{chanSettingsInputMaxSI} ? $params->{chanSettingsInputMaxSI} : $db->{$chan}->{maxRefreshInterval};
+
+                $dbi->write();
+                $chan = substr($chan, 1, length($chan));
+                return $router->redirect($client, "/rss?view=$chan");
             } else {
                 return $router->redirect($client, '/');
             }
         });
     }
-
 }
 
 sub rss_connected {
@@ -315,6 +330,9 @@ sub rss_irc_interface {
         format => '%FEED%: %TITLE% [%URL%]',
         read => []
       };
+
+      $db->{lc($arg1)}->{minRefreshInterval} = 400;
+      $db->{lc($arg1)}->{maxRefreshInterval} = 1320;
 
       $dbi->write();
       $bot->notice($nick, "Added feed $arg2 [$arg3] for $arg1.");
@@ -416,6 +434,7 @@ sub rss_irc_interface {
       $bot->fastsay($nick, @out);
 
       $bot->log("RSS: LIST command issued by $nick for $arg1", "Modules");
+      $dbi->free();
     } else {
       $bot->notice($nick, "Command requres channel op (+o) mode.");
       $bot->log("RSS: Command denied for $nick: LIST $arg1", "Modules");
@@ -461,6 +480,8 @@ sub rss_irc_interface {
   } else {
     $bot->notice($nick, "Invalid command.  For help: /msg $Shadow::Core::nick help rss");
   }
+
+  $dbi->free();
 }
 
 sub sortTimeStampArray {
@@ -546,6 +567,8 @@ sub rss_checkread {
             return 1;
         }
     }
+
+    $dbi->free();
 }
 
 sub rss_updateread {
@@ -565,15 +588,23 @@ sub update_synctime {
     my ($chan, $title, @times) = @_;
     my $db = ${$dbi->read("feeds.db")};
 
+    if (!exists($db->{$chan}->{minRefreshInterval})) {
+        $db->{$chan}->{minRefreshInterval} = 400;
+    }
+
+    if (!exists($db->{$chan}->{maxRefreshInterval})) {
+        $db->{$chan}->{maxRefreshInterval} = 1320;
+    }
+
     if (!exists($db->{$chan}->{$title}->{autoSync})) {
         $db->{$chan}->{$title}->{autoSync} = 1;
     } elsif ($db->{$chan}->{$title}->{autoSync} == 1) {
         my $freq = calc_interval(@times);
 
-        if ($freq < 400) {
-            $freq = 400;
-        } elsif ($freq > 1320) {
-            $freq = 1320;
+        if ($freq < $db->{$chan}->{minRefreshInterval}) {
+            $freq = $db->{$chan}->{minRefreshInterval};
+        } elsif ($freq > $db->{$chan}->{maxRefreshInterval}) {
+            $freq = $db->{$chan}->{maxRefreshInterval};
         }
 
         my $db = ${$dbi->read("feeds.db")};
@@ -584,6 +615,7 @@ sub update_synctime {
         }
     }
 
+    $dbi->free();
     return 0;
 }
 
@@ -612,21 +644,21 @@ sub rss_agrigator {
             lastRecieved => time()
         });
 
-        $dbi->write();
+        $dbi->write(0);
 
         if ($bot->isloaded("URLIdentifier")) {
             $tmplink =~ s/nitter\.net/twitter\.com/;
             if (URLIdentifier::is_supported($tmplink)) {
                 if (!exists($db->{$chan}->{$title}->{fetchMeta})) {
                     $db->{$chan}->{$title}->{fetchMeta} = 1;
-                    $dbi->write();
+                    $dbi->write(0);
                 }
 
                 if ($db->{$chan}->{$title}->{fetchMeta}) {
                     $reqstats{$reqstats{_stathour}}++;
                     
                     URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-                    $dbi->write();
+                    $dbi->write(0);
 
                     update_synctime($chan, $title, @times);
                     return;
@@ -684,7 +716,7 @@ sub rss_refresh {
       if (time() >= $synctime) {
         $bot->log("RSS: Refreshing feed $title for $chan", "Modules");
         $db->{$chan}->{$title}->{lastSync} = time();
-        $dbi->write();
+        $dbi->write(0);
 
         if (!$feedcache{$db->{$chan}->{$title}->{url}}) {
           $reqstats{$reqstats{_stathour}}++;
@@ -694,6 +726,7 @@ sub rss_refresh {
             if (my $err = $tx->error) {
               $failedreqstats{$reqstats{_stathour}}++;
               $reqstats{$reqstats{_stathour}}--;
+              $dbi->free();
               return $bot->err("RSS: Error fetching RSS feed $title [$db->{$chan}->{$title}->{url}] for $chan: ".$err->{message}, 0);
             }
 
@@ -725,6 +758,7 @@ sub rss_refresh {
           })->catch(sub {
               $failedreqstats{$reqstats{_stathour}}++;
               $reqstats{$reqstats{_stathour}}--;
+              $dbi->free();
               return $bot->err("RSS: Error fetching RSS feed $title for $chan: ".shift(), 0);
           })->wait;
 
@@ -735,6 +769,7 @@ sub rss_refresh {
     }
   }
   %feedcache = ();
+  $dbi->free();
 }
 
 sub rss_tick {
@@ -773,6 +808,8 @@ sub unloader {
     $router->del('post', '/rss-edit');
     $router->del('post', '/rss-chansettings');
   }
+
+  $dbi->free()
 }
 
 1;
