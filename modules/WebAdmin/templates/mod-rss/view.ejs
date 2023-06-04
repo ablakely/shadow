@@ -291,15 +291,15 @@
                             <h1 class="modal-title fs-5" id="chanSettingsModalLabel">Edit</h1>
                         </div>
                         <div class="modal-body">
-                            <input type="hidden" name="feed" />
+                            <input type="hidden" name="chanSettingsInputChan" value="<%= chan %>" />
                             <div class="mb-3">
                                 <label for="chanSettingsInputURL" class="form-label">Minimum Refresh Interval</label>
-                                <input type="number" class="form-control" id="chanSettingsInputMinSI" aria-describedby="minSIHelp" value="<%= db.minRefreshInterval ? db.minRefreshInteral : 400 %>">
+                                <input type="number" class="form-control" name="chanSettingsInputMinSI" id="chanSettingsInputMinSI" aria-describedby="minSIHelp" value="<%= db.minRefreshInterval ? db.minRefreshInteral : 400 %>">
                                 <div id="minSIHelp" class="form-text">Minimum amount of seconds used to calculate a feed's refresh interval.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="chanSettingsInputSync" class="form-label">Maximum Refresh Interval</label>
-                                <input type="number" class="form-control" id="chanSettingsInputMaxSI" aria-describedby="maxSIHelp" value="<%= db.maxRefreshInterval ? db.maxRefreshInterval : 1320 %>">
+                                <input type="number" class="form-control" name="chanSettingsInputMaxSI" id="chanSettingsInputMaxSI" aria-describedby="maxSIHelp" value="<%= db.maxRefreshInterval ? db.maxRefreshInterval : 1320 %>">
                                 <div id="maxSIHelp" class="form-text">Maximum amount of seconds used to calculate a feed's refresh interval.</div>
                             </div>
                         </div>

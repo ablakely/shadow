@@ -16,6 +16,7 @@
 #       syncInterval: seconds,
 #       autoSync: 1,
 #       fetchMeta: 1,
+#
 #       read: [{
 #         url: "",
 #         lastRecieved: epoch
@@ -247,11 +248,12 @@ sub loader {
 
             if ($web->checkSession($headers)) {
                 return $router->redirect($client, "/rss") unless (
-                        exists($params->{editInputChan}) &&
-                        exists($params->{editInputFeed}) &&
-                        exists($params->{editInputURL})  &&
-                        exists($params->{editInputSync}) &&
-                        exists($params->{editInputFormat}));
+                    exists($params->{editInputChan}) &&
+                    exists($params->{editInputFeed}) &&
+                    exists($params->{editInputURL})  &&
+                    exists($params->{editInputSync}) &&
+                    exists($params->{editInputFormat})
+                );
                     
                 my $feed = $params->{editInputFeed};
                 my $chan = $params->{editInputChan};
@@ -269,7 +271,21 @@ sub loader {
         });
 
         $router->post('/rss-chansettings', sub {
+            my ($client, $params, $headers) = @_;
+            my $db = ${$dbi->read("feeds.db")};
 
+            if ($web->checkSession($headers)) {
+                return $router->redirect($client, "/rss") unless (
+                    exists($params->{chanSettingsInputChan})  &&
+                    exists($params->{chanSettingsInputMinSI}) &&
+                    exists($params->{chanSettingsInputMaxSI})
+                );
+
+                my $chan = $params->{chanSettingsInputChan};
+
+            } else {
+                return $router->redirect($client, '/');
+            }
         });
     }
 
