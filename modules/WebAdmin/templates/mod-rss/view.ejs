@@ -125,6 +125,7 @@
                         </thead>
                         <tbody>
                             <% for (var i = 0; i < dbk.length; i++) { %>
+                            <% if (/m(in|ax)RefreshInterval/.test(dbk[i])) { continue; } %>
                             <tr>
                                 <td><a href="<%= db[dbk[i]].url %>"><%= dbk[i] %></a></td>
                                 <td><%= db[dbk[i]].syncInterval %></td>
@@ -165,6 +166,8 @@
         <div class="modal fade" id="addFeed" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action="/rss-add">
+                    <input type="hidden" name="addInputChan" value="<%= chan %>">
+                    <input type="hidden" name="addInputChanMinRI" value="<%= db.minRefreshInterval ? db.minRefreshInterval : 400 %>"
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5" id="addModalLabel">New Feed</h1>
@@ -172,17 +175,17 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label for="addInputName" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="addInputName" aria-describedby="addNameHelp">
+                                <input type="text" class="form-control" name="addInputName" id="addInputName" aria-describedby="addNameHelp">
                                 <div id="addNameHelp" class="form-text">Name for the RSS feed.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="addInputURL" class="form-label">URL</label>
-                                <input type="url" class="form-control" id="addInputURL" aria-describedby="addURLHelp">
+                                <input type="url" class="form-control" name="addInputURL" id="addInputURL" aria-describedby="addURLHelp">
                                 <div id="addURLHelp" class="form-text">URL for the RSS feed.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="addInputFormat" class="form-label">Format</label>
-                                <input type="text" class="form-control" id="addInputFormat" aria-describedby="addFormatHelp" value="%FEED%: %TITLE% [%URL%]">
+                                <input type="text" class="form-control" name="addInputFormat" id="addInputFormat" aria-describedby="addFormatHelp" value="%FEED%: %TITLE% [%URL%]">
                                 <div id="addFormatHelp" class="form-text">
                                     Format used to display the RSS feed in the channel.
                                 </div>
@@ -212,9 +215,9 @@
                             <div class="mb-3">
                                 <label for="addInputSync" class="form-label">Refresh Interval</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" id="addInputSync" aria-describedby="syncHelp" value="400" disabled>
+                                    <input type="number" class="form-control" id="addInputSync" name="addInputSync" aria-describedby="syncHelp" value="400" disabled>
                                     <div class="input-group-text">
-                                        <input class="form-check-input mt-0" id="autoSyncCheck" type="checkbox" value="" aria-label="Auto update refresh interval" checked>
+                                        <input class="form-check-input mt-0" id="autoSyncCheck" name="addInputAutoSync" type="checkbox" value="" aria-label="Auto update refresh interval" checked>
                                         <label style="margin-left: 5px" class="form-check-label" for="autoSyncCheck">Auto Update</label>
                                     </div>
                                 </div>
@@ -294,7 +297,7 @@
                             <input type="hidden" name="chanSettingsInputChan" value="<%= chan %>" />
                             <div class="mb-3">
                                 <label for="chanSettingsInputURL" class="form-label">Minimum Refresh Interval</label>
-                                <input type="number" class="form-control" name="chanSettingsInputMinSI" id="chanSettingsInputMinSI" aria-describedby="minSIHelp" value="<%= db.minRefreshInterval ? db.minRefreshInteral : 400 %>">
+                                <input type="number" class="form-control" name="chanSettingsInputMinSI" id="chanSettingsInputMinSI" aria-describedby="minSIHelp" value="<%= db.minRefreshInterval ? db.minRefreshInterval : 400 %>">
                                 <div id="minSIHelp" class="form-text">Minimum amount of seconds used to calculate a feed's refresh interval.</div>
                             </div>
                             <div class="mb-3">

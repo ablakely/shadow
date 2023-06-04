@@ -65,8 +65,8 @@ sub write {
         }
     }
 
-    $pretty = 0 if (!$pretty);
-    $free   = 1 if (!$free);
+    $pretty = 0 if (scalar(@_) < 3);
+    $free   = 1 if (scalar(@_) < 2);
 
     my $tmp = to_json($self->{buf}, { utf8 => 1, pretty => $pretty });
 
@@ -74,7 +74,6 @@ sub write {
     print $fh $tmp."\n";
     close($fh) or return 0;
 
-    delete $self->{buf} if ($free);;
     return 1;
 }
 
