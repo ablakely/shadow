@@ -156,7 +156,7 @@ sub loader {
                         $dbi->write();
                     }
                     
-                    return $router->redirect($client, '..');
+                    return $router->redirect($client, '/rss');
                 } elsif (exists($params->{chan}) && exists($params->{deleteFeed})) {
                     $params->{chan} = "#".$params->{chan}; 
 
@@ -165,7 +165,7 @@ sub loader {
                         $dbi->write();
                     }
                     
-                    return $router->redirect($client, '..');
+                    return $router->redirect($client, '/rss?view='.$params->{chan});
                 } elsif (exists($params->{chan}) && exists($params->{toggleAutoSync})) {
                     $params->{chan} = "#".$params->{chan}; 
 
@@ -234,11 +234,42 @@ sub loader {
                         totalfeeds => $totalfeeds,
                         chancount  => scalar(keys(%{$db}))
                     }));
-                }
+                } 
 
             } else {
                 return $router->redirect($client, "/");
             }
+        });
+
+        $router->post('/rss-edit', sub {
+            my ($client, $params, $headers) = @_;
+            my $db = ${$dbi->read("feeds.db")};
+
+            if ($web->checkSession($headers)) {
+                return $router->redirect($client, "/rss") unless (
+                        exists($params->{editInputChan}) &&
+                        exists($params->{editInputFeed}) &&
+                        exists($params->{editInputURL})  &&
+                        exists($params->{editInputSync}) &&
+                        exists($params->{editInputFormat}));
+                    
+                my $feed = $params->{editInputFeed};
+                my $chan = $params->{editInputChan);
+                
+                $db->{$chan}->{$feed}->{url} = $params->{editInputURL} ? $params->{editInputURL} : $db->{$chan}->{$feed}->{url};
+                $db->{$chan}->{$feed}->{syncInterval} = $params->{editInputSync} ? $params->{editInputSync} : $db->{$chan}->{$feed}->{syncInterval};
+                $db->{$chan}->{$feed}->{format} = $params->{editInputFormat} ? $params->{editInputFormat} : $db->{$chan}->{$feed}->{format};
+                
+                $dbi->write();
+                $chan = substr($chan, 1, length($chan));
+                return $router->redirect($client, "/rss?view=$chan");
+            } else {
+                return $router->redirect($client, '/');
+            }
+        });
+
+        $router->post('/rss-chansettings', sub {
+
         });
     }
 
@@ -723,6 +754,8 @@ sub unloader {
     my $router= $web->router();
     $web->del_navbar_link("RSS");
     $router->del('get', '/rss');
+    $router->del('post', '/rss-edit');
+    $router->del('post', '/rss-chansettings');
   }
 }
 

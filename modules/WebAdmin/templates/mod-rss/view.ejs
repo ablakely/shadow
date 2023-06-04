@@ -238,20 +238,20 @@
                             <h1 class="modal-title fs-5" id="editModalLabel">Edit</h1>
                         </div>
                         <div class="modal-body">
-                            <input type="hidden" name="feed" />
+                            <input type="hidden" name="editInputFeed" />
                             <div class="mb-3">
                                 <label for="editInputURL" class="form-label">URL</label>
-                                <input type="url" class="form-control" id="editInputURL" aria-describedby="URLHelp">
+                                <input type="url" name="editInputURL" class="form-control" id="editInputURL" aria-describedby="URLHelp">
                                 <div id="URLHelp" class="form-text">URL for the RSS feed.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="editInputSync" class="form-label">Sync Interval</label>
-                                <input type="number" class="form-control" id="editInputSync" aria-describedby="SyncHelp">
+                                <input type="number" name="editInputSync" class="form-control" id="editInputSync" aria-describedby="SyncHelp">
                                 <div id="SyncHelp" class="form-text">Feed refresh interval in seconds.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="editInputFormat" class="form-label">Format</label>
-                                <input type="text" class="form-control" id="editInputFormat" aria-describedby="FormatHelp">
+                                <input type="text" name="editInputFormat" class="form-control" id="editInputFormat" aria-describedby="FormatHelp">
                                 <div id="FormatHelp" class="form-text">Output format used for the channel.</div>
                             </div>
                         </div>
