@@ -254,7 +254,7 @@ sub loader {
                         exists($params->{editInputFormat}));
                     
                 my $feed = $params->{editInputFeed};
-                my $chan = $params->{editInputChan);
+                my $chan = $params->{editInputChan};
                 
                 $db->{$chan}->{$feed}->{url} = $params->{editInputURL} ? $params->{editInputURL} : $db->{$chan}->{$feed}->{url};
                 $db->{$chan}->{$feed}->{syncInterval} = $params->{editInputSync} ? $params->{editInputSync} : $db->{$chan}->{$feed}->{syncInterval};

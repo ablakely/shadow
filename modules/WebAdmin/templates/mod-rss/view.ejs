@@ -130,7 +130,7 @@
                                 <td><%= db[dbk[i]].syncInterval %></td>
                                 <td><%= gmtime(db[dbk[i]].lastSync) %></td>
                                 <% if (db[dbk[i]].fetchMeta) { %>
-                                <td>This feed is displayed using URLIdentifier</td>
+                                <td class="text-warning"><i>This feed is displayed using URLIdentifier.</i></td>
                                 <% } else { %>
                                 <td><%= db[dbk[i]].format %></td>
                                 <% } %>
@@ -282,13 +282,45 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="chanSettings" tabindex="-1" aria-labelledby="chanSettingsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="post" action="/rss-chansettings">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="chanSettingsModalLabel">Edit</h1>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="feed" />
+                            <div class="mb-3">
+                                <label for="chanSettingsInputURL" class="form-label">Minimum Refresh Interval</label>
+                                <input type="number" class="form-control" id="chanSettingsInputMinSI" aria-describedby="minSIHelp" value="<%= db.minRefreshInterval ? db.minRefreshInteral : 400 %>">
+                                <div id="minSIHelp" class="form-text">Minimum amount of seconds used to calculate a feed's refresh interval.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chanSettingsInputSync" class="form-label">Maximum Refresh Interval</label>
+                                <input type="number" class="form-control" id="chanSettingsInputMaxSI" aria-describedby="maxSIHelp" value="<%= db.maxRefreshInterval ? db.maxRefreshInterval : 1320 %>">
+                                <div id="maxSIHelp" class="form-text">Maximum amount of seconds used to calculate a feed's refresh interval.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" id="chanSettingsSubmitButton" class="btn btn-success">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
         <script src="/js/feather.min.js"  crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js" integrity="sha384-gdQErvCNWvHQZj6XZM0dNsAoY4v+j5P1XDpNkcM3HJG1Yx04ecqIHk7+4VBOCHOG" crossorigin="anonymous"></script>
         <script src="/js/dashboard.js"></script>
 
-        <script> 
+        <script>
+            const chan = "<%= chan %>"
+
             $("#autoSyncCheck").change(function() {
                 $("#addInputSync").prop('disabled', this.checked ? true : false)
             });
@@ -310,6 +342,15 @@
                     } else {
                         confirmBtn.href = `/rss?deleteFeed=${what}`
                     }
+                })
+            }
+
+            const chanSettingModal = document.getElementById('chanSettings')
+            if (chanSettingModal) {
+                chanSettingModal.addEventListener('show.bs.modal', event => {
+                   const modalTitle = chanSettingModal.querySelector('.modal-title')
+
+                    modalTitle.textContent = `Edit ${chan}`
                 })
             }
 
