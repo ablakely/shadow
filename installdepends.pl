@@ -54,6 +54,8 @@ closedir(MODS);
 @depends = sortArray(@dependsRaw);
 
 foreach my $mod (@depends) {
+    next if ($mod =~ /Shadow\:\:/);
+
 	print "Checking for $mod...";
 	eval "require $mod";
 
@@ -65,7 +67,7 @@ foreach my $mod (@depends) {
 	}
 }
 
-print "\nDone.  Your enviornment is now prepared for shadow.\n";
+print "\nDone.  Your environment is now prepared for shadow.\n";
 print "Make sure you edit etc/shadow.conf then run ./shadow\n";
 my $whome = `whoami`;
 chomp $whome;

@@ -1,5 +1,6 @@
 package WebAdmin;
 
+use utf8;
 use Encode qw(encode);
 use lib './modules';
 use IO::Socket::INET;
@@ -56,6 +57,10 @@ sub render {
     if (exists($args->{nav_active})) {
         my @tmp = $wa->navbar($args->{nav_active});
         $args->{navbar}  = \@tmp;
+    }
+
+    if (!exists($args->{show_quicklinks})) {
+        $args->{show_quicklinks} = 0;
     }
 
     $args->{include} = sub {
@@ -183,7 +188,7 @@ sub closeClient {
     delete $inbuf{$client};
     delete $outbuf{$client};
     delete $ready{$client};
-    delete $sockmap{$client->peerhost()};
+    delete $sockmap{$client->peerhost()} if (exists($sockmap{$client->peerhost()}));
 
     $select->remove($client);
     close $client;
@@ -202,6 +207,7 @@ sub wa_tick {
                 next;
             }
             
+            $data = encode('UTF-8', $data);
             handleHTTPRequest($client, $data);
         }
     }

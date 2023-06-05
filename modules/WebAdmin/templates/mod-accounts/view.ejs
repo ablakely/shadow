@@ -161,8 +161,9 @@
                                 <tbody>
                                     <% for (var i = 0; i < modk.length; i++) { %>
                                     <tr>
-                                        <td><%= modk[i].split(".")[0] %></td>
-                                        <td><%= modk[i].split(".")[1] %></td>
+                                        <% var modsplit = modk[i].split("."); %>
+                                        <td><%= modsplit.length > 1 ? modsplit.shift() : "N/A" %></td>
+                                        <td><%= modsplit.join(".") %></td>
                                         <td><%= modinfo[modk[i]] %></td>
                                     </tr>
                                     <% } %>

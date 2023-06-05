@@ -34,11 +34,30 @@ use Shadow::Help;
 our $bot  = Shadow::Core->new();
 our $help = Shadow::Help->new();
 
+our @supported_domains = (
+    'youtube.com', 'youtu.be', 'twitter.com', 'nitter.net',
+    'browser.geekbench.com/v6/cpu', 'ebay.com', 'patriots.win',
+    'rumble.com', 'odysee.com', 'patriots.wiki'
+);
+
+sub is_supported {
+    my ($turl) = @_;
+
+    foreach my $url (@supported_domains) {
+        return 1 if ($turl =~ /\Q$url/);
+    }
+
+    return 0;
+}
+
+
 sub loader {
   $bot->register("URLIdentifier", "v1.5", "Aaron Blakely", "Fetches title and other information about URLs");
 
   $bot->add_handler('message channel', 'url_id');
 }
+
+
 
 sub getSiteInfo {
     my ($url) = @_;

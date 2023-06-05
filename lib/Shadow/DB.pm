@@ -8,6 +8,7 @@ package Shadow::DB;
 # Copyright 2023 (C) Aaron Blakely
 #
 
+use Encode;
 use strict;
 use warnings;
 use Carp;
@@ -35,6 +36,7 @@ sub read {
         {
             local $/;
             $tmp = <$fh>;
+            $tmp = decode_utf8($tmp);
 
         }
         close($fh) or return 0;
@@ -54,16 +56,34 @@ sub read {
 }
 
 sub write {
-    my ($self, $pretty) = @_;
+    my ($self, $free, $pretty) = @_;
 
-    $pretty = $pretty ? 1 : 0;
+    if (!exists($self->{buf})) {
+        if (&Shadow::Core::log) {
+            Shadow::Core::log(1, "Error: [DB] Write called on freed instance.", "System");
+            return 0;
+        } else {
+            confess("Error: [DB] Write called on freed instance.");
+        }
+    }
+
+    $pretty = 0 if (scalar(@_) < 3);
+    $free   = 1 if (scalar(@_) < 2);
+
     my $tmp = to_json($self->{buf}, { utf8 => 1, pretty => $pretty });
+    $tmp = encode_utf8($tmp); 
 
     open(my $fh, ">", $self->{filename}) or return 0;
     print $fh $tmp."\n";
     close($fh) or return 0;
 
     return 1;
+}
+
+sub free {
+    my ($self) = @_;
+
+    delete $self->{buf} if (exists($self->{buf}));
 }
 
 1;

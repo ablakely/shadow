@@ -63,6 +63,7 @@ sub aliasHandler {
 
     if ($cmdSplit[0] eq "add" || $cmdSplit[0] eq "ADD") {
         if (!$cmdSplit[1] || !$cmdSplit[2] || !$cmdSplit[3]) {
+            $dbi->free();
             return $bot->notice($nick, "\002Syntax\002: ${cmdprefix}alias add <chan> <trigger> <response>");
         }
 
@@ -79,6 +80,7 @@ sub aliasHandler {
 
     } elsif ($cmdSplit[0] eq "del" || $cmdSplit[0] eq "DEL") {
         if (!$cmdSplit[1] || !$cmdSplit[2]) {
+            $dbi->free();
             return $bot->notice($nick, "\002Syntax\002: ${cmdprefix}alias del <chan> <trigger>");
         }
 
@@ -93,6 +95,7 @@ sub aliasHandler {
         }
     } elsif ($cmdSplit[0] eq "update" || $cmdSplit[0] eq "UPDATE") {
         if (!$cmdSplit[1] || !$cmdSplit[2] || !$cmdSplit[3]) {
+            $dbi->free();
             return $bot->notice($nick, "\002Syntax\002: /msg ${cmdprefix}alias update <chan> <trigger> <response>");
         }
 
@@ -109,11 +112,15 @@ sub aliasHandler {
 
     } elsif ($cmdSplit[0] eq "list" || $cmdSplit[0] eq "LIST") {
         if (!$cmdSplit[1]) {
+            $dbi->free();
             return $bot->notice($nick, "\002Syntax\002: /msg ${cmdprefix}alias list <chan>");
         }
 
         if ($bot->isin($cmdSplit[1], $Shadow::Core::nick) && $bot->isop($nick, $cmdSplit[1])) {
-            return $bot->notice($nick, "No aliases exist for $cmdSplit[1]") if (!scalar(keys(%{$db->{Aliases}->{lc($cmdSplit[1])}})));
+            if (!scalar(keys(%{$db->{Aliases}->{lc($cmdSplit[1])}}))) {
+                $dbi->free();
+                return $bot->notice($nick, "No aliases exist for $cmdSplit[1]");
+            }
 
             my $fmt = Shadow::Formatter->new();
             $fmt->table_header("Trigger", "Response");
@@ -128,6 +135,7 @@ sub aliasHandler {
             $bot->log("Aliases: Command denied for $nick: LIST $cmdSplit[1]", "Modules");
         }
     } else {
+        $dbi->free();
         return $bot->notice($nick, "\002Syntax\002: ${cmdprefix}alias <add|del|update|list> <channel> <trigger> [response]");
     }
 
@@ -143,6 +151,8 @@ sub chanMessageHandler {
         if (exists($db->{Aliases}->{$chan}->{$1})) {
             $bot->say($chan, $db->{Aliases}->{lc($chan)}->{$1});
         }
+
+        $dbi->free();
     }
 
 }
@@ -154,6 +164,8 @@ sub unloader {
     $bot->del_handler('message channel', 'chanMessageHandler');
 
     $help->del_help('alias', 'Channel');
+
+    $dbi->free();
 }
 
 1;

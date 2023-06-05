@@ -46,6 +46,8 @@ sub Autojoin_connected {
     foreach my $chan (keys %{$db->{Autojoin}}) {
       $bot->join($chan);
     }
+
+    $dbi->free();
 }
 
 sub autojoin {
@@ -56,6 +58,7 @@ sub autojoin {
     my $db = ${$dbi->read()};
 
     if (!$cmd) {
+      $dbi->free();
       return $bot->notice($nick, "Syntax: autojoin <add|del|list> <channel> [key]");
     }
 
@@ -65,7 +68,10 @@ sub autojoin {
       $bot->join($chan);
       $bot->notice($nick, "Added $chan to auto join list.");
     } elsif ($cmd eq "del") {
-      return $bot->notice($nick, "$chan is not in autojoin list") if (!$db->{Autojoin}->{$chan});
+      if (!$db->{Autojoin}->{$chan}) {
+        $dbi->free();
+        return $bot->notice($nick, "$chan is not in autojoin list");
+      }
       delete $db->{Autojoin}->{$chan};
 
       $bot->part($chan, "Removed from autojoin.");
@@ -92,6 +98,8 @@ sub unloader {
   $bot->del_handler('privcmd autojoin', 'autojoin');
 
   $help->del_help('autojoin', 'Admin');
+
+  $dbi->free();
 }
 
 1;

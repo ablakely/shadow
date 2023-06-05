@@ -14,6 +14,12 @@
         <link rel="canonical" href="https://getbootstrap.com/docs/5.3/examples/dashboard/">
         <link href="/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
+        <style>
+            .padbtns > button {
+                margin-left: 5px;
+            }
+        </style>
+
         <!-- Favicons
             <link rel="apple-touch-icon" href="/docs/5.3/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
             <link rel="icon" href="/docs/5.3/assets/img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
@@ -99,128 +105,104 @@
                 <%= include('inc/navbar.ejs') %>
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Accounts</h1>
+                        <h1 class="h2">RSS</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="me-2">
+                                <button title="Add a new channel" type="button" data-bs-toggle="modal" data-bs-target="#addChan" class="btn btn-sm btn-primary"><span class="align-text-bottom" data-feather="file-plus"></span></button>    
+                            </div>
+                        </div>
                     </div>
-                    <table class="table table-xl">
-                        <thead>
-                            <tr>
-                                <th>Nick</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Host</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% for (var i = 0; i < dbk.length; i++) { %>
-                            <% if (typeof db[dbk[i]] !== "undefined") { %>
-                            <tr>
-                                <td><%= dbk[i] %></td>
-                                <% if (db[dbk[i]].status === "Online") { %>
-                                <td><span class="text-info"><%= db[dbk[i]].status %></span></td>
-                                <% } else { %>
-                                <td><span><%= db[dbk[i]].status %></span></td>
-                                <% } %>
-                                <td><%= db[dbk[i]].ctime %></td>
-                                <td><%= db[dbk[i]].lhost %></td>
-                                <td><%= db[dbk[i]].ltime %></td>
-                                <td>
-                                    <div class="padbtns"> 
-                                        <a href="/accounts?view=<%= dbk[i] %>" class="btn btn-primary btn-sm"><span class="align-text-bottom" data-feather="eye"></span> View</a>
-                                        <button type="button" data-bs-toggle="modal" data-bs-target="#resetPassword" data-bs-user="<%= dbk[i] %>" class="btn btn-info btn-sm"><span class="align-text-bottom" data-feather="edit"></span> Reset Password</button>
-                                        <button type="button" data-bs-toggle="modal" data-bs-target="#confirmDelete" data-bs-user="<%= dbk[i] %>" class="btn btn-danger btn-sm"><span class="align-text-bottom" data-feather="trash"></span> Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <% } %>
-                            <% } %>
-                        </tbody>
-                    </table>
 
+                    <canvas class="my-4 w-100" id="requestsChart" width="900" height="350"></canvas>
+                    
+                    <h2>RSS Module Statistics</h2>
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Channel Count</th>
+                            <td><%= chancount %></td>
+                            <th>Feed Count</th>
+                            <td><%= totalfeeds %></td>
+                        </tr>
+                    </table>
                 </main>
-            </div>
+            </div> 
         </div>
 
-
-        <div class="modal fade" id="resetPassword" tabindex="-1" aria-labelledby="rpwdModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <form method="post" action="/accounts/resetpw">
+        <div class="modal fade" id="addChan" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+            <form method="get" action="/rss">
+                <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="rpwdModalLabel">Reset password</h1>
+                            <h1 class="modal-title fs-5" id="addModalLabel">Add Channel</h1>
                         </div>
                         <div class="modal-body">
-                            <input type="hidden" name="nick" />
                             <div class="mb-3">
-                                <label for="password" class="col-form-label">Password</label>
-                                <input type="text" name="password" class="form-control" id="password">
+                                <label for="addInputChan" class="form-label">Channel</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">#</span>
+                                    <input type="text" name="addChan" class="form-control" id="editInputChan">
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Reset</button>
+                            <button type="submit" class="btn btn-primary">Submit</a>
                         </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="modal fade" id="confirmDelete" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="confirmModalLabel">Delete</h1>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            This action cannot be undone.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <a id="confirmDeleteButton" href="#" type="button" class="btn btn-danger">Delete</a>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
         <script src="/js/feather.min.js"  crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js" integrity="sha384-gdQErvCNWvHQZj6XZM0dNsAoY4v+j5P1XDpNkcM3HJG1Yx04ecqIHk7+4VBOCHOG" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
         <script src="/js/dashboard.js"></script>
 
         <script>
-            const resetModal = document.getElementById('resetPassword')
-            if (resetModal) {
-                resetModal.addEventListener('show.bs.modal', event => {
-                    const button = event.relatedTarget
-                    const nick = button.getAttribute('data-bs-user')
+            (() => {
 
-                    const modalTitle = resetModal.querySelector('.modal-title')
-                    const modalBodyInput = resetModal.querySelector('.modal-body input')
-
-                    modalTitle.textContent = `Reset password for ${nick}`
-                    modalBodyInput.value = nick
+                const ctx = document.getElementById('requestsChart')
+                    // eslint-disable-next-line no-unused-vars
+                const myChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: <%= labels %>,
+                            datasets: [{
+                                data: <%= data %>,
+                                label: 'URL Requests',
+                                lineTension: 0,
+                                backgroundColor: 'transparent',
+                                borderColor: '#007bff',
+                                borderWidth: 4,
+                                pointBackgroundColor: '#007bff'    
+                            }, {
+                                data: <%= failed %>,
+                                label: 'Failed Requests',
+                                lineTension: 0,
+                                backgroundColor: 'transparent',
+                                borderColor: '#F40B3F',
+                                borderWidth: 4,
+                                pointBackgroundColor: '#F40B3F'
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: {
+                                   // display: false
+                                },
+                                    tooltip: {
+                                    boxPadding: 3
+                                }
+                            },
+                            scale: {
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
                 })
-            }
-
-            const confirmModal = document.getElementById('confirmDelete')
-            const confirmBtn   = document.getElementById('confirmDeleteButton')
-
-            if (confirmModal) {
-                confirmModal.addEventListener('show.bs.modal', event => {
-                    const button = event.relatedTarget
-                    const nick = button.getAttribute('data-bs-user')
-
-                    const modalTitle = confirmModal.querySelector('.modal-title')
-
-                    modalTitle.textContent = `Delete ${nick}`
-                    confirmBtn.innerHTML = `Delete ${nick}`
-                    confirmBtn.href = `/accounts?delete=${nick}`
-                })
-            }
+            })();
         </script>
     </body>
 </html>
