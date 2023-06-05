@@ -494,6 +494,7 @@ sub rss_irc_interface {
           $fmt->table_header("Feed", "URL", "Interval", "Format");
 
           foreach my $feed (keys %{$db->{$arg1}}) {
+              next unless (exists($db->{$arg1}->{$feed}->{url}));
               $fmt->table_row(
                   $feed,
                   $db->{$arg1}->{$feed}->{url},
