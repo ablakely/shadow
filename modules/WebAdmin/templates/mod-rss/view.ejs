@@ -167,7 +167,7 @@
             <div class="modal-dialog">
                 <form method="post" action="/rss-add">
                     <input type="hidden" name="addInputChan" value="<%= chan %>">
-                    <input type="hidden" name="addInputChanMinRI" value="<%= db.minRefreshInterval ? db.minRefreshInterval : 400 %>"
+                    <input type="hidden" name="addInputChanMinRI" value="<%= db.minRefreshInterval ? db.minRefreshInterval : 400 %>">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5" id="addModalLabel">New Feed</h1>
@@ -236,12 +236,13 @@
         <div class="modal fade" id="editFeed" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action="/rss-edit">
+                    <input type="hidden" name="editInputFeed" id="editInputFeed" />
+                    <input type="hidden" name="editInputChan" value="<%= chan %>">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5" id="editModalLabel">Edit</h1>
                         </div>
                         <div class="modal-body">
-                            <input type="hidden" name="editInputFeed" />
                             <div class="mb-3">
                                 <label for="editInputURL" class="form-label">URL</label>
                                 <input type="url" name="editInputURL" class="form-control" id="editInputURL" aria-describedby="URLHelp">
@@ -371,10 +372,10 @@
                     const urlEnabled = button.getAttribute('data-bs-urlid')
 
                     const modalTitle = editModal.querySelector('.modal-title')
-                    const modalBodyInput = editModal.querySelector('.modal-body input')
+                    const modalBodyInput = document.getElementById('editInputFeed')
 
                     modalTitle.textContent = `Edit ${name}`
-                    modalBodyInput.value = feed
+                    modalBodyInput.value = name
                     
                     const formatInp = document.getElementById('editInputFormat')
                     const syncInp = document.getElementById('editInputSync')

@@ -1,5 +1,6 @@
 package WebAdmin;
 
+use utf8;
 use Encode qw(encode);
 use lib './modules';
 use IO::Socket::INET;
@@ -206,6 +207,7 @@ sub wa_tick {
                 next;
             }
             
+            $data = encode('UTF-8', $data);
             handleHTTPRequest($client, $data);
         }
     }

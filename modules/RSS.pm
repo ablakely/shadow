@@ -5,7 +5,7 @@
 # Changelog:
 # v1.1 - Performance and feed compatibility improvements, formatting support
 # v1.2 - Switch to Shadow::DB
-#
+# v1.4 - Added Web Interface
 # feed.db format:
 # [
 #   "#chan": {
@@ -141,6 +141,8 @@ sub loader {
             my @chanlinks;
 
             foreach my $chan (keys(%{$db})) {
+                next if ($chan =~ /m(in|ax)RefreshInterval/ || !$chan || $chan eq "");
+
                 $chan =~ s/\#//;
                 push(@chanlinks, {
                     text => $chan,
@@ -192,7 +194,7 @@ sub loader {
                     $web->out($client, $web->render("mod-rss/view.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
-                        quicklinks_header => "Channels",
+                        quicklinks_header => "RSS Channels",
                         quicklinks => \@chanlinks,
                         chan => $params->{view},
                         db => $db->{$params->{view}},
@@ -238,7 +240,7 @@ sub loader {
                     $web->out($client, $web->render("mod-rss/index.ejs", {
                         nav_active => "RSS",
                         show_quicklinks => 1,
-                        quicklinks_header => "Channels",
+                        quicklinks_header => "RSS Channels",
                         quicklinks => \@chanlinks,
                         labels => $labelstr,
                         data   => $datastr,
@@ -269,10 +271,12 @@ sub loader {
                 my $feed = $params->{editInputFeed};
                 my $chan = $params->{editInputChan};
                 
+                
                 my $db = ${$dbi->read("feeds.db")};
                 $db->{$chan}->{$feed}->{url} = $params->{editInputURL} ? $params->{editInputURL} : $db->{$chan}->{$feed}->{url};
                 $db->{$chan}->{$feed}->{syncInterval} = exists $params->{editInputSync} ? $params->{editInputSync} : $db->{$chan}->{$feed}->{syncInterval};
                 $db->{$chan}->{$feed}->{format} = exists $params->{editInputFormat} ? $params->{editInputFormat} : $db->{$chan}->{$feed}->{format};
+                print "dbug: ".$db->{$chan}->{$feed}->{format}."\n";
                 
                 $dbi->write();
                 $chan = substr($chan, 1, length($chan));
@@ -332,8 +336,8 @@ sub loader {
                     read => []
                 };
 
-                $db->{lc($arg1)}->{minRefreshInterval} = 400 if (!exists($db->{lc($arg1)}->{minRefreshInterval}));
-                $db->{lc($arg1)}->{maxRefreshInterval} = 1320 if (!exists($db->{lc($arg1)}->{maxRefreshInterval}));
+                $db->{$chan}->{minRefreshInterval} = 400 if (!exists($db->{$chan}->{minRefreshInterval}));
+                $db->{$chan}->{maxRefreshInterval} = 1320 if (!exists($db->{$chan}->{maxRefreshInterval}));
 
                 $dbi->write();
                 $dbi->free();
@@ -671,8 +675,6 @@ sub rss_agrigator {
     my $fmtstring = $db->{$chan}->{$title}->{format};
     my $tmplink = $entry->link();
     my $read = rss_checkread($chan, $title, $tmplink);
-
-    print "dbug: $tmplink - read = $read\n";
 
     my $issued = $entry->issued();
     push(@times, $issued->epoch()) if ($issued);

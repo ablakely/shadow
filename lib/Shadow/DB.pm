@@ -8,6 +8,7 @@ package Shadow::DB;
 # Copyright 2023 (C) Aaron Blakely
 #
 
+use Encode;
 use strict;
 use warnings;
 use Carp;
@@ -35,6 +36,7 @@ sub read {
         {
             local $/;
             $tmp = <$fh>;
+            $tmp = decode_utf8($tmp);
 
         }
         close($fh) or return 0;
@@ -69,6 +71,7 @@ sub write {
     $free   = 1 if (scalar(@_) < 2);
 
     my $tmp = to_json($self->{buf}, { utf8 => 1, pretty => $pretty });
+    $tmp = encode_utf8($tmp); 
 
     open(my $fh, ">", $self->{filename}) or return 0;
     print $fh $tmp."\n";
