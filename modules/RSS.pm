@@ -152,8 +152,26 @@ sub loader {
             }
 
             if ($web->checkSession($headers)) {
+                if (exists($params->{addChan})) {
+                    my $chan = "#".lc($params->{addChan});
+                    if (!$bot->isin($chan, $Shadow::Core::nick)) {
+                        $dbi->free();
 
-                if (exists($params->{deleteChan})) {
+                        $chan = substr($chan, 1, length($chan));
+                        return $router->redirect($client, "/rss?err=NOT_IN_CHAN&chan=$chan");
+                    }
+
+                    $db->{$chan} = {
+                        minRefreshInterval => 400,
+                        maxRefreshInterval => 1320
+                    };
+
+                    $dbi->write();
+                    $dbi->free();
+
+                    $chan = substr($chan, 1, length($chan));
+                    return $router->redirect($client, "/rss?view=$chan");
+                } elsif (exists($params->{deleteChan})) {
                     $params->{deleteChan} = "#".$params->{deleteChan}; 
 
                     if (exists($db->{$params->{deleteChan}})) {
@@ -172,6 +190,7 @@ sub loader {
                     }
                     
                     $dbi->free();
+                    $params->{chan} = substr($params->{chan}, 1, length($params->{chan}));
                     return $router->redirect($client, '/rss?view='.$params->{chan});
                 } elsif (exists($params->{chan}) && exists($params->{toggleAutoSync})) {
                     $params->{chan} = "#".$params->{chan}; 
@@ -184,6 +203,18 @@ sub loader {
                     $params->{chan} = substr($params->{chan}, 1, length($params->{chan}));
 
                     $dbi->free();
+                    return $router->redirect($client, '/rss?view='.$params->{chan});
+                } elsif (exists($params->{chan}) && exists($params->{toggleURLPreview})) {
+                    $params->{chan} = "#".$params->{chan};
+
+                    if (exists($db->{$params->{chan}}->{$params->{toggleURLPreview}}->{fetchMeta})) {
+                        $db->{$params->{chan}}->{$params->{toggleURLPreview}}->{fetchMeta} = $db->{$params->{chan}}->{$params->{toggleURLPreview}}->{fetchMeta} ? 0 : 1;
+                        $dbi->write();
+                    }
+
+                    $params->{chan} = substr($params->{chan}, 1, length($params->{chan}));
+                    $dbi->free();
+
                     return $router->redirect($client, '/rss?view='.$params->{chan});
                 } elsif (exists($params->{view})) {
                     $params->{view} = "#".$params->{view};

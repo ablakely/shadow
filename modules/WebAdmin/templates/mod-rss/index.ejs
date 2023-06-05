@@ -106,6 +106,11 @@
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">RSS</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="me-2">
+                                <button title="Add a new channel" type="button" data-bs-toggle="modal" data-bs-target="#addChan" class="btn btn-sm btn-primary"><span class="align-text-bottom" data-feather="file-plus"></span></button>    
+                            </div>
+                        </div>
                     </div>
 
                     <canvas class="my-4 w-100" id="requestsChart" width="900" height="350"></canvas>
@@ -120,7 +125,32 @@
                         </tr>
                     </table>
                 </main>
-            </div>
+            </div> 
+        </div>
+
+        <div class="modal fade" id="addChan" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+            <form method="get" action="/rss">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="addModalLabel">Add Channel</h1>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="addInputChan" class="form-label">Channel</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">#</span>
+                                    <input type="text" name="addChan" class="form-control" id="editInputChan">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Submit</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
 
         <script src="/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
@@ -131,6 +161,7 @@
 
         <script>
             (() => {
+
                 const ctx = document.getElementById('requestsChart')
                     // eslint-disable-next-line no-unused-vars
                 const myChart = new Chart(ctx, {

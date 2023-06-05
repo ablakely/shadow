@@ -344,7 +344,7 @@
                     if (what.includes('#')) {
                         confirmBtn.href = `/rss?deleteChan=${what}`
                     } else {
-                        confirmBtn.href = `/rss?deleteFeed=${what}`
+                        confirmBtn.href = `/rss?deleteFeed=${what}&chan=${chan.replace('#', '')}`
                     }
                 })
             }
