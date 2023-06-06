@@ -1,0 +1,77 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use IO::Socket::INET;
+
+if (scalar(@ARGV) < 3) {
+    print "Usage: $0 <IP of bot:port> <nick> <auth cookie value>\n";
+    exit;
+}
+
+my ($IP, $NICK, $SESSION_KEY) = @ARGV;
+my ($DOMAIN, $PORT) = split(/\:/, $IP);
+
+sub doReq {
+    my ($cmd) = @_;
+
+    my $sock = IO::Socket::INET->new(
+        PeerAddr => $DOMAIN,
+        PeerPort => $PORT,
+        Proto => 'tcp'
+    ) or print "Error: Cannot connect: $!\n";
+
+    print $sock "POST /terminal/api HTTP/1.1\r\n";
+    print $sock "Cookie: nick=$NICK; auth=$SESSION_KEY\r\n\r\n";
+    print $sock "cmd=$cmd\r\n";
+
+    my $ret;
+    my $skip = 1;
+
+    while (my $in = <$sock>) {
+        if ($in =~ /^\r\n$/) {
+            $skip = 0;
+            next;
+        }
+
+        $ret .= $in if (!$skip);
+    }
+
+    return $ret ? $ret : ""; 
+}
+
+print <<'BANNER';
+  ____  _               _               
+ / ___|| |__   __ _  __| | _____      __
+ \___ \| '_ \ / _` |/ _` |/ _ \ \ /\ / /
+  ___) | | | | (_| | (_| | (_) \ V  V / 
+ |____/|_| |_|\__,_|\__,_|\___/ \_/\_/  
+          WebTerminal v1.2
+
+Use help for a list of terminal commands, or /help (shortcut for irc "help") for a list of module commands.
+Do not paste code into this terminal unless you understand that code.
+BANNER
+
+print "\nConnecting to $IP with $NICK:$SESSION_KEY\n\n";
+print "> ";
+while (my $line = <STDIN>) {
+    chomp $line;
+    print "\r";
+
+    if ($line =~ /^\./) {
+        print "Error: JavaScript evaluation is only available in a browser.\n";
+    } elsif ($line =~ /^\//) {
+        $line =~ s/^\///;
+        print doReq('irc "'.$line.'";');
+    } elsif ($line =~ /^(quit|exit)$/) {
+        print "Exiting...\n";
+        exit;
+    } elsif ($line =~ /^clear$/) {
+        print `clear`;
+    } else {
+        print doReq($line);
+    }
+    
+    print "\r> ";
+
+}
