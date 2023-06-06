@@ -130,7 +130,7 @@
                                 <td><a href="<%= db[dbk[i]].url %>"><%= dbk[i] %></a></td>
                                 <td><%= db[dbk[i]].syncInterval %></td>
                                 <td><%= gmtime(db[dbk[i]].lastSync) %></td>
-                                <% if (db[dbk[i]].fetchMeta) { %>
+                                <% if (db[dbk[i]].fetchMeta && supportedURL(db[dbk[i]].url)) { %>
                                 <td class="text-warning"><i>This feed is displayed using URLIdentifier.</i></td>
                                 <% } else { %>
                                 <td><%= db[dbk[i]].format %></td>
@@ -392,7 +392,7 @@
                     syncInp.value = syncInt
                     urlInp.value = feedURL
 
-                    if (parseInt(urlEnabled)) {
+                    if (parseInt(urlEnabled) && parseInt(urlSupported)) {
                         formatInp.disabled = true
                         formatInp.value = "This feed is displayed using URLIdentifier"
                     } else {
