@@ -52,8 +52,7 @@ sub reload {
 
     echo("[[b;lightgreen;]Reloading $mod]");
 
-    $bot->unload_module($mod);
-    $bot->load_module($mod);
+    $bot->reload_module($mod);
 }
 
 sub load {

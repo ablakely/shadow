@@ -1346,12 +1346,12 @@ sub nick {
 
 sub join {
 	my $self = shift;
-	irc_raw(1, "JOIN $_[0]");
+	irc_raw(1, scalar(@_) > 1 ? "JOIN $_[0] :$_[1]" : "JOIN $_[0]");
 }
 
 sub part {
 	my $self = shift;
-	irc_raw(1, "PART $_[0] :$_[1]");
+	irc_raw(1, scalar(@_) > 1 ? "PART $_[0] :$_[1]" : "PART $_[0]");
 }
 
 sub kick {
