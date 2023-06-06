@@ -227,8 +227,7 @@ sub ircadmin_reload {
   if ($bot->isbotadmin($nick, $host)) {
     $bot->notice($nick, "Reloading module: $text");
     $bot->log("Reloading module: $text [Issued by $nick]");
-    $bot->unload_module($text);
-    $bot->load_module($text);
+    $bot->reload_module($text);
   } else {
     $bot->notice($nick, "Unauthorized.");
   }
