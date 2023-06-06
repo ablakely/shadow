@@ -270,7 +270,7 @@ sub load_module {
 		return 1;
 	} else {
 		err(1, "Error: No such module $module_name", 0, "Modules");
-		return undef;
+		return 0;
 	}
 }
 
@@ -279,6 +279,7 @@ sub unload_module {
 
 	foreach my $loaded_mod (@loaded_modules) {
 		if ($loaded_mod eq "Shadow::Mods::".$module_name) {
+            handle_handler('module', 'unload', $module_name);
 			eval "$module_name->unloader();";
 			if ($@) {
 				err(1, "[Core/unload_module/$module_name] eval error: $@", 0, "Modules");
@@ -297,6 +298,24 @@ sub unload_module {
 	}
 
 	return undef;
+}
+
+sub reload_module {
+	my ($self, $module_name) = @_;
+
+	foreach my $loaded_mod (@loaded_modules) {
+		if ($loaded_mod eq "Shadow::Mods::".$module_name) {
+
+            return 0 if (!$self->unload_module($module_name));
+            return 0 if (!$self->load_module($module_name));
+
+
+            handle_handler('module', 'reload', $module_name);
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 sub register {

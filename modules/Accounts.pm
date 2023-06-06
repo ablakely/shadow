@@ -88,74 +88,12 @@ sub get_session {
 }
 
 # Private
-sub loader {
-    $bot->register("Accounts", "v0.1", "Aaron Blakely", "User Accounts");
 
-    if ($bot->storage_exists("accounts.sessions")) {
-        %sessions = %{$bot->retrieve("accounts.sessions")};
-    }
+sub acc_webmod_init {
+    # module load and module unload handler will call this for every event,
+    # return unless the module for the event is WebAdmin.
+    return unless (shift() eq "WebAdmin");
 
-    $bot->add_handler("privcmd register", "acc_register");
-    $bot->add_handler("privcmd id", "acc_id");
-    $bot->add_handler("event quit", "acc_quit_ev");
-    $bot->add_handler("privcmd accounts", "acc_admin_interface");
-    $bot->add_handler("privcmd passwd", "acc_passwd");
-
-    $help->add_help("register", "General", "<password>", "Register an account.", 0, sub {
-        my ($nick, $host, $text) = @_;
-        $bot->fastsay($nick, (
-            "Help for \x02REGISTER\x02:",
-            " ",
-            "\x02register\x02 is used to create a new account.",
-            " ",
-            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."register <password>"
-        ));
-    });
-    
-    $help->add_help("id", "General", "[<nick>] <password>", "Log in to an account.", 0, sub {
-        my ($nick, $host, $text) = @_;
-        $bot->fastsay($nick, (
-            "Help for \x02ID\x02:",
-            " ",
-            "\x02id\x02 is used to login to an account, if \x02<nick>\x02 is omitted the IRC nickname is used in it's place.",
-            " ",
-            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."id [<nick>] <password>"
-        ));
-    });
-
-    $help->add_help("passwd", "General", "<password>", "Change password for an account.", 0, sub {
-        my ($nick, $host, $text) = @_;
-        $bot->fastsay($nick, (
-            "Help for \x02PASSWD\x02:",
-            " ",
-            "\x02passwd\x02 is used to update a password for an account.",
-            " ",
-            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."passwd <password>"
-        ));
-    });
-    
-    $help->add_help("accounts", "Admin", "<subcommand> [<args>]", "User Accounts management", 1, sub {
-        my ($nick, $host, $text) = @_;
-        $bot->fastsay($nick, (
-            "Help for \x02ACCOUNTS\x02:",
-            " ",
-            "\x02accounts\x02 is used to manage user created accounts.",
-            "Subcommands:",
-            "  \x02list\x02 - Lists all accounts",
-            "  \x02remove <nick>\x02 - Deletes an account and it's referenced data",
-            "  \x02whois <nick>\x02 - Fetches useful information about an account",
-            "  \x02passwd <nick> <pass>\x02 - Force changes a users password",
-            " ",
-            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."accounts <subcommand> [<args>]"
-        ));
-    });
-
-    my $db = ${$dbi->read("accounts.db")};
-    if (!scalar(keys(%{$db}))) {
-        $dbi->write();
-    }
-    
-    # WebAdmin.pm Dashboard extension
     if ($bot->isloaded("WebAdmin")) {
         $web = WebAdmin->new();
         my $router = $web->router();  
@@ -270,6 +208,93 @@ sub loader {
             $dbi->free();
         });
     }
+}
+
+sub acc_webmod_cleanup {
+    return unless (shift() eq "WebAdmin");
+
+    if ($bot->isloaded("WebAdmin")) {
+        my $router = $web->router();
+
+        $web->del_navbar_link("Accounts");
+        $router->del('get', '/accounts');
+        $router->del('post', '/accounts/resetpw');
+    }
+}
+
+sub loader {
+    $bot->register("Accounts", "v0.1", "Aaron Blakely", "User Accounts");
+
+    if ($bot->storage_exists("accounts.sessions")) {
+        %sessions = %{$bot->retrieve("accounts.sessions")};
+    }
+
+    $bot->add_handler("privcmd register", "acc_register");
+    $bot->add_handler("privcmd id", "acc_id");
+    $bot->add_handler("event quit", "acc_quit_ev");
+    $bot->add_handler("privcmd accounts", "acc_admin_interface");
+    $bot->add_handler("privcmd passwd", "acc_passwd");
+
+
+    $bot->add_handler('module load',   'acc_webmod_init');
+    $bot->add_handler('module reload', 'acc_webmod_init');
+    $bot->add_handler('module unload', 'acc_webmod_cleanup');
+
+    $help->add_help("register", "General", "<password>", "Register an account.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02REGISTER\x02:",
+            " ",
+            "\x02register\x02 is used to create a new account.",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."register <password>"
+        ));
+    });
+    
+    $help->add_help("id", "General", "[<nick>] <password>", "Log in to an account.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02ID\x02:",
+            " ",
+            "\x02id\x02 is used to login to an account, if \x02<nick>\x02 is omitted the IRC nickname is used in it's place.",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."id [<nick>] <password>"
+        ));
+    });
+
+    $help->add_help("passwd", "General", "<password>", "Change password for an account.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02PASSWD\x02:",
+            " ",
+            "\x02passwd\x02 is used to update a password for an account.",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."passwd <password>"
+        ));
+    });
+    
+    $help->add_help("accounts", "Admin", "<subcommand> [<args>]", "User Accounts management", 1, sub {
+        my ($nick, $host, $text) = @_;
+        $bot->fastsay($nick, (
+            "Help for \x02ACCOUNTS\x02:",
+            " ",
+            "\x02accounts\x02 is used to manage user created accounts.",
+            "Subcommands:",
+            "  \x02list\x02 - Lists all accounts",
+            "  \x02remove <nick>\x02 - Deletes an account and it's referenced data",
+            "  \x02whois <nick>\x02 - Fetches useful information about an account",
+            "  \x02passwd <nick> <pass>\x02 - Force changes a users password",
+            " ",
+            "\x02SYNTAX\x02: ".$help->cmdprefix($nick)."accounts <subcommand> [<args>]"
+        ));
+    });
+
+    my $db = ${$dbi->read("accounts.db")};
+    if (!scalar(keys(%{$db}))) {
+        $dbi->write();
+    }
+
+    acc_webmod_init("WebAdmin");
 }
 
 sub hashpw {
@@ -479,13 +504,11 @@ sub unloader {
     $help->del_help("id", "General");
     $help->del_help("passwd", "General");
 
-    if ($bot->isloaded("WebAdmin")) {
-        my $router = $web->router();
+    $bot->del_handler('module load', 'acc_webmod_init');
+    $bot->del_handler('module reload', 'acc_webmod_init');
+    $bot->del_handler('module unload', 'acc_webmod_cleanup');
 
-        $web->del_navbar_link("Accounts");
-        $router->del('get', '/accounts');
-        $router->del('post', '/accounts/resetpw');
-    }
+    acc_webmod_cleanup("WebAdmin");
 
     $bot->store("accounts.sessions", \%sessions);
     $dbi->free();

@@ -63,72 +63,9 @@ my %failedreqstats;
 $reqstats{_stathour} = strftime("%I %p", gmtime(time));
 $reqstats{_statday}  = (gmtime(time))[3];
 
-sub loader {
-    $bot->register("RSS", "v1.4", "Aaron Blakely", "RSS aggregator");
+sub rss_webmod_init {
+    return unless (shift() eq "WebAdmin");
 
-    if ($bot->storage_exists("RSS.reqstats")) {
-        %reqstats = %{ $bot->retrieve("RSS.reqstats") };
-        %failedreqstats = %{ $bot->retrieve("RSS.failedreqstats") };
-    }
-
-    $bot->log("[RSS] Loading: RSS module v1.4", "Modules");
-    $bot->add_handler('event connected', 'rss_connected');
-    $bot->add_handler('privcmd rss', 'rss_irc_interface');
-    $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
-        my ($nick, $host, $text) = @_;
-        my @out;
-
-        my $cmdprefix = "/msg $Shadow::Core::nick ";
-        $cmdprefix    = "/" if ($bot->is_term_user($nick));
-
-        if ($text =~ /rss set/i) {
-            push(@out, "Help for \x02RSS SET\x02:");
-            push(@out, " ");
-            push(@out, "\x02SYNTAX\x02: ${cmdprefix}rss set <option> <chan> <feed name> <value>");
-
-            push(@out, " ");
-            push(@out, "  Options:");
-            push(@out, "    SYNCTIME - Refresh rate for a feed in seconds.");
-            push(@out, "    FORMAT   - Change the output format for a feed:");
-            push(@out, "      Example: \%FEED\%: \%TITLE\% [\%URL\%]");
-            push(@out, "      ");
-            push(@out, "      \%FEED\%: Feed name");
-            push(@out, "      \%TITLE\%: RSS entry title");
-            push(@out, "      \%URL\%: RSS entry link");
-            push(@out, "      \%C\%: mIRC color escape character (ctrl + k)");
-            push(@out, "      \%B\%: mIRC bold character (ctrl + b)");
-
-            $bot->fastsay($nick, @out);
-
-            return;
-        }
-
-        push(@out, "Help for \x02RSS\x02:");
-        push(@out, " ");
-        push(@out, "\x02rss\x02 is a command used for managing rss feeds for each channel.");
-        push(@out, "this command uses subcommands to perform different actions:");
-        push(@out, "  \x02add\x02 #chan <feed name> <url> - adds a feed for a channel.");
-        push(@out, "  \x02del\x02 #chan <feed name> - removes a feed from a channel.");
-        push(@out, "  \x02set\x02 #chan <feed name> <setting> <value> - not yet implemented.");
-        push(@out, "  \x02list\x02 #chan - lists all of the feeds for a given channel.");
-        push(@out, "  \x02sync\x02 - forces the bot to sync all feeds.");
-        push(@out, " ");
-        push(@out, "\x02syntax\x02: ${cmdprefix}rss <add|del|list|set|sync> [#chan] [feed name] [url]");
-
-
-        $bot->fastsay($nick, @out);
-    });
-
-    my $db = ${$dbi->read("feeds.db")};
-    if (!scalar(keys(%{$db}))) {
-        $dbi->write();
-    }
-
-    $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
-
-    rss_connected() if ($bot->connected());
-
-    # WebAdmin extension
     if ($bot->isloaded("WebAdmin")) {
         $web = WebAdmin->new();
         my $router = $web->router();
@@ -380,6 +317,78 @@ sub loader {
             }
         });
     }
+}
+
+sub loader {
+    $bot->register("RSS", "v1.4", "Aaron Blakely", "RSS aggregator");
+
+    if ($bot->storage_exists("RSS.reqstats")) {
+        %reqstats = %{ $bot->retrieve("RSS.reqstats") };
+        %failedreqstats = %{ $bot->retrieve("RSS.failedreqstats") };
+    }
+
+    $bot->log("[RSS] Loading: RSS module v1.4", "Modules");
+    $bot->add_handler('event connected', 'rss_connected');
+    $bot->add_handler('privcmd rss', 'rss_irc_interface');
+    $help->add_help("rss", "Channel", "<add|del|list|set|sync> [#chan] [feed name] [url]", "RSS module interface.", 0, sub {
+        my ($nick, $host, $text) = @_;
+        my @out;
+
+        my $cmdprefix = "/msg $Shadow::Core::nick ";
+        $cmdprefix    = "/" if ($bot->is_term_user($nick));
+
+        if ($text =~ /rss set/i) {
+            push(@out, "Help for \x02RSS SET\x02:");
+            push(@out, " ");
+            push(@out, "\x02SYNTAX\x02: ${cmdprefix}rss set <option> <chan> <feed name> <value>");
+
+            push(@out, " ");
+            push(@out, "  Options:");
+            push(@out, "    SYNCTIME - Refresh rate for a feed in seconds.");
+            push(@out, "    FORMAT   - Change the output format for a feed:");
+            push(@out, "      Example: \%FEED\%: \%TITLE\% [\%URL\%]");
+            push(@out, "      ");
+            push(@out, "      \%FEED\%: Feed name");
+            push(@out, "      \%TITLE\%: RSS entry title");
+            push(@out, "      \%URL\%: RSS entry link");
+            push(@out, "      \%C\%: mIRC color escape character (ctrl + k)");
+            push(@out, "      \%B\%: mIRC bold character (ctrl + b)");
+
+            $bot->fastsay($nick, @out);
+
+            return;
+        }
+
+        push(@out, "Help for \x02RSS\x02:");
+        push(@out, " ");
+        push(@out, "\x02rss\x02 is a command used for managing rss feeds for each channel.");
+        push(@out, "this command uses subcommands to perform different actions:");
+        push(@out, "  \x02add\x02 #chan <feed name> <url> - adds a feed for a channel.");
+        push(@out, "  \x02del\x02 #chan <feed name> - removes a feed from a channel.");
+        push(@out, "  \x02set\x02 #chan <feed name> <setting> <value> - not yet implemented.");
+        push(@out, "  \x02list\x02 #chan - lists all of the feeds for a given channel.");
+        push(@out, "  \x02sync\x02 - forces the bot to sync all feeds.");
+        push(@out, " ");
+        push(@out, "\x02syntax\x02: ${cmdprefix}rss <add|del|list|set|sync> [#chan] [feed name] [url]");
+
+
+        $bot->fastsay($nick, @out);
+    });
+
+    my $db = ${$dbi->read("feeds.db")};
+    if (!scalar(keys(%{$db}))) {
+        $dbi->write();
+    }
+
+    $ua->transactor->name("'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'");
+
+    rss_connected() if ($bot->connected());
+
+    # WebAdmin extension
+    $bot->add_handler('module load', 'rss_webmod_init');
+    $bot->add_handler('module reload', 'rss_webmod_init');
+
+    rss_webmod_init("WebAdmin");
 }
 
 sub rss_connected {
@@ -882,6 +891,9 @@ sub unloader {
   $bot->store("RSS.reqstats", \%reqstats);
   $bot->store("RSS.failedreqstats", \%failedreqstats);
 
+  $bot->del_handler('module load', 'rss_webmod_init');
+  $bot->del_handler('module reload', 'rss_webmod_init');
+  
   if ($bot->isloaded("WebAdmin")) {
     my $router= $web->router();
     $web->del_navbar_link("RSS");
