@@ -661,6 +661,7 @@ sub rss_updateread {
   }
 
   $dbi->write();
+  $dbi->free();
 }
 
 sub update_synctime {
@@ -722,19 +723,20 @@ sub rss_agrigator {
             lastRecieved => time()
         });
 
+        if (!exists($db->{$chan}->{$title}->{fetchMeta})) {
+            $db->{$chan}->{$title}->{fetchMeta} = 1;
+        }
+
+        $dbi->write();
+        $dbi->free();
 
         if ($bot->isloaded("URLIdentifier")) {
             $tmplink =~ s/nitter\.net/twitter\.com/;
             if (URLIdentifier::is_supported($tmplink)) {
-                if (!exists($db->{$chan}->{$title}->{fetchMeta})) {
-                    $db->{$chan}->{$title}->{fetchMeta} = 1;
-                }
-
                 if ($db->{$chan}->{$title}->{fetchMeta}) {
                     $reqstats{$reqstats{_stathour}}++;
                     
                     URLIdentifier::url_id("RSS.pm", "0.0.0.0", $chan, $tmplink);
-                    $dbi->write();
 
                     update_synctime($chan, $title, @times);
                     return;
@@ -779,7 +781,6 @@ sub rss_agrigator {
 
   # calculate SYNCTIME
   update_synctime($chan, $title, @times);
-  $dbi->write();
 }
 
 sub rss_refresh {
