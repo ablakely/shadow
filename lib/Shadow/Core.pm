@@ -18,7 +18,7 @@ use Shadow::Admin;
 use Shadow::Help;
 
 # Global Variables, Arrays, and Hashes
-our ($cfg, $cfgparser, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug, $connected);
+our ($cfg, $cfgparser, $curr_server, $sel, $ircping, $checktime, $irc, $nick, $lastout, $myhost, $time, $tickcount, $debug, $connected);
 our (@queue, @timeout, @loaded_modules, @onlineusers, @botadmins);
 our (%server, %options, %handlers, %sc, %su, %sf, %inbuffer, %outbuffer, %users, %modreg, %log, %storage);
 
@@ -536,6 +536,8 @@ sub irc_connect {
 	sendfh($irc, "NICK ".$options{config}{nick}."\r\n");
 	sendfh($irc, "USER shadow ".lc($options{config}{nick})." ".lc($ircserver)." :".$options{config}{name}."\r\n");
 
+    $curr_server = $_[0];
+
 	$sel->add($irc);
 	$ircping = time;
 	return $irc;
@@ -563,145 +565,152 @@ sub irc_reconnect {
 # IRC events processor
 
 sub irc_in {
-	my ($response, $fh) = @_;
-	$ircping = time;
-	handle_handler("raw", "in", $response);
+    my ($response, $fh) = @_;
+    $ircping = time;
+    handle_handler("raw", "in", $response);
 
-	if ($response =~ /^PING (.*)$/) {
-		irc_raw(0, "PONG $1");
-	}
-	elsif ($response =~ /^NOTICE (.*)$/) {
-		handle_handler('raw', 'noticeUP', $1);
-	}
-	elsif ($response =~ /^ERROR/) {
-		$ircping = time - 100;
-		%sc	 = ();
-	} else {
-		$response 		=~ s/^:([^ ]+) //;
-		my $ck       		= $1;
-		my ($command, $text) 	= split(/:/, $response, 2);
+    if ($response =~ /^PING (.*)$/) {
+        irc_raw(0, "PONG $1");
+    }
+    elsif ($response =~ /^NOTICE (.*)$/) {
+        handle_handler('raw', 'noticeUP', $1);
+    }
+    elsif ($response =~ /^ERROR/) {
+        $ircping = time - 100;
+        %sc	 = ();
+    } else {
+        $response 		=~ s/^:([^ ]+) //;
+        my $ck       		= $1;
+        my ($command, $text) 	= split(/:/, $response, 2);
 
-		my @bits		= split(' ', "$ck $command");
-		return if !defined $bits[1];
-		my ($remotenick, $remotehost) = split("!", $bits[0]);
-		handle_handler("raw", lc($bits[1]), $remotenick, $remotehost, $text, @bits);
+        my @bits		= split(' ', "$ck $command");
+        return if !defined $bits[1];
+        my ($remotenick, $remotehost) = split("!", $bits[0]);
+        handle_handler("raw", lc($bits[1]), $remotenick, $remotehost, $text, @bits);
 
-		if ($bits[1] eq "004") {
-		    # connected event
-		    irc_connected($bits[2]);
+        if ($bits[1] eq "004") {
+            # connected event
+            irc_connected($bits[2]);
 
-		    my @chans = exists($ENV{IRC_CHANS}) ? split(/,/, $ENV{IRC_CHANS}) : @{$cfg->{Shadow}->{IRC}->{bot}->{channels}};
-		    foreach my $channel (@chans) {
-					Shadow::Core::log(1, "Attempting to join $channel", "System");
-					irc_raw(1, "JOIN :$channel");
-		    }
+            my @chans = exists($ENV{IRC_CHANS}) ? split(/,/, $ENV{IRC_CHANS}) : @{$cfg->{Shadow}->{IRC}->{bot}->{channels}};
+            foreach my $channel (@chans) {
+                Shadow::Core::log(1, "Attempting to join $channel", "System");
+                irc_raw(1, "JOIN :$channel");
+            }
 
-			  Shadow::Core::log(1, "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}, "System");
-			  irc_raw(1, "JOIN :".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan});
-		}
-		elsif ($bits[1] eq "005") {
-		  # scan 005 info for adapting to our enviornment
-		  irc_scaninfo(@bits);
-		}
-		elsif ($bits[1] eq "433") {
-		  # nickname is in use event
-		  irc_nicktaken($bits[3]);
-		}
-		elsif ($bits[1] eq "381") {
-		  # oper event
-		  irc_becameOper();
-		}
-		elsif ($bits[1] eq "353") {
-		  # names event
-		  irc_users($bits[4], split(/ /, $text));
-		}
-		elsif ($bits[1] eq "MODE") {
-		  # mode event
-		  my $mode = join(" ", @bits[2 .. scalar(@bits) - 1]) if defined $bits[2];
-		  $mode .= " $text" if defined $text;
-		  irc_mode($mode, $remotenick, $bits[0]);
-		}
-		elsif ($bits[1] eq "PRIVMSG") {
-		  # privmsg event
-		  irc_msg_handler($remotenick, $bits[2], $text, $bits[0]);
-		}
-		elsif ($bits[1] eq "JOIN") {
-		  # join event
+            Shadow::Core::log(1, "Attempting to join cmdchan: ".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan}, "System");
+            irc_raw(1, "JOIN :".$cfg->{Shadow}->{IRC}->{bot}->{cmdchan});
+        }
+        elsif ($bits[1] eq "005") {
+            # scan 005 info for adapting to our enviornment
+            irc_scaninfo(@bits);
+        }
+        elsif ($bits[1] eq "433") {
+            # nickname is in use event
+            irc_nicktaken($bits[3]);
+        }
+        elsif ($bits[1] eq "381") {
+            # oper event
+            irc_becameOper();
+        }
+        elsif ($bits[1] eq "353") {
+            # names event
+            irc_users($bits[4], split(/ /, $text));
+        }
+        elsif ($bits[1] eq "MODE") {
+            # mode event
+            my $mode = join(" ", @bits[2 .. scalar(@bits) - 1]) if defined $bits[2];
+            $mode .= " $text" if defined $text;
+            irc_mode($mode, $remotenick, $bits[0]);
+        }
+        elsif ($bits[1] eq "PRIVMSG") {
+            # privmsg event
+            irc_msg_handler($remotenick, $bits[2], $text, $bits[0]);
+        }
+        elsif ($bits[1] eq "JOIN") {
+            # join event
 
-		  if (!$text) {
-		    # support for charybdis 3.5.2
+            if (!$text) {
+                # support for charybdis 3.5.2
 
-		    ($command, $text) = split(/ /, $command);
-		  }
+                ($command, $text) = split(/ /, $command);
+            }
 
-		  irc_join($text, $remotenick, $bits[0]);
-		}
-		elsif ($bits[1] eq "PART") {
-		  # part event
-		  irc_part($bits[2], $remotenick, $bits[0], $text);
-		}
-		elsif ($bits[1] eq "QUIT") {
-		  # quit event
-		  irc_quit($remotenick, $bits[0], $text);
-		}
-		elsif ($bits[1] eq "NOTICE") {
-		  # notice event
-		  irc_notice($remotenick, $bits[2], $text, $bits[0]);
-		}
-		elsif ($bits[1] eq "NICK") {
-		  # nick change event
+            irc_join($text, $remotenick, $bits[0]);
+        }
+        elsif ($bits[1] eq "PART") {
+            # part event
+            irc_part($bits[2], $remotenick, $bits[0], $text);
+        }
+        elsif ($bits[1] eq "QUIT") {
+            # quit event
+            irc_quit($remotenick, $bits[0], $text);
+        }
+        elsif ($bits[1] eq "NOTICE") {
+            # notice event
+            irc_notice($remotenick, $bits[2], $text, $bits[0]);
+        }
+        elsif ($bits[1] eq "NICK") {
+            # nick change event
 
-		  # support for charybdis 3.5.2
-		  if (!$bits[2]) {
-		      irc_nick($remotenick, $text, $bits[0]);
-		  } else {
-		      irc_nick($remotenick, $bits[2], $bits[0]);
-		  }
-		}
-		elsif ($bits[1] eq "INVITE") {
-		  # invite event
-		  irc_invite($remotenick, $bits[3], $text, $bits[0]);
-		}
-		elsif ($bits[1] eq "KICK") {
-		  # kick event
-		  irc_kick($remotenick, $bits[2], $bits[3], $text, $bits[0]);
-		}
-		elsif ($bits[1] eq "473" || $bits[1] eq "475" || $bits[1] eq "479") {
-		  # knock event
-		  irc_knock($remotenick, $bits[3], $text, $bits[0]);
-		}
-		elsif ($bits[1] eq "302") {
-			irc_userhost($text);
-			handle_handler('raw', 'userhost', $bits[2], $text);
-		}
-		elsif ($bits[1] eq "311") {
-			irc_userhost($bits[3], $bits[4]."\@".$bits[5]);
-		}
-		elsif ($bits[1] eq "366") {
-			# end of /NAMES event
-			if (!$text) {
-		    # support for charybdis 3.5.2
+            # support for charybdis 3.5.2
+            if (!$bits[2]) {
+                irc_nick($remotenick, $text, $bits[0]);
+            } else {
+                irc_nick($remotenick, $bits[2], $bits[0]);
+            }
+        }
+        elsif ($bits[1] eq "INVITE") {
+            # invite event
+            irc_invite($remotenick, $bits[3], $text, $bits[0]);
+        }
+        elsif ($bits[1] eq "KICK") {
+            # kick event
+            irc_kick($remotenick, $bits[2], $bits[3], $text, $bits[0]);
+        }
+        elsif ($bits[1] eq "473" || $bits[1] eq "475" || $bits[1] eq "479") {
+            # knock event
+            irc_knock($remotenick, $bits[3], $text, $bits[0]);
+        }
+        elsif ($bits[1] eq "302") {
+            irc_userhost($text);
+            handle_handler('raw', 'userhost', $bits[2], $text);
+        }
+        elsif ($bits[1] eq "311") {
+            irc_userhost($bits[3], $bits[4]."\@".$bits[5]);
+        }
+        elsif ($bits[1] eq "366") {
+            # end of /NAMES event
+            if (!$text) {
+                # support for charybdis 3.5.2
 
-		    ($command, $text) = split(/ /, $command);
-		  }
+                ($command, $text) = split(/ /, $command);
+            }
 
-		  handle_handler('event', 'namesend', $bits[3]);
-		}
-		elsif ($bits[1] eq "332") {
-		  # topic event
-		  $sc{lc($bits[3])}{topic}{text} = $text;
-		}
-		elsif ($bits[1] eq "333") {
-		  # topic info event
-		  $sc{lc($bits[3])}{topic}{by}     = $bits[4];
-		  $sc{lc($bits[3])}{topic}{'time'} = $bits[5];
-		}
-		elsif ($bits[1] eq "TOPIC") {
-		  # topic event
-		  irc_topic($remotenick, $bits[2], $text, $bits[0]);
-		}
-
-	}
+            handle_handler('event', 'namesend', $bits[3]);
+        }
+        elsif ($bits[1] eq "332") {
+            # topic event
+            $sc{lc($bits[3])}{topic}{text} = $text;
+        }
+        elsif ($bits[1] eq "333") {
+            # topic info event
+            $sc{lc($bits[3])}{topic}{by}     = $bits[4];
+            $sc{lc($bits[3])}{topic}{'time'} = $bits[5];
+        }
+        elsif ($bits[1] eq "TOPIC") {
+            # topic event
+            irc_topic($remotenick, $bits[2], $text, $bits[0]);
+        }
+        elsif ($bits[1] eq "324") {
+            #channel modes
+            $sc{lc($bits[3])}{modes} = $bits[4];
+        }
+        elsif ($bits[1] eq "329") {
+            # channel created time
+            $sc{lc($bits[3])}{created} = $bits[4];
+        }
+    }
 }
 
 # IRC event parsers
@@ -886,18 +895,29 @@ sub irc_join {
 
 	# if it is ourself then we create a record for the channel and update our host
 	if ($remotenick eq $nick) {
-		$sc{lc($channel)}	= {};
-		$myhost			= $hostmask;
+        irc_raw(1, "mode $channel");
+
+		$sc{lc($channel)} = {
+            users => {
+                $nick => {
+                    hostmask => $hostmask,
+                    ts       => time(),
+                    lastmsg  => 0
+                }
+            }
+        };
+
+		$myhost = $hostmask;
 		handle_handler('event', 'join_me', $remotenick, $hostmask, $channel);
-	}
+	} else {
+        irc_raw(1, "whois $remotenick");
+        $sc{lc($channel)}{users}{$remotenick}		    = {};
+        $sc{lc($channel)}{users}{$remotenick}{hostmask}	= $hostmask;
+        $sc{lc($channel)}{users}{$remotenick}{ts}       = time();
+        $sc{lc($channel)}{users}{$remotenick}{lastmsg}  = 0;
 
-
-	irc_raw(1, "whois $remotenick");
-	$sc{lc($channel)}{users}{$remotenick}		= {};
-	$sc{lc($channel)}{users}{$remotenick}{hostmask}	= $hostmask;
-
-	return if $remotenick eq $nick;
-	handle_handler('event', 'join', $remotenick, $hostmask, $channel);
+        handle_handler('event', 'join', $remotenick, $hostmask, $channel);
+    }
 }
 
 sub irc_part {
@@ -1098,7 +1118,10 @@ sub irc_channel_handler {
 			handle_handler('chanmecmd', 'default', $remotenick, $hostmask, $channel, $tmp[0]." ".$tmp[1]);
 		}
 	}
-	handle_handler('message', 'channel', $remotenick, $hostmask, $channel, $text);
+
+    handle_handler('message', 'channel', $remotenick, $hostmask, $channel, $text);
+
+    $sc{lc($channel)}{users}{$remotenick}{lastmsg} = time();
 }
 
 sub irc_privmsg_handler {
@@ -1364,6 +1387,12 @@ sub mode {
 	irc_raw(1, "MODE ". CORE::join(" ", @_));
 }
 
+sub modes {
+    my ($self, $chan) = @_;
+
+    return exists($sc{lc($chan)}{modes}) ? $sc{lc($chan)}{modes} : 0;
+}
+
 sub voice {
 	my $self = shift;
 	irc_raw(1, "MODE $_[0] +v :$_[1]");
@@ -1403,6 +1432,8 @@ sub listusers {
 	my ($self, $channel) = @_;
 	my %tmp;
 	$tmp{$_} = 1 for (keys(%{$sc{lc($channel)}{users}}));
+
+    # remove bot from array
 	delete($tmp{$nick});
 	delete($tmp{lc($nick)});
 	return keys %tmp;
@@ -1417,7 +1448,13 @@ sub listusers {
 	 delete($tmp{lc($nick)});
 
 	 &{$cb}($channel, keys %tmp);
- }
+}
+
+sub getcfg {
+    my ($self) = @_;
+
+    return $cfg;
+}
 
 sub gethost {
 	my ($self, $nick) = @_;
@@ -1427,6 +1464,26 @@ sub gethost {
 			return $sc{$chan}{users}{$nick}{host};
 		}
 	}
+
+    return 0;
+}
+
+sub getjointime {
+    my ($self, $nick, $chan) = @_;
+
+    return exists($sc{lc($chan)}{users}{$nick}{ts}) ? $sc{lc($chan)}{users}{$nick}{ts} : 0; 
+}
+
+sub getidle {
+    my ($self, $nick, $chan) = @_;
+
+    return exists($sc{lc($chan)}{users}{$nick}{lastmsg}) ? time() - $sc{lc($chan)}{users}{$nick}{lastmsg} : -1;
+}
+
+sub getserver {
+    my $self = shift;
+
+    return $curr_server;
 }
 
 sub flood {
@@ -1437,6 +1494,18 @@ sub flood {
 sub reconnect {
 	my $self = shift;
 	irc_reconnect();
+}
+
+sub channels {
+    my ($self) = @_;
+
+    return keys(%sc);
+}
+
+sub getsc { 
+    my $self = shift;
+
+    return \%sc;
 }
 
 sub isowner {
@@ -1579,7 +1648,11 @@ sub isin {
 sub topic {
 	my ($self, $channel, $topic) = @_;
 	if (!defined($topic)) {
-		return $sc{lc($channel)}{topic}{text};
+        if (exists($sc{lc($channel)}{topic}{text})) {
+		    return $sc{lc($channel)}{topic}{text};
+        } else {
+            return 0;
+        }
 	} else {
 		irc_raw(2, "TOPIC $channel :$topic");
 	}

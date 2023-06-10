@@ -46,6 +46,9 @@ bot.admins = [*!*@example.org,*!*@netadmin.bbsn.ca]
 @Modules
 # Modules Section - Define settings for configuring modules.
 
+[Pepper]
+dcc.port = "1024" 
+
 [WebAdmin]
 
 # httpd.addr - Defines which IP the WebAdmin HTTP server will listen on. 
