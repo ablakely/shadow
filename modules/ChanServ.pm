@@ -1,11 +1,5 @@
 package ChanServ;
 
-#$INSCRIPT[sh]
-#  if [ ! -d "./modules/Pepper2" ]; then
-#    git clone https://github.com/ablakely/Pepper ./modules/Pepper2
-#  fi
-#$INSCRIPT
-
 
 use lib './Oper.pm';
 

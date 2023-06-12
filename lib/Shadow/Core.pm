@@ -188,6 +188,32 @@ sub log {
 	err($self, $string, 0, $queue);
 }
 
+sub shutdown {
+    my ($self) = @_;
+
+    err(0, "Shutting down...", 0, "System");
+    handle_handler('system', 'shutdown');
+
+	foreach my $module_name (@loaded_modules) {
+        if ($module_name =~ /Shadow\:\:Mods/) {
+            $module_name =~ s/Shadow\:\:Mods\:\://;
+
+            eval "$module_name->unloader();";
+            if ($@) {
+                err(1, "[Core/unload_module/$module_name] eval error: $@", 0, "Modules");
+            }
+        }
+	}
+
+    irc_raw(1, "QUIT :Shutting down...");
+    irc_disconnect();
+    exit;
+}
+
+sub fexit {
+    exit;
+}
+
 sub err {
 	my ($self, $err, $fatal, $queue) = @_;
 	if (!$fatal) {
@@ -1087,16 +1113,19 @@ sub irc_msg_handler {
 
 	return if ignore($remotenick, $hostmask);
 
-	if ($text =~ /^\001(\w*)( (.*)|)\001$/) {
-		irc_ctcp_handler($msgchan, $remotenick, $1, $2, $hostmask);
-	} else {
-		if ($msgchan !~ /^[#&!+]/) {
-			irc_privmsg_handler($remotenick, $text, $hostmask);
-		} else {
-
-			irc_channel_handler($remotenick, $msgchan, $text, $hostmask);
-		}
-	}
+    if ($msgchan !~ /^[#&!+]/) {
+        if ($text =~ /^\001(\w*)( (.*)|)\001$/) {
+            irc_ctcp_handler($remotenick, 0, $1, $2, $hostmask);
+        } else {
+            irc_privmsg_handler($remotenick, $text, $hostmask);
+        }
+    } else {
+        if ($text =~ /^\001(\w*)( (.*)|)\001$/) {
+            irc_ctcp_handler($remotenick, $msgchan, $1, $2, $hostmask);
+        } else {
+            irc_channel_handler($remotenick, $msgchan, $text, $hostmask);
+        }
+    }
 }
 
 sub irc_channel_handler {
@@ -1135,8 +1164,9 @@ sub irc_privmsg_handler {
 }
 
 sub irc_ctcp_handler {
-	my ($msgchan, $remotenick, $ctcp_command, $ctcp_params, $hostmask) = @_;
-	if (handle_handler('ctcp', lc($ctcp_command), $remotenick, $msgchan, $ctcp_params)) {
+	my ($remotenick, $msgchan, $ctcp_command, $ctcp_params, $hostmask) = @_;
+
+	if (handle_handler('ctcp', lc($ctcp_command), $remotenick, $hostmask, $msgchan, $ctcp_params)) {
 		return;
 	}
 
