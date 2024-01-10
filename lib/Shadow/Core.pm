@@ -1,6 +1,7 @@
 # Shadow::Core v1.0	- Core Module for Shadow IRC Bot
 # Written by Aaron Blakely <aaron@ephasic.org>
 # Supports:
+#   SSL
 #	/Most/ IRCd's - Since it scans 005 of the PREFIXES
 #
 
@@ -13,6 +14,8 @@ use strict;
 use warnings;
 use IO::Select;
 use IO::Socket::INET;
+use IO::Socket::SSL;
+
 use Config;
 use Shadow::Admin;
 use Shadow::Help;
@@ -116,6 +119,8 @@ sub new {
 	$options{config}{nick}		= $ENV{IRC_NICK} || $cfg->{Shadow}->{IRC}->{bot}->{nick} || $whoami;
 	$options{config}{name}		= $ENV{IRC_NAME} || $cfg->{Shadow}->{IRC}->{bot}->{name} || $nick;
 	$options{config}{reconnect}	= 200;
+
+    $options{config}{ssl} = $cfg->{Shadow}->{IRC}->{bot}->{useSSL} =~ /yes/i ? 1 : 0;
 
 	# to put something in there
 	$Shadow::Core::nick = $nick;
@@ -553,11 +558,19 @@ sub irc_connect {
 	my ($ircserver, $ircport) = split(/:/, $_[0], 2);
 
 	Shadow::Core::log(1, "Connecting to IRC server... [server=$ircserver, port=$ircport]", 0, "System");
-	$irc = IO::Socket::INET->new(
-		Proto		=> 'TCP',
-		PeerAddr	=> $ircserver,
-		PeerPort	=> $ircport,
-	) or return undef;
+
+    if ($options{config}{ssl} == 1) {
+        unless($irc = IO::Socket::SSL->new("$ircserver:$ircport")) {
+            print "SSL Connection Error: $! - $SSL_ERROR\n";
+            return undef;
+        }
+    } else {
+        $irc = IO::Socket::INET->new(
+            Proto       => 'TCP',
+            PeerAddr    => $ircserver,
+            PeerPort    => $ircport,
+        ) or return undef;
+    }
 
 	sendfh($irc, "NICK ".$options{config}{nick}."\r\n");
 	sendfh($irc, "USER shadow ".lc($options{config}{nick})." ".lc($ircserver)." :".$options{config}{name}."\r\n");
