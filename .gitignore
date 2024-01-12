@@ -5,6 +5,8 @@ shadow.log
 /etc/shadow.conf
 /etc/aliases.db
 /etc/*.db
+/etc/quote.log
+/etc/quote.txt
 .AppleDouble
 .DS_Store
 /doc/.AppleDobule
