@@ -5,7 +5,8 @@
 @Shadow
 
 [IRC]
-bot.host       = [irc-nb.bbsn.ca:6667]
+bot.host       = [irc.server.com:6667]
+bot.useSSL     = no
 bot.nick       = "Shadow"
 bot.name       = "shadow"
 bot.channels   = [#chan1,#chan2,#etc]
