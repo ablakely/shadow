@@ -17,6 +17,7 @@ shadow.log
 /modules/Pepper
 log
 /modules/Test1.pm
+/modules/Chan5000.pm
 .vstags
 Dockerfile
 /dcc-downloads
