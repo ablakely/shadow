@@ -63,3 +63,14 @@ httpd.publicURL = "http://10.0.0.104:8888/"
 
 # sys.checkupdate - Automatically check for updates with git fetch
 sys.checkupdate = yes
+
+[OpenAI]
+
+# api.key - OpenAI API key
+api.key = "API KEY"
+
+# api.maxtokens - Maximum number of tokens to generate
+api.maxtokens = "400"
+
+# api.temperature - Temperature of generated text
+api.temperature = "0.8"

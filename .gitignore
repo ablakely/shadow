@@ -21,3 +21,5 @@ log
 .vstags
 Dockerfile
 /dcc-downloads
+./bmotion-api-list
+./eggdrop-api

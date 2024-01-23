@@ -679,6 +679,13 @@ sub irc_in {
         }
         elsif ($bits[1] eq "PART") {
             # part event
+
+            # no part message
+            if (!$bits[2]) {
+                $bits[2] = $text;
+                $text = "";
+            }
+
             irc_part($bits[2], $remotenick, $bits[0], $text);
         }
         elsif ($bits[1] eq "QUIT") {
@@ -982,6 +989,8 @@ sub irc_quit {
 		}
 	}
 
+    print "irc_quit: $remotenick, $hostmask, $text, @channels\n";
+
 	handle_handler('event', 'quit', $remotenick, $hostmask, $text, @channels);
 }
 
@@ -1178,6 +1187,8 @@ sub irc_privmsg_handler {
 
 sub irc_ctcp_handler {
 	my ($remotenick, $msgchan, $ctcp_command, $ctcp_params, $hostmask) = @_;
+
+    handle_handler('event', 'ctcp', $remotenick, $hostmask, $msgchan ? $msgchan : $nick, $ctcp_command, $ctcp_params);
 
 	if (handle_handler('ctcp', lc($ctcp_command), $remotenick, $hostmask, $msgchan, $ctcp_params)) {
 		return;

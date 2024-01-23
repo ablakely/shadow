@@ -1,0 +1,37 @@
+* setudef
+* putloglev
+* putlog
+bind:
+    * join
+    * mode
+    * pubm
+    * sign
+    * nick
+    * part
+    * ctcp
+    * pub
+    * msg
+    dcc
+    * time - partially
+    bot
+    link
+    
+
+* channels
+* channel
+* rand
+utimer
+timer
+utimers
+timers
+matchattr
+validuser
+chandname2name
+* puthelp
+* putserv
+* isbotnick
+ischanban
+* chanlist
+nick2hand
+getuser
+
