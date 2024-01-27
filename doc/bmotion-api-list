@@ -1,0 +1,37 @@
+* setudef
+* putloglev
+* putlog
+bind:
+    * join
+    * mode
+    * pubm
+    * sign
+    * nick
+    * part
+    * ctcp
+    * pub
+    * msg
+    - dcc  - TODO: should function without?
+    * time - partially
+    - bot  - TODO: bot net - should function without
+    - link - ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+
+* channels
+* channel
+* rand
+* utimer - TODO: implement timer processing from ticks
+* timer -  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* utimers - TODO: create code to determine remaining time
+* timers -  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* matchattr
+* validuser - TODO: User DB
+* chandname2name - TODO: Channel DB IDs
+* puthelp
+* putserv
+* isbotnick
+* ischanban - TODO: Shadow Core channel ban list support
+* chanlist
+* nick2hand - TODO: User DB
+* getuser   - TODO: User DB
+

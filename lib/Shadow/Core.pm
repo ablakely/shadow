@@ -1188,6 +1188,9 @@ sub irc_privmsg_handler {
 sub irc_ctcp_handler {
 	my ($remotenick, $msgchan, $ctcp_command, $ctcp_params, $hostmask) = @_;
 
+    # remove leading space from params
+    $ctcp_params =~ s/^\s+//;
+
     handle_handler('event', 'ctcp', $remotenick, $hostmask, $msgchan ? $msgchan : $nick, $ctcp_command, $ctcp_params);
 
 	if (handle_handler('ctcp', lc($ctcp_command), $remotenick, $hostmask, $msgchan, $ctcp_params)) {
