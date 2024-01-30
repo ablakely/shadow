@@ -50,6 +50,10 @@ bot.admins = [*!*@example.org,*!*@netadmin.bbsn.ca]
 [Pepper]
 dcc.port = "1024" 
 
+# Not sure if these matter but some scripts may check against them.
+eggdrop.numversion = "10120000"
+eggdrop.version = "1.12.0-pepper"
+
 [WebAdmin]
 
 # httpd.addr - Defines which IP the WebAdmin HTTP server will listen on. 

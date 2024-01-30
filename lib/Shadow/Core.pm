@@ -1151,8 +1151,11 @@ sub irc_msg_handler {
 }
 
 sub irc_channel_handler {
-	my @tmp;
 	my ($remotenick, $channel, $text, $hostmask) = @_;
+	my @tmp;
+
+	return if ignore($remotenick, $hostmask);
+
 	if ($text =~ /^\Q$options{irc}{cmdprefix}\E(\S+)(\s+(.*))?/) {
 		handle_handler('chancmd', $1, $remotenick, $hostmask, $channel, $3);
 	}
